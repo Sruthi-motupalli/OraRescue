@@ -50,4 +50,3 @@ The debug app builds and the latest local reports show 18 passing unit tests. Fi
 Developed from the group's Ora Rescue proposal for the Android group assignment, with AI development assistance. Group members should record their actual contributions, follow the lecturer's guidance on disclosure, and supply their own reflections and presentation evidence. See [START-HERE.md](START-HERE.md) for the demo journey and report checklist.
 
 Local SDK paths, build outputs, signing keys, and development caches are excluded from version control.
-
