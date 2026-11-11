@@ -2,6 +2,7 @@ package com.ora.rescue
 
 import androidx.room.withTransaction
 import java.time.LocalDate
+import java.time.LocalTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,15 +21,25 @@ class StudyRepository(private val database: StudyDatabase) {
     /** Live flow emitting a fresh StudySnapshot whenever the revision counter updates. */
     val snapshots: Flow<StudySnapshot> = dao.observeRevision().map { snapshot() }
 
-    /** Reads a complete, consistent snapshot of all tasks, availability, and sessions. */
+    /** Reads a complete, consistent snapshot of all tasks, availability, time windows, and sessions. */
     suspend fun snapshot(): StudySnapshot = database.withTransaction { readSnapshot() }
 
-    private suspend fun readSnapshot() = StudySnapshot(
-        revision = dao.revision() ?: 0,
-        tasks = dao.tasks(),
-        availability = dao.availability(),
-        sessions = dao.sessions()
-    )
+    private suspend fun readSnapshot(): StudySnapshot {
+        val rev = dao.revision() ?: 0
+        val tasks = dao.tasks()
+        val avail = dao.availability()
+        val windows = dao.timeWindows()
+        val sessions = dao.sessions()
+        val profile = dao.userProfile() ?: UserProfile()
+        return StudySnapshot(
+            revision = rev,
+            tasks = tasks,
+            availability = avail,
+            timeWindows = windows,
+            sessions = sessions,
+            profile = profile
+        )
+    }
 
     /**
      * Creates or updates a study topic with strict business rule validation.
@@ -67,7 +78,7 @@ class StudyRepository(private val database: StudyDatabase) {
     }
 
     /**
-     * Configures available study minutes for a given calendar day (0 to 1,440 minutes / 24 hours).
+     * Configures legacy daily availability minutes for backward compatibility.
      */
     suspend fun availability(day: Long, minutes: Int, today: LocalDate = LocalDate.now()) {
         val todayDay = today.toEpochDay()
@@ -86,17 +97,132 @@ class StudyRepository(private val database: StudyDatabase) {
     }
 
     /**
+     * Adds a new free-time window for a specific calendar day after strict validation.
+     */
+    suspend fun addTimeWindow(day: Long, startMinute: Int, endMinute: Int, today: LocalDate = LocalDate.now(), editId: Long = 0L) {
+        database.withTransaction {
+            dao.initialize(Revision())
+            val currentWindows = dao.timeWindowsForDay(day)
+            val error = TimeWindowValidator.validateWindow(day, startMinute, endMinute, currentWindows, today, ignoreId = editId)
+            require(error == null) { error ?: "Invalid time window." }
+
+            if (editId != 0L) {
+                require(currentWindows.any { it.id == editId }) { "This window changed. Refresh the calendar." }
+                dao.deleteTimeWindow(editId)
+            }
+            dao.insertTimeWindows(listOf(TimeWindow(day = day, startMinute = startMinute, endMinute = endMinute)))
+
+            // Synchronize legacy DailyAvailability total for backward compatibility
+            val allDayWindows = dao.timeWindowsForDay(day)
+            val totalMins = allDayWindows.sumOf { it.durationMinutes }
+            dao.saveAvailability(DailyAvailability(day, totalMins))
+
+            dao.clearPending(today.toEpochDay())
+            dao.bumpRevision()
+        }
+    }
+
+    /**
+     * Deletes a free-time window by ID.
+     */
+    suspend fun deleteTimeWindow(id: Long, today: LocalDate = LocalDate.now()) {
+        database.withTransaction {
+            dao.initialize(Revision())
+            val all = dao.timeWindows()
+            val target = all.find { it.id == id }
+            if (target != null) {
+                require(target.day >= today.toEpochDay()) { "Past dates are read-only." }
+                dao.deleteTimeWindow(id)
+                val remainingWindows = dao.timeWindowsForDay(target.day)
+                val totalMins = remainingWindows.sumOf { it.durationMinutes }
+                dao.saveAvailability(DailyAvailability(target.day, totalMins))
+                dao.clearPending(today.toEpochDay())
+                dao.bumpRevision()
+            }
+        }
+    }
+
+    /**
+     * Clears all free-time windows for a given day (marks day as Day Off).
+     */
+    suspend fun clearTimeWindowsForDay(day: Long, today: LocalDate = LocalDate.now()) {
+        val todayDay = today.toEpochDay()
+        require(day >= todayDay) { "Cannot clear past dates." }
+
+        database.withTransaction {
+            dao.initialize(Revision())
+            dao.clearTimeWindowsForDay(day)
+            dao.saveAvailability(DailyAvailability(day, 0))
+            dao.clearPending(todayDay)
+            dao.bumpRevision()
+        }
+    }
+
+    /**
+     * Copies all configured time windows from [sourceDay] to a list of [targetDays].
+     */
+    suspend fun copyWindowsToDates(sourceDay: Long, targetDays: List<Long>, today: LocalDate = LocalDate.now()) {
+        val todayDay = today.toEpochDay()
+        database.withTransaction {
+            dao.initialize(Revision())
+            val sourceWindows = dao.timeWindowsForDay(sourceDay)
+            require(sourceWindows.isNotEmpty()) { "Source day has no time windows to copy." }
+
+            require(targetDays.isNotEmpty()) { "Select at least one date." }
+            require(targetDays.all { it >= todayDay && it != sourceDay }) { "Choose future target dates, excluding the source." }
+            // Copy is additive and atomic: never silently overwrite a different day's windows.
+            for (targetDay in targetDays.distinct()) {
+                val existing = dao.timeWindowsForDay(targetDay)
+                val copies = sourceWindows.map { TimeWindow(day = targetDay, startMinute = it.startMinute, endMinute = it.endMinute) }
+                for (copy in copies) {
+                    val error = TimeWindowValidator.validateWindow(targetDay, copy.startMinute, copy.endMinute, existing, today)
+                    require(error == null) { "${dateLabel(targetDay)}: $error Nothing was copied." }
+                }
+                dao.insertTimeWindows(copies)
+                dao.saveAvailability(DailyAvailability(targetDay, (existing + copies).sumOf { it.durationMinutes }))
+            }
+
+            dao.clearPending(todayDay)
+            dao.bumpRevision()
+        }
+    }
+
+    /**
+     * Updates local student profile preferences in Room.
+     */
+    suspend fun updateProfile(name: String, studyGoalMinutes: Int, preferredSplit: Boolean, avatarIndex: Int) {
+        require(name.isNotBlank() && name.trim().length <= 40) { "Enter a name between 1 and 40 characters." }
+        require(avatarIndex in 0..3) { "Choose a valid avatar." }
+        require(studyGoalMinutes in 15..1440) { "Study target must be between 15 and 1,440 minutes." }
+
+        database.withTransaction {
+            dao.initialize(Revision())
+            dao.saveUserProfile(
+                UserProfile(
+                    id = 1,
+                    name = name.trim(),
+                    studyGoalMinutes = studyGoalMinutes,
+                    preferredSplit = preferredSplit,
+                    avatarIndex = avatarIndex
+                )
+            )
+            dao.bumpRevision()
+        }
+    }
+
+    /**
      * Records progress for a scheduled study session.
      * Can only be recorded on or after the scheduled session day.
      * A partially or fully completed session closes permanently; future recovery schedules remaining work.
      */
-    suspend fun recordProgress(sessionId: Long, minutes: Int, today: LocalDate = LocalDate.now()) {
+    suspend fun recordProgress(sessionId: Long, minutes: Int, today: LocalDate = LocalDate.now(), currentMinute: Int = if (today == LocalDate.now()) LocalTime.now().let { it.hour * 60 + it.minute } else 0) {
         val todayDay = today.toEpochDay()
         database.withTransaction {
             dao.initialize(Revision())
             val session = requireNotNull(dao.session(sessionId)) { "This session changed. Refresh the plan." }
             require(session.status == StudySession.PENDING) { "Progress for this session is already recorded." }
             require(session.day <= todayDay) { "Record progress on the study day or afterwards." }
+            require(session.day < todayDay || session.startMinute < 0 || session.startMinute <= currentMinute) { "This session has not started yet." }
 
             val task = requireNotNull(dao.task(session.taskId)) { "Task no longer exists." }
             val remaining = readSnapshot().remaining(task)
@@ -119,14 +245,15 @@ class StudyRepository(private val database: StudyDatabase) {
      * Atomically commits an accepted recovery plan to the database.
      * Strictly verifies that the database has not changed since the preview was generated.
      */
-    suspend fun accept(plan: RecoveryPlan, today: LocalDate = LocalDate.now()) {
+    suspend fun accept(plan: RecoveryPlan, today: LocalDate = LocalDate.now(), currentMinute: Int = if (today == LocalDate.now()) LocalTime.now().let { it.hour * 60 + it.minute } else 0) {
         val todayDay = today.toEpochDay()
         database.withTransaction {
             dao.initialize(Revision())
             require(plan.startDay == todayDay) { "The date changed. Generate a fresh preview." }
             require((dao.revision() ?: 0) == plan.revision) { "Your tasks or availability changed. Generate a new preview." }
 
-            val expected = Planner.build(readSnapshot(), today, plan.splitTasks)
+            require(plan.sessions.none { it.day == todayDay && it.hasExactTimes && it.startMinute < currentMinute }) { "A proposed start time has passed. Recalculate your preview." }
+            val expected = Planner.build(readSnapshot(), today, plan.splitTasks, plan.generatedMinute)
             require(plan == expected) { "This preview is out of date. Generate it again." }
 
             dao.clearPending(todayDay)
@@ -135,7 +262,9 @@ class StudyRepository(private val database: StudyDatabase) {
                     StudySession(
                         taskId = it.taskId,
                         day = it.day,
-                        allocatedMinutes = it.minutes
+                        allocatedMinutes = it.minutes,
+                        startMinute = it.startMinute,
+                        endMinute = it.endMinute
                     )
                 }
             )

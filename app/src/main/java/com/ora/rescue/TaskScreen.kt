@@ -79,7 +79,7 @@ fun TaskScreen(
                 Text(
                     text = if (id == 0L) "Make space for a topic." else "Refine your study topic.",
                     style = MaterialTheme.typography.headlineMedium,
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = OraFontFamily,
                     fontWeight = FontWeight.Bold,
                     color = OraPlumInk
                 )

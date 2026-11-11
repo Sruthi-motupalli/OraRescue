@@ -15,7 +15,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
@@ -30,7 +29,7 @@ fun RecoveryScreen(
     onAccept: () -> Unit,
     onAvailability: () -> Unit
 ) {
-    var split by rememberSaveable { mutableStateOf(true) }
+    var split by rememberSaveable(snapshot.profile.preferredSplit) { mutableStateOf(snapshot.profile.preferredSplit) }
     val today = LocalDate.now().toEpochDay()
     val isCurrent = preview?.revision == snapshot.revision &&
             preview.startDay == today &&
@@ -40,21 +39,21 @@ fun RecoveryScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 36.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Eyebrow("ROOM TO BEGIN AGAIN")
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Eyebrow("A FRESH START")
                 Text(
-                    text = "Find your next step.",
+                    text = "Recovery Plan",
+                    fontFamily = OraFontFamily,
                     style = MaterialTheme.typography.headlineMedium,
-                    fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Bold,
                     color = OraPlumInk
                 )
                 Text(
-                    text = "Ora places unfinished work before each exam, prioritizing nearest deadlines and higher priority topics into your configured study availability.",
+                    text = "Let’s make room to catch up.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = OraPlumMuted
                 )
@@ -80,9 +79,9 @@ fun RecoveryScreen(
                         )
                         Text(
                             text = if (split)
-                                "Allow topics to span multiple study days when daily capacity is limited."
+                                "Allow topics to span multiple free windows and study days."
                             else
-                                "Keep each topic as a single study block on one day.",
+                                "Require each topic to fit in ONE continuous free window.",
                             style = MaterialTheme.typography.bodySmall,
                             color = OraPlumMuted
                         )
@@ -119,9 +118,9 @@ fun RecoveryScreen(
                         .defaultMinSize(minHeight = 48.dp),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Icon(Icons.Rounded.Schedule, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Daily availability")
+                    Text("Edit Availability")
                 }
 
                 Button(
@@ -134,7 +133,7 @@ fun RecoveryScreen(
                 ) {
                     Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(if (plan == null) "Generate preview" else "Recalculate")
+                    Text(if (plan == null) "Generate Preview" else "Recalculate")
                 }
             }
         }
@@ -155,7 +154,7 @@ fun RecoveryScreen(
             item {
                 NoteCard(
                     title = "A preview you control",
-                    text = "Review proposed study sessions and any capacity shortfall before accepting. Your existing saved plan stays untouched until you accept.",
+                    text = "Review proposed study sessions, exact time slots, and any capacity shortfall before accepting. Your existing saved plan stays untouched until you accept.",
                     icon = Icons.Rounded.Info,
                     containerColor = OraCreamVariant
                 )
@@ -185,7 +184,7 @@ fun RecoveryScreen(
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                text = "$totalPlaced min found a place",
+                                text = "$totalPlaced min scheduled",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = if (totalShortfall > 0) OraAmber else OraSage
@@ -195,7 +194,7 @@ fun RecoveryScreen(
                             text = if (totalShortfall > 0)
                                 "$totalShortfall min remain unallocated due to capacity or deadline limits. Review unallocated topics below."
                             else
-                                "All outstanding study work successfully scheduled before upcoming exam deadlines!",
+                                "All outstanding study work successfully scheduled into your free-time windows before upcoming exams!",
                             style = MaterialTheme.typography.bodyMedium,
                             color = OraPlumInk
                         )
@@ -264,7 +263,7 @@ fun RecoveryScreen(
                             )
                             if (!split && work.reason.contains("whole remaining task")) {
                                 Text(
-                                    "Tip: Enable 'Split longer topics' above to allow this topic to divide across multiple days.",
+                                    "Tip: Enable 'Split longer topics' above to allow this topic to divide across multiple free windows.",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = OraRose,
                                     fontWeight = FontWeight.Medium
@@ -280,7 +279,7 @@ fun RecoveryScreen(
             if (days.isNotEmpty()) {
                 item {
                     Text(
-                        "Proposed Daily Schedule",
+                        "Your Revised Schedule",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleSmall,
                         color = OraPlumInk,
@@ -290,7 +289,7 @@ fun RecoveryScreen(
 
                 items(days.keys.toList(), key = { "day-$it" }) { day ->
                     val sessions = days.getValue(day)
-                    val available = snapshot.availability.find { it.day == day }?.minutes ?: 0
+                    val available = snapshot.dayCapacity(day)
                     val done = snapshot.sessions.filter { it.day == day }.sumOf { it.completedMinutes }
                     val proposedMins = sessions.sumOf { it.minutes }
 
@@ -323,16 +322,22 @@ fun RecoveryScreen(
                                         color = OraPlumInk
                                     )
                                 }
-                                Text(
-                                    text = "$proposedMins min proposed",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = OraRose
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = OraRoseLight
+                                ) {
+                                    Text(
+                                        text = "$proposedMins min",
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = OraRose
+                                    )
+                                }
                             }
 
                             Text(
-                                text = "$proposedMins min proposed + $done min completed / $available min daily available",
+                                text = "$proposedMins min proposed + $done min completed / $available min daily capacity",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = OraPlumMuted
                             )
@@ -370,7 +375,10 @@ fun RecoveryScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            "${session.minutes} min · exam ${task?.examDay?.let(::dateLabel)}",
+                                            text = if (session.hasExactTimes)
+                                                "${session.timeRangeString} (${session.minutes} min) · exam ${task?.examDay?.let(::dateLabel)}"
+                                            else
+                                                "${session.minutes} min · exam ${task?.examDay?.let(::dateLabel)}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = OraPlumMuted
                                         )
@@ -410,7 +418,7 @@ fun RecoveryScreen(
                     ) {
                         Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Accept & Apply Recovery Plan")
+                        Text("Accept Recovery Plan")
                     }
 
                     OutlinedButton(
@@ -435,4 +443,3 @@ fun RecoveryScreen(
         }
     }
 }
-

@@ -1,9 +1,11 @@
 package com.ora.rescue
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import java.time.LocalDate
+import java.time.LocalTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -14,6 +16,7 @@ import kotlinx.coroutines.launch
  */
 class OraApplication : Application() {
     val repository by lazy { StudyRepository(StudyDatabase.create(this)) }
+    val prefs by lazy { getSharedPreferences("ora_prefs", Context.MODE_PRIVATE) }
 }
 
 /** Immutable UI state representing the current snapshot, loading status, or error. */
@@ -32,6 +35,7 @@ data class UiNotice(val message: String, val destination: String? = null)
  */
 class StudyViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as OraApplication).repository
+    private val prefs      = (application as OraApplication).prefs
 
     private val _state = MutableStateFlow(StudyUiState())
     val state: StateFlow<StudyUiState> = _state.asStateFlow()
@@ -44,6 +48,21 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
 
     private val notices = Channel<UiNotice>(Channel.BUFFERED)
     val events: Flow<UiNotice> = notices.receiveAsFlow()
+
+    // ─── Theme Preference ─────────────────────────────────────────────────────
+    private val _themePreference = MutableStateFlow(loadThemePreference())
+    val themePreference: StateFlow<ThemePreference> = _themePreference.asStateFlow()
+
+    private fun loadThemePreference(): ThemePreference {
+        val stored = prefs.getString("theme", ThemePreference.SYSTEM.name) ?: ThemePreference.SYSTEM.name
+        return runCatching { ThemePreference.valueOf(stored) }.getOrDefault(ThemePreference.SYSTEM)
+    }
+
+    /** Updates the theme preference and persists it across restarts. */
+    fun setThemePreference(pref: ThemePreference) {
+        _themePreference.value = pref
+        prefs.edit().putString("theme", pref.name).apply()
+    }
 
     init {
         reload()
@@ -104,11 +123,50 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
         repository.deleteTask(id)
     }
 
-    /** Sets daily study availability in minutes. */
+    /** Sets daily study availability in minutes (legacy). */
     fun setAvailability(day: Long, minutes: Int) = perform(
         message = "Availability saved. Generate a fresh recovery plan."
     ) {
         repository.availability(day, minutes)
+    }
+
+    /** Adds a new free-time window for a specific date. */
+    fun addTimeWindow(day: Long, startMinute: Int, endMinute: Int) = perform(
+        message = "Free-time window added (${TimeWindow.formatMinuteOfDay(startMinute)} – ${TimeWindow.formatMinuteOfDay(endMinute)})."
+    ) {
+        repository.addTimeWindow(day, startMinute, endMinute)
+    }
+
+    fun editTimeWindow(id: Long, day: Long, start: Int, end: Int) = perform("Time window updated. Recalculate your plan.") {
+        repository.addTimeWindow(day, start, end, editId = id)
+    }
+
+    /** Removes a free-time window. */
+    fun deleteTimeWindow(id: Long) = perform(
+        message = "Time window removed."
+    ) {
+        repository.deleteTimeWindow(id)
+    }
+
+    /** Clears all time windows for a day (marking it as Day Off). */
+    fun clearTimeWindows(day: Long) = perform(
+        message = "Marked as Day Off (0 available minutes)."
+    ) {
+        repository.clearTimeWindowsForDay(day)
+    }
+
+    /** Copies time windows from source day to multiple target upcoming days. */
+    fun copyTimeWindows(sourceDay: Long, targetDays: List<Long>) = perform(
+        message = "Time windows copied to ${targetDays.size} upcoming days."
+    ) {
+        repository.copyWindowsToDates(sourceDay, targetDays)
+    }
+
+    /** Updates local student profile preferences in Room. */
+    fun updateProfile(name: String, studyGoalMinutes: Int, preferredSplit: Boolean, avatarIndex: Int) = perform(
+        message = "Profile preferences updated."
+    ) {
+        repository.updateProfile(name, studyGoalMinutes, preferredSplit, avatarIndex)
     }
 
     /** Records completed study progress for a session. */
@@ -120,7 +178,7 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Generates an in-memory preview of the recovery plan for the user to review. */
     fun preview(split: Boolean) = perform(message = null) {
-        _preview.value = Planner.build(repository.snapshot(), LocalDate.now(), split)
+        _preview.value = Planner.build(repository.snapshot(), LocalDate.now(), split, LocalTime.now().let { it.hour * 60 + it.minute })
     }
 
     /** Cancels and discards the active preview without modifying database state. */

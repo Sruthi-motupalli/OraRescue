@@ -53,7 +53,7 @@ fun Eyebrow(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelSmall,
-        color = OraRose,
+        color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
         modifier = modifier
     )
@@ -61,10 +61,11 @@ fun Eyebrow(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun PriorityBadge(priority: Int, modifier: Modifier = Modifier) {
+    val cs = MaterialTheme.colorScheme
     val (color, container) = when (priority) {
-        3 -> OraRose to OraRoseLight
-        2 -> Color(0xFF664E5A) to Color(0xFFF4DFE7)
-        else -> OraSage to OraSageLight
+        3 -> cs.primary to cs.primaryContainer
+        2 -> Color(0xFF8070B0) to cs.secondaryContainer
+        else -> cs.tertiary to cs.tertiaryContainer
     }
     Surface(
         color = container,
@@ -97,8 +98,8 @@ fun NoteCard(
     text: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    containerColor: Color = OraRoseLight.copy(alpha = 0.7f),
-    titleColor: Color = OraPlumInk
+    containerColor: Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+    titleColor: Color = MaterialTheme.colorScheme.onBackground
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -114,7 +115,7 @@ fun NoteCard(
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, fontWeight = FontWeight.SemiBold, color = titleColor, style = MaterialTheme.typography.titleSmall)
-                Text(text, style = MaterialTheme.typography.bodyMedium, color = OraPlumInk)
+                Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }
@@ -132,7 +133,7 @@ fun EmptyStateCard(
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
@@ -143,23 +144,23 @@ fun EmptyStateCard(
         ) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = OraRoseLight,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(52.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = OraRose, modifier = Modifier.size(28.dp))
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                 }
             }
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = OraPlumInk
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = OraPlumMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 12.dp),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
@@ -197,7 +198,7 @@ fun DeskSummaryBanner(
             modifier = Modifier
                 .background(
                     Brush.linearGradient(
-                        listOf(Color(0xFFF3DBE3), Color(0xFFFCEFE7))
+                        listOf(Color(0xFF668BFF), Color(0xFFA47CF4))
                     )
                 )
                 .fillMaxWidth()
@@ -210,25 +211,25 @@ fun DeskSummaryBanner(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Spa, contentDescription = null, tint = OraRose, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Spa, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Your time, gently planned",
+                        "Today’s Goal · Keep Going!",
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = OraPlumInk
+                        color = Color.White
                     )
                 }
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color.White.copy(alpha = 0.8f)
+                    color = Color.White.copy(alpha = 0.2f)
                 ) {
                     Text(
                         text = percentText,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium,
-                        color = OraPlumInk
+                        color = Color.White
                     )
                 }
             }
@@ -236,9 +237,9 @@ fun DeskSummaryBanner(
             Text(
                 text = "$planned min planned",
                 style = MaterialTheme.typography.headlineMedium,
-                fontFamily = FontFamily.Serif,
+                fontFamily = OraFontFamily,
                 fontWeight = FontWeight.Bold,
-                color = OraPlumInk
+                color = Color.White
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -247,7 +248,7 @@ fun DeskSummaryBanner(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp),
-                    color = OraRose,
+                    color = Color.White,
                     trackColor = Color.White.copy(alpha = 0.7f)
                 )
                 Row(
@@ -257,18 +258,18 @@ fun DeskSummaryBanner(
                     Text(
                         "$worked min completed",
                         style = MaterialTheme.typography.labelSmall,
-                        color = OraSage,
+                        color = Color.White,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
                         "$capacity min daily capacity",
                         style = MaterialTheme.typography.labelSmall,
-                        color = OraPlumMuted
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
             }
 
-            HorizontalDivider(color = OraBorderLight.copy(alpha = 0.6f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -278,13 +279,13 @@ fun DeskSummaryBanner(
                 Text(
                     "$openTasks open topics to study",
                     style = MaterialTheme.typography.labelMedium,
-                    color = OraPlumInk
+                    color = Color.White
                 )
                 Text(
                     "$outstanding min left overall",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = OraRose
+                    color = Color.White
                 )
             }
         }
@@ -368,12 +369,13 @@ fun TopicCard(
 ) {
     val progress = if (task.totalMinutes > 0) (completed.toFloat() / task.totalMinutes).coerceIn(0f, 1f) else 0f
     val isFinished = remaining == 0
+    val cs = MaterialTheme.colorScheme
 
     OutlinedCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+        colors = CardDefaults.outlinedCardColors(containerColor = cs.surface)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -386,7 +388,7 @@ fun TopicCard(
                 Icon(
                     Icons.AutoMirrored.Rounded.MenuBook,
                     contentDescription = null,
-                    tint = OraRose,
+                    tint = cs.primary,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(8.dp))
@@ -395,7 +397,7 @@ fun TopicCard(
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = OraRose
+                    color = cs.primary
                 )
                 PriorityBadge(task.priority)
             }
@@ -404,7 +406,7 @@ fun TopicCard(
                 text = task.topic,
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.titleMedium,
-                color = OraPlumInk
+                color = cs.onBackground
             )
 
             Row(
@@ -415,13 +417,13 @@ fun TopicCard(
                 Text(
                     text = daysRemainingLabel(task.examDay, today) + " · ${dateLabel(task.examDay)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = OraPlumMuted
+                    color = cs.onSurfaceVariant
                 )
                 Text(
                     text = if (isFinished) "0 min remaining" else "$remaining min remaining",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isFinished) OraSage else OraPlumInk
+                    color = if (isFinished) cs.tertiary else cs.onBackground
                 )
             }
 
@@ -430,8 +432,8 @@ fun TopicCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(6.dp),
-                color = if (isFinished) OraSage else OraRose,
-                trackColor = OraCreamVariant
+                color = if (isFinished) cs.tertiary else cs.primary,
+                trackColor = cs.surfaceVariant
             )
 
             Row(
@@ -442,11 +444,11 @@ fun TopicCard(
                 Text(
                     text = "$completed of ${task.totalMinutes} min completed",
                     style = MaterialTheme.typography.labelSmall,
-                    color = OraPlumMuted
+                    color = cs.onSurfaceVariant
                 )
                 if (isFinished) {
                     Surface(
-                        color = OraSageLight,
+                        color = cs.tertiaryContainer,
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Row(
@@ -454,8 +456,8 @@ fun TopicCard(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = OraSage, modifier = Modifier.size(14.dp))
-                            Text("Completed", color = OraSage, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = cs.tertiary, modifier = Modifier.size(14.dp))
+                            Text("Completed", color = cs.tertiary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -474,10 +476,11 @@ fun SessionCard(
     onProgress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val cs = MaterialTheme.colorScheme
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+        colors = CardDefaults.outlinedCardColors(containerColor = cs.surface)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -490,7 +493,7 @@ fun SessionCard(
                 Text(
                     text = task.subject,
                     modifier = Modifier.weight(1f),
-                    color = OraRose,
+                    color = cs.primary,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -501,7 +504,7 @@ fun SessionCard(
                 text = task.topic,
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.titleMedium,
-                color = OraPlumInk,
+                color = cs.onBackground,
                 modifier = Modifier.clickable(onClick = onEdit)
             )
 
@@ -511,34 +514,37 @@ fun SessionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${session.allocatedMinutes} min scheduled session",
+                    text = if (session.hasExactTimes)
+                        "${session.timeRangeString} (${session.allocatedMinutes} min)"
+                    else
+                        "${session.allocatedMinutes} min scheduled session",
                     style = MaterialTheme.typography.bodySmall,
-                    color = OraPlumMuted
+                    color = cs.onSurfaceVariant
                 )
                 when (session.status) {
-                    StudySession.CLOSED -> Surface(color = OraSageLight, shape = RoundedCornerShape(6.dp)) {
+                    StudySession.CLOSED -> Surface(color = cs.tertiaryContainer, shape = RoundedCornerShape(6.dp)) {
                         Text(
                             "${session.completedMinutes} min completed",
                             Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = OraSage,
+                            color = cs.tertiary,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    StudySession.MISSED -> Surface(color = OraAmberLight, shape = RoundedCornerShape(6.dp)) {
+                    StudySession.MISSED -> Surface(color = cs.errorContainer, shape = RoundedCornerShape(6.dp)) {
                         Text(
                             "Missed · ready to recover",
                             Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = OraAmber,
+                            color = cs.error,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    else -> Surface(color = OraRoseLight, shape = RoundedCornerShape(6.dp)) {
+                    else -> Surface(color = cs.primaryContainer, shape = RoundedCornerShape(6.dp)) {
                         Text(
                             "Pending",
                             Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = OraRose,
+                            color = cs.primary,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium
                         )
@@ -591,10 +597,10 @@ fun MinutesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold, color = OraPlumInk) },
+        title = { Text(title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(explanation, style = MaterialTheme.typography.bodyMedium, color = OraPlumMuted)
+                Text(explanation, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 if (quickPresets.isNotEmpty()) {
                     Text("Quick presets:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)

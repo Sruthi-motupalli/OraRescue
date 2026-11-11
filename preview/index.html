@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ora Rescue · Preview</title>
+<style>
+/* ── Font stack: Apple SF system font on supported Apple devices, Inter (OFL-licensed,
+   bundled) on Windows / Android. SF Pro files are NOT redistributed here. ── */
+@font-face{font-family:Inter;src:url('fonts/inter.ttf') format('truetype');font-weight:100 900;font-display:swap}
+
+:root{
+  --ff: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+        Inter, 'Segoe UI', Roboto, sans-serif;
+  --ink: #1c1b2e;
+  --ink2: #5c5876;
+  --muted: #8b87a8;
+  --paper: #f3f1ff;
+  --surface: #ffffff;
+  --card: rgba(255,255,255,0.80);
+  --brand: #7763ff;
+  --brand-dark: #5040c0;
+  --brand-light: #eae5ff;
+  --line: #e2ddf5;
+  --sage: #299764;
+  --sage-bg: #eafaf3;
+  --amber: #c05b00;
+  --amber-bg: #fff4ea;
+  --error: #c0001a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background: radial-gradient(ellipse at 15% 85%,#d6ceff,transparent 48%),
+              radial-gradient(ellipse at 90% 10%,#dbeeff,transparent 45%),
+              var(--paper);
+  color:var(--ink);
+  font:16px/1.5 var(--ff);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+/* ── Layout ── */
+.layout{display:flex;justify-content:center;align-items:flex-start;gap:48px;max-width:1100px;margin:30px auto;padding:0 20px}
+.sidebar{flex:1;max-width:420px;padding-top:40px}
+.sidebar h1{font-size:40px;font-weight:700;line-height:1.1;letter-spacing:-1px;color:#1a1832;margin:12px 0 14px}
+.sidebar p{font-size:14px;color:var(--ink2);line-height:1.6;max-width:360px}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.pill{background:var(--brand-light);color:var(--brand-dark);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}
+.pill.g{background:var(--sage-bg);color:var(--sage)}
+.pill.a{background:var(--amber-bg);color:var(--amber)}
+.sidebar-note{font-size:12px;color:var(--muted);border-left:3px solid var(--line);padding-left:12px;margin-top:20px;line-height:1.5}
+
+/* ── Phone Frame ── */
+.phone{
+  width:390px;height:min(844px, calc(100dvh - 48px));min-height:520px;
+  border:7px solid #1e1d30;
+  border-radius:46px;
+  background:linear-gradient(155deg,#f2f7ff 0%,#ece8ff 65%,#f4f1ff 100%);
+  box-shadow:0 28px 70px rgba(90,75,175,0.22),0 0 0 2px #aaa8c0;
+  display:flex;flex-direction:column;overflow:hidden;position:relative;
+}
+.status-bar{
+  height:40px;padding:10px 24px 0;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;font-weight:700;color:#22223a;position:relative;flex-shrink:0;
+}
+.status-bar::after{
+  content:'';position:absolute;top:7px;left:calc(50% - 42px);
+  width:84px;height:21px;border-radius:14px;background:#1a1930;
+}
+.screen{flex:1;min-height:0;overflow-y:auto;padding:14px 18px 20px;scrollbar-width:thin;scrollbar-color:rgba(119,99,255,.25) transparent}
+.screen::-webkit-scrollbar{width:3px}
+.screen::-webkit-scrollbar-thumb{background:rgba(119,99,255,.25);border-radius:3px}
+
+/* ── Bottom Navigation ── */
+nav{
+  height:72px;background:rgba(255,255,255,0.93);
+  border-top:1px solid rgba(220,215,250,.85);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0 8px 8px;flex-shrink:0;
+}
+nav button{
+  flex:1;background:transparent;color:var(--muted);
+  font:600 10px/1 var(--ff);border:0;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  min-height:52px;border-radius:12px;padding:4px 2px;
+  -webkit-tap-highlight-color:transparent;
+}
+nav button .ic{font-size:21px;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;transition:all .15s}
+nav button.active{color:var(--brand);font-weight:700}
+nav button.active .ic{background:var(--brand-light)}
+nav button.add-btn{
+  width:52px;height:52px;max-width:52px;min-height:52px;flex:none;
+  border-radius:50%;background:linear-gradient(135deg,#9b7bff,#6b55f8);
+  color:#fff;box-shadow:0 8px 20px rgba(119,99,255,.38);margin:0 6px;
+  padding:0;
+}
+nav button.add-btn .ic{font-size:28px;background:transparent;color:#fff;border-radius:50%}
+
+/* ── Typography helpers ── */
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--brand)}
+h2{font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--ink);margin:4px 0 8px}
+h3{font-size:16px;font-weight:600;color:var(--ink)}
+.section-label{font-size:14px;font-weight:600;color:var(--ink)}
+.body{font-size:16px;line-height:1.5;color:var(--ink)}
+.small{font-size:14px;color:var(--ink2)}
+.tiny{font-size:12px;color:var(--muted)}
+.meta{font-size:13px;color:var(--ink2)}
+strong{font-weight:600}
+
+/* ── Cards ── */
+.card{
+  background:var(--card);border:1px solid rgba(220,215,250,.85);
+  border-radius:20px;padding:16px;margin-bottom:12px;
+  box-shadow:0 4px 16px rgba(100,80,220,.05);
+}
+.card.sage{background:var(--sage-bg);border-color:rgba(41,151,100,.2)}
+.card.amber{background:var(--amber-bg);border-color:rgba(192,91,0,.2)}
+.card.brand{background:var(--brand-light);border-color:rgba(119,99,255,.2)}
+.row{display:flex;align-items:center;gap:8px}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+/* ── Stat chips ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+.stat-box{background:rgba(255,255,255,.82);border:1px solid #e5e0f8;border-radius:16px;padding:12px 8px;text-align:center}
+.stat-box .si{width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;font-size:14px;color:#fff}
+.stat-box:nth-child(1) .si{background:linear-gradient(135deg,#b993ff,#8865ff)}
+.stat-box:nth-child(2) .si{background:linear-gradient(135deg,#8eccff,#5c8eff)}
+.stat-box:nth-child(3) .si{background:linear-gradient(135deg,#ffadc1,#fa6d8e)}
+.stat-box strong{display:block;font-size:17px;font-weight:700;color:var(--ink)}
+.stat-box span{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600}
+
+/* ── Goal banner ── */
+.goal-card{
+  background:linear-gradient(115deg,#637cf8 0%,#765ef0 55%,#9971f4 100%);
+  border-radius:20px;padding:18px 16px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden;
+  box-shadow:0 10px 24px rgba(110,85,245,.28);
+}
+.goal-card::after{
+  content:'';position:absolute;width:130px;height:130px;border-radius:35px;
+  background:#ffffff12;transform:rotate(32deg);right:-40px;top:0;pointer-events:none;
+}
+.goal-card h3{font-size:20px;font-weight:700;color:#fff;margin:4px 0 2px}
+.goal-card .sub{font-size:12px;opacity:.85;margin-bottom:12px}
+.prog-bg{height:7px;border-radius:6px;background:rgba(255,255,255,.28);overflow:hidden}
+.prog-fill{height:100%;border-radius:6px;background:#fff;transition:width .3s}
+
+/* ── Badge ── */
+.badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:600;background:var(--brand-light);color:var(--brand-dark)}
+.badge.g{background:var(--sage-bg);color:var(--sage)}
+.badge.a{background:var(--amber-bg);color:var(--amber)}
+.badge.r{background:#fde8ed;color:#c7254e}
+
+/* ── Calendar ── */
+.cal-wdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
+.cell{
+  aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,.55);border:1px solid rgba(220,215,250,.7);position:relative;transition:all .15s;
+}
+.cell:hover{background:#fff;border-color:var(--brand)}
+.cell.sel{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 4px 12px rgba(119,99,255,.35)}
+.cell.today:not(.sel){border:2px solid var(--brand);font-weight:800}
+.cell.past:not(.sel){opacity:.5}
+.cell.empty{background:transparent;border-color:transparent;cursor:default}
+.dots{display:flex;gap:2px;margin-top:2px}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--brand-light)}
+.dot.g{background:#2ebd72}.dot.p{background:var(--brand)}.dot.a{background:#f38f32}
+.legend{display:flex;gap:14px;justify-content:center;margin-bottom:12px;font-size:11px;color:var(--muted)}
+.legend .li{display:flex;align-items:center;gap:4px}
+
+/* ── Window rows ── */
+.win-row{
+  background:rgba(255,255,255,.88);border:1px solid #e3def8;border-radius:14px;
+  padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+}
+.win-time{font-size:14px;font-weight:700;color:var(--ink)}
+.win-dur{font-size:12px;color:var(--muted)}
+
+/* ── Forms ── */
+.field{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:12px}
+.field input,.field select{
+  display:block;width:100%;margin-top:5px;padding:12px 14px;
+  border:1px solid #d8d2f2;border-radius:12px;background:rgba(255,255,255,.88);
+  font:14px/1 var(--ff);color:var(--ink);
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(119,99,255,.18)}
+.field input[type=time]{font-size:16px;padding:14px}
+
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+
+/* ── Buttons ── */
+button{cursor:pointer;font:600 14px/1 var(--ff);border:0;border-radius:12px;min-height:44px;padding:0 18px;background:var(--brand);color:#fff;transition:filter .15s}
+button:hover{filter:brightness(.95)}
+button:disabled{opacity:.4;cursor:default;filter:none}
+button.secondary{background:rgba(255,255,255,.88);color:var(--brand);border:1px solid #d8d2f2}
+button.quiet{background:transparent;color:var(--muted);min-height:36px;padding:4px 10px}
+button.quiet:hover{color:var(--ink);background:rgba(0,0,0,.04)}
+button.danger{background:#fde8ed;color:#c7254e;border:1px solid #f9ccd7}
+button.small{font-size:12px;min-height:34px;padding:0 12px;border-radius:10px}
+button.full{width:100%}
+
+/* ── Dialogs ── */
+dialog{
+  border:1px solid #ddd7f8;border-radius:22px;padding:24px;
+  width:min(360px,90vw);background:#fff;
+  box-shadow:0 20px 60px rgba(40,30,80,.22);color:var(--ink);
+}
+dialog::backdrop{background:rgba(25,20,45,.45);backdrop-filter:blur(2px)}
+dialog h2{font-size:19px;font-weight:700;margin-bottom:8px}
+dialog p{font-size:14px;color:var(--ink2);margin-bottom:16px}
+.error-msg{font-size:13px;color:var(--error);font-weight:600;margin:8px 0}
+
+/* ── Profile Hero ── */
+.p-hero{background:linear-gradient(135deg,#dceaff,#e5d7ff);border-radius:22px;padding:24px;text-align:center;margin-bottom:12px}
+.p-hero .av{font-size:60px;line-height:1}
+.p-hero h3{font-size:20px;font-weight:700;margin-top:8px}
+.p-hero p{font-size:13px;color:var(--ink2);margin-top:4px}
+
+/* ── Empty state ── */
+.empty-state{text-align:center;padding:24px 16px}
+.empty-state .ei{font-size:30px;margin-bottom:8px}
+.empty-state h3{font-size:16px;margin-bottom:4px}
+.empty-state p{font-size:14px;color:var(--ink2);margin-bottom:16px}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#1f1d36;color:#fff;padding:12px 20px;border-radius:14px;
+  font-size:13px;font-weight:600;z-index:999;box-shadow:0 10px 30px rgba(0,0,0,.22);
+  opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* ── Responsive ── */
+@media(max-width:830px){
+  .layout{flex-direction:column;align-items:center;margin:12px auto;padding:0 12px;gap:0}
+  .sidebar{display:none}
+  .phone{width:100%;max-width:390px}
+}
+
+/* Final readability and keyboard pass. */
+.cell{min-height:44px;padding:4px 0;color:var(--ink);font-family:var(--ff);line-height:1.2;background:rgba(255,255,255,.5)}
+.cell.sel{color:white}.cell:focus-visible{outline:3px solid var(--brand-dark);outline-offset:1px}
+button:disabled{opacity:.5;cursor:default}h2{font-weight:600}.goal-card h3{font-weight:600}
+.muted{color:var(--ink2)}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Desktop intro sidebar -->
+  <aside class="sidebar">
+    <span class="eyebrow">Ora Rescue · Browser Preview</span>
+    <h1>Your study time, reclaimed.</h1>
+    <p>A deterministic study-recovery planner with exact free-time windows, local Room persistence, and zero cloud tracking. All five Android screens are recreated here.</p>
+    <div class="pills">
+      <span class="pill">Icy Lavender</span>
+      <span class="pill g">Exact Windows</span>
+      <span class="pill a">Deterministic</span>
+      <span class="pill">100% Local</span>
+    </div>
+    <div class="sidebar-note">
+      This is a browser simulation. Data lives in <code>localStorage</code>, separate from the Android Room database. Font: Apple SF system font on macOS/iOS; Inter (OFL-licensed, bundled) on other platforms.
+    </div>
+    <div style="margin-top:18px">
+      <button class="secondary small" onclick="resetData()">↺ Reset sample data</button>
+    </div>
+  </aside>
+
+  <!-- Phone frame -->
+  <div class="phone" aria-label="Ora Rescue app preview">
+    <div class="status-bar">
+      <span id="clock">9:41</span>
+      <span>● ▰ 100%</span>
+    </div>
+    <main class="screen" id="screen" aria-live="polite"></main>
+    <nav aria-label="Bottom navigation">
+      <button data-p="home" onclick="go('home')"><span class="ic">⌂</span>Home</button>
+      <button data-p="calendar" onclick="go('calendar')"><span class="ic">▦</span>Calendar</button>
+      <button class="add-btn" aria-label="Add topic" onclick="go('add')"><span class="ic">＋</span></button>
+      <button data-p="recover" onclick="go('recover')"><span class="ic">♧</span>Recovery</button>
+      <button data-p="profile" onclick="go('profile')"><span class="ic">♙</span>Profile</button>
+    </nav>
+  </div>
+</div>
+
+<!-- Dialogs -->
+<dialog id="windowDlg">
+  <form id="windowForm">
+    <h2 id="wdTitle">Add free time</h2>
+    <p id="wdSub" class="small" style="color:var(--muted)"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px">
+      <label class="field">Start time<input type="time" name="start" required value="16:00"></label>
+      <label class="field">End time<input type="time" name="end" required value="18:00"></label>
+    </div>
+    <div class="presets">
+      <button type="button" class="secondary small" onclick="setWin('09:00','11:00')">09–11</button>
+      <button type="button" class="secondary small" onclick="setWin('16:00','18:00')">16–18</button>
+      <button type="button" class="secondary small" onclick="setWin('19:30','21:30')">19:30–21:30</button>
+      <button type="button" class="secondary small" onclick="setWin('21:00','23:00')">21–23</button>
+    </div>
+    <div class="error-msg" id="wdErr" hidden></div>
+    <div class="row-between" style="margin-top:16px">
+      <button type="button" class="quiet" onclick="$('#windowDlg').close()">Cancel</button>
+      <button type="submit">Save window</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="copyDlg">
+  <form id="copyForm">
+    <h2>Copy free time</h2>
+    <p>Add today's windows to selected upcoming dates. Existing windows are preserved; overlaps skip the whole day.</p>
+    <div id="copyDateList" style="display:grid;gap:8px;margin:12px 0 4px"></div>
+    <div class="error-msg" id="copyErr" hidden></div>
+    <div class="row-between" style="margin-top:16px">
+      <button type="button" class="quiet" onclick="$('#copyDlg').close()">Cancel</button>
+      <button type="submit">Copy windows</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="progressDlg">
+  <form id="progressForm">
+    <h2>Record progress</h2>
+    <p id="progressSub" class="small" style="color:var(--muted)"></p>
+    <label class="field">Completed minutes
+      <input type="number" name="done" min="0" required>
+    </label>
+    <div class="presets" id="progressPresets"></div>
+    <div class="row-between" style="margin-top:16px">
+      <button type="button" class="quiet" onclick="$('#progressDlg').close()">Cancel</button>
+      <button type="submit">Save progress</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="aboutDlg">
+  <h2>About Ora Rescue</h2>
+  <p>Kotlin · Jetpack Compose · Material 3 · Room SQLite · 100% offline. Zero accounts, telemetry, or cloud storage.</p>
+  <p style="margin-top:8px;font-size:13px;color:var(--muted)">Font: Apple SF system font where available (macOS/iOS); Inter (OFL, bundled) elsewhere. SF Pro files are not redistributed.</p>
+  <div style="margin-top:16px"><button class="full secondary" onclick="$('#aboutDlg').close()">Close</button></div>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   Ora Rescue — Self-contained browser preview
+   All 5 destinations: Home, Calendar, Add Topic, Recovery, Profile.
+   Browser localStorage only; completely separate from Android Room db.
+   ===================================================================== */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ── Date helpers ── */
+function localDay(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function plusDays(s, n) {
+  const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return localDay(d);
+}
+function fmtShort(s) { return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function fmtLong(s)  { return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
+function minToTime(m) { return `${pad(Math.floor(m/60))}:${pad(m%60)}`; }
+function timeToMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+function canRecord(s) { const date=localDay(new Date()); return !!s && !s.recorded && (s.day<date || s.day===date && (s.start==null || s.start<=nowMin())); }
+function nowMin() { const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+const TODAY = localDay(new Date());
+
+/* ── Sample data factory ── */
+function mkSamples() {
+  return {
+    tasks: [
+      {id:1,subject:'Operating Systems',topic:'CPU Scheduling & Semaphores',minutes:120,exam:plusDays(TODAY,5),priority:3},
+      {id:2,subject:'Machine Learning',topic:'Decision Trees & Ensembles',minutes:90,exam:plusDays(TODAY,8),priority:2},
+      {id:3,subject:'Mobile Dev',topic:'Compose & Room Migration',minutes:60,exam:plusDays(TODAY,12),priority:2}
+    ],
+    windows: [
+      {id:101,day:TODAY,            start:960, end:1080},
+      {id:102,day:TODAY,            start:1170,end:1290},
+      {id:103,day:plusDays(TODAY,1),start:960, end:1080},
+      {id:104,day:plusDays(TODAY,2),start:1020,end:1200},
+    ],
+    sessions: [
+      {id:1,taskId:1,day:TODAY,start:960, end:1080,minutes:120,done:0,recorded:false},
+      {id:2,taskId:2,day:TODAY,start:1170,end:1260,minutes:90, done:0,recorded:false},
+    ],
+    profile: {name:'Shruthi',goal:120,split:true,avatar:'👩🏻‍💻'}
+  };
+}
+
+/* ── State ── */
+const STORE = 'ora_v3';
+let S;
+// Keep earlier preview data accessible; upgrade its field names without deleting it.
+function loadPreviewData() {
+  const current = localStorage.getItem(STORE);
+  if (current) return JSON.parse(current);
+  const raw = localStorage.getItem('ora-interface-demo-v1');
+  if (!raw) return mkSamples();
+  const old = JSON.parse(raw), icons = ['👩🏻‍💻','🧑🏽‍🎓','📚','✨'];
+  return {...old, windows:old.windows||[], legacyCapacity:old.capacity||{},
+    sessions:(old.sessions||[]).map(x=>({...x,taskId:x.taskId??x.task,end:x.end??(x.start==null?null:x.start+x.minutes)})),
+    profile:{name:old.profile?.name||'Shruthi',goal:old.profile?.goal||120,split:old.profile?.split??true,
+      avatar:typeof old.profile?.avatar==='number'?icons[old.profile.avatar]:old.profile?.avatar||icons[0]}};
+}
+try { S = loadPreviewData(); } catch { S = mkSamples(); }
+if (!S.profile) S.profile = {name:'Student',goal:120,split:true,avatar:'👩🏻‍💻'};
+if (!S.windows)  S.windows = [];
+
+function save() { localStorage.setItem(STORE, JSON.stringify(S)); }
+function resetData() { S = mkSamples(); save(); calDay = TODAY; calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); go('home'); toast('Sample data restored'); }
+
+/* ── Navigation ── */
+let page = 'home', editId = null, calDay = TODAY;
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+let searchQ = '', subjectF = '', preview = null, splitMode = true;
+
+function go(p, id=null) {
+  page = p; editId = id;
+  if (p !== 'recover') preview = null;
+  render(); $('#screen').scrollTop = 0;
+}
+
+function render() {
+  document.querySelectorAll('nav button[data-p]').forEach(b =>
+    b.classList.toggle('active', b.dataset.p === page));
+  $('#screen').innerHTML = {
+    home: renderHome, calendar: renderCalendar, add: renderAdd,
+    recover: renderRecover, profile: renderProfile
+  }[page]?.() ?? renderHome();
+  if (page === 'add') bindAddForm();
+}
+
+/* ── Helpers ── */
+function taskDone(id) { return S.sessions.filter(s=>s.taskId===id).reduce((a,s)=>a+s.done,0); }
+function taskLeft(t)  { return Math.max(0, t.minutes - taskDone(t.id)); }
+function priLabel(p)  { return ['Low','Low','Medium','High'][p]||'Medium'; }
+function greeting()   { const h=new Date().getHours(); return h<12?'Good Morning':h<18?'Good Afternoon':'Good Evening'; }
+function winsForDay(d){ return S.windows.filter(w=>w.day===d).sort((a,b)=>a.start-b.start); }
+function dayCapMin(d) { return winsForDay(d).reduce((a,w)=>a+(w.end-w.start),0); }
+
+function winOverlap(d, s, e, skipId=0) {
+  return S.windows.some(w => w.day===d && w.id!==skipId && s<w.end && e>w.start);
+}
+
+/* ── Home ── */
+function renderHome() {
+  const p = S.profile;
+  const goalMin = p.goal || 120;
+  const todaySess = S.sessions.filter(s=>s.day===TODAY);
+  const doneToday = todaySess.reduce((a,s)=>a+s.done, 0);
+  const pct = Math.min(100, Math.round(doneToday/goalMin*100));
+  const doneTopics = S.tasks.filter(t=>taskLeft(t)<=0).length;
+  const totalFocus = S.sessions.reduce((a,s)=>a+s.done, 0);
+  const openCount  = S.tasks.filter(t=>taskLeft(t)>0).length;
+
+  const nearest = S.tasks.filter(t=>taskLeft(t)>0).sort((a,b)=>a.exam.localeCompare(b.exam))[0];
+
+  const filters = ['All','In Progress','Completed',...new Set(S.tasks.map(t=>t.subject))];
+  const filtered = S.tasks.filter(t => {
+    const qs = searchQ.toLowerCase();
+    const matchQ = !qs || t.topic.toLowerCase().includes(qs) || t.subject.toLowerCase().includes(qs);
+    if (!matchQ) return false;
+    if (subjectF==='In Progress') return taskLeft(t)>0;
+    if (subjectF==='Completed')   return taskLeft(t)<=0;
+    if (subjectF && subjectF!=='All') return t.subject===subjectF;
+    return true;
+  });
+
+  return `
+  <div>
+    <div class="row-between" style="margin-bottom:12px">
+      <div>
+        <div class="eyebrow">${greeting()}</div>
+        <h2>Hello, ${esc(p.name)} 👋</h2>
+      </div>
+      <div style="font-size:48px;cursor:pointer" onclick="go('profile')" title="Profile">${esc(p.avatar||'👩🏻‍💻')}</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="si">✓</div><strong>${doneTopics}</strong><span>Done</span></div>
+      <div class="stat-box"><div class="si">◷</div><strong>${Math.floor(totalFocus/60)}h ${totalFocus%60}m</strong><span>Focus</span></div>
+      <div class="stat-box"><div class="si">ϟ</div><strong>${openCount}</strong><span>Open</span></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="row-between"><span class="tiny" style="color:#fff9">TODAY'S GOAL</span><span class="tiny" style="color:#fff9">${doneToday} / ${goalMin} min</span></div>
+      <h3>${pct>=100?'Goal reached 🎉':pct>0?'Keep going!':'Ready to start?'}</h3>
+      <p class="sub">${pct>=100?'Outstanding focus today.':pct>0?`${pct}% of your ${goalMin}-min goal.`:'Every small session adds up.'}</p>
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    ${nearest?`
+    <div class="card" style="border-left:4px solid var(--brand);padding:12px 14px;margin-bottom:12px">
+      <div class="row-between">
+        <span class="tiny" style="font-weight:700;color:var(--brand);text-transform:uppercase">Nearest Exam</span>
+        <span class="badge a">${fmtShort(nearest.exam)}</span>
+      </div>
+      <div class="section-label" style="margin-top:4px">${esc(nearest.subject)} · ${esc(nearest.topic)}</div>
+      <div class="meta" style="margin-top:2px">${taskLeft(nearest)} min remaining</div>
+    </div>`:''}
+
+    <div class="row-between" style="margin:16px 0 6px">
+      <div class="section-label">Today's Sessions</div>
+      <button class="quiet small" onclick="go('calendar')">Calendar ›</button>
+    </div>
+    ${todaySess.length===0?`<div class="card empty-state"><div class="ei">📅</div><h3>No sessions today</h3><p>Add free-time windows in Calendar, then generate a plan.</p><div class="row" style="justify-content:center;gap:8px"><button class="secondary small" onclick="go('calendar')">Set free time</button><button class="small" onclick="go('recover')">Create plan</button></div></div>`:
+      todaySess.map(s=>{
+        const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:TODAY};
+        const tr=s.start!=null?`${minToTime(s.start)} – ${minToTime(s.end)}`:`${s.minutes} min`;
+        return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
+          <div class="row-between">
+            <span class="tiny" style="font-weight:700;color:var(--brand)">${esc(t.subject)}</span>
+            <span class="badge ${s.recorded?'g':'a'}">${tr}</span>
+          </div>
+          <div class="section-label" style="margin:4px 0 6px">${esc(t.topic)}</div>
+          <div class="row-between">
+            <span class="tiny">${s.recorded?`${s.done} min recorded`:'Pending'}</span>
+            ${s.recorded?`<span class="badge g">✓ Done</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
+          </div>
+        </div>`;
+      }).join('')}
+
+    <div class="row-between" style="margin:18px 0 8px">
+      <div class="section-label">All Topics (${S.tasks.length})</div>
+      <button class="quiet small" onclick="go('add')">+ Add topic</button>
+    </div>
+    <input type="search" placeholder="Search topics or subjects…" value="${esc(searchQ)}"
+           oninput="searchQ=this.value;render()"
+           style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid #ddd7f5;font:14px/1 var(--ff);background:rgba(255,255,255,.8);margin-bottom:8px">
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">
+      ${filters.map(f=>`<button class="secondary small" style="${subjectF===f||(!subjectF&&f==='All')?'background:var(--brand);color:#fff;border-color:var(--brand)':''}" onclick="subjectF='${f==='All'?'':f}';render()">${esc(f)}</button>`).join('')}
+    </div>
+    ${filtered.length===0?`<div class="card"><p class="small" style="text-align:center;color:var(--muted);padding:16px 0">No topics match your filter.</p></div>`:''}
+    ${filtered.map(t=>`
+    <div class="card" style="padding:12px 14px;margin-bottom:8px">
+      <div class="row-between">
+        <span class="tiny" style="font-weight:700;color:var(--brand)">${esc(t.subject)}</span>
+        <span class="badge">${priLabel(t.priority)}</span>
+      </div>
+      <div class="section-label" style="margin:4px 0 2px">${esc(t.topic)}</div>
+      <div class="row-between meta" style="margin-bottom:8px">
+        <span>Exam ${fmtShort(t.exam)}</span>
+        <span>${taskLeft(t)} min left</span>
+      </div>
+      <div class="row-between">
+        <button class="secondary small" onclick="go('add',${t.id})">Edit</button>
+        <button class="danger small" onclick="deleteTopic(${t.id})">Delete</button>
+      </div>
+    </div>`).join('')}
+
+    <div class="tiny" style="text-align:center;color:var(--muted);margin-top:20px">ORA RESCUE · BROWSER PREVIEW · DATA STORED LOCALLY</div>
+  </div>`;
+}
+
+/* ── Calendar ── */
+function renderCalendar() {
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const first = new Date(calYear, calMonth, 1);
+  const days  = new Date(calYear, calMonth+1, 0).getDate();
+  const startOffset = (first.getDay()+6)%7; // Mon=0
+
+  const wins = winsForDay(calDay);
+  const totalMin = dayCapMin(calDay);
+  const sessDay  = S.sessions.filter(s=>s.day===calDay);
+  const curNow   = nowMin();
+
+  let cells = '<span></span>'.repeat(startOffset);
+  for (let d=1; d<=days; d++) {
+    const ds = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+    const isSel = ds===calDay, isToday = ds===TODAY;
+    const isPast = ds<TODAY && !isSel;
+    const hw = S.windows.some(w=>w.day===ds);
+    const hs = S.sessions.some(s=>s.day===ds);
+    const he = S.tasks.some(t=>t.exam===ds);
+    cells += `<button type="button" aria-label="Select ${ds}" aria-pressed="${isSel}" class="cell${isSel?' sel':''}${isToday?' today':''}${isPast?' past':''}" onclick="calDay='${ds}';render()">
+      <span>${d}</span>
+      <span class="dots" aria-hidden="true">${hw?'<span class="dot g"></span>':''}${hs?'<span class="dot p"></span>':''}${he?'<span class="dot a"></span>':''}</span>
+    </button>`;
+  }
+
+  return `<div>
+    <div class="row-between" style="margin-bottom:10px">
+      <h2>Calendar</h2>
+      <button class="secondary small" onclick="calDay=TODAY;calYear=new Date().getFullYear();calMonth=new Date().getMonth();render()">Today</button>
+    </div>
+
+    <div class="row-between" style="margin-bottom:10px">
+      <button class="quiet" aria-label="Prev month" onclick="if(calMonth===0){calMonth=11;calYear--}else calMonth--;render()">‹</button>
+      <strong style="font-size:15px">${monthNames[calMonth]} ${calYear}</strong>
+      <button class="quiet" aria-label="Next month" onclick="if(calMonth===11){calMonth=0;calYear++}else calMonth++;render()">›</button>
+    </div>
+
+    <div class="cal-wdays"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+    <div class="cal-grid">${cells}</div>
+
+    <div class="legend">
+      <span class="li"><span class="dot g"></span> Free time</span>
+      <span class="li"><span class="dot p"></span> Session</span>
+      <span class="li"><span class="dot a"></span> Exam</span>
+    </div>
+
+    <!-- Free-time editor for selected date -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="row-between">
+        <div>
+          <div class="eyebrow">Free time</div>
+          <div class="section-label">${fmtLong(calDay)}</div>
+        </div>
+        <span class="badge ${totalMin>0?'g':''}">${totalMin>0?`${totalMin} min total`:'Day off'}</span>
+      </div>
+      <div style="margin:12px 0 8px">
+        ${wins.length===0?`<p class="small" style="color:var(--muted);text-align:center;padding:8px 0">No free-time windows. Rest day.</p>`:''}
+        ${wins.map(w=>{
+          const elapsed = calDay===TODAY && w.end<=curNow;
+          return `<div class="win-row">
+            <div>
+              <div class="win-time">${minToTime(w.start)} – ${minToTime(w.end)}</div>
+              <div class="win-dur">${w.end-w.start} min${elapsed?' · <em style="color:var(--muted)">elapsed</em>':''}</div>
+            </div>
+            <div class="row">
+              <button class="secondary small" onclick="openEditWin(${w.id})" ${calDay<TODAY?'disabled':''}>Edit</button>
+              <button class="danger small" onclick="deleteWin(${w.id})" ${calDay<TODAY?'disabled':''}>✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <button class="small" onclick="openAddWin()" ${calDay<TODAY?'disabled':''}>+ Add time</button>
+        <button class="secondary small" onclick="openCopyDlg()" ${calDay<TODAY||wins.length===0?'disabled':''}>Copy to dates</button>
+        <button class="quiet small" onclick="clearDay('${calDay}')" ${calDay<TODAY?'disabled':''}>Day off</button>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+        <span class="tiny">Quick presets:</span>
+        <div class="presets">
+          <button class="secondary small" onclick="addPreset(960,1080)" ${calDay<TODAY?'disabled':''}>Afternoon 16–18</button>
+          <button class="secondary small" onclick="addPreset(1170,1290)" ${calDay<TODAY?'disabled':''}>Evening 19:30–21:30</button>
+          <button class="secondary small" onclick="addPreset(1260,1380)" ${calDay<TODAY?'disabled':''}>Night 21–23</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agenda for selected date -->
+    <div class="section-label" style="margin-bottom:8px">Agenda – ${fmtShort(calDay)}</div>
+    ${S.tasks.filter(t=>t.exam===calDay).map(t=>`<div class="card amber" style="padding:10px 14px;margin-bottom:8px">★ Exam – ${esc(t.subject)} · ${esc(t.topic)}</div>`).join('')}
+    ${sessDay.length===0?`<p class="small" style="color:var(--muted)">No study sessions scheduled on this date.</p>`:''}
+    ${sessDay.map(s=>{
+      const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session'};
+      const tr=s.start!=null?`${minToTime(s.start)}–${minToTime(s.end)}`:`${s.minutes} min`;
+      return `<div class="card" style="padding:10px 14px;margin-bottom:8px">
+        <div class="row-between">
+          <span class="tiny" style="font-weight:700;color:var(--brand)">${esc(t.subject)}</span>
+          <span class="badge ${s.recorded?'g':'a'}">${tr}</span>
+        </div>
+        <div class="section-label" style="margin:4px 0">${esc(t.topic)}</div>
+        ${s.recorded?`<span class="badge g">${s.done} min completed</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
+      </div>`;
+    }).join('')}
+
+    <div style="margin-top:16px">
+      <button class="full" onclick="go('recover')">Build recovery plan →</button>
+    </div>
+  </div>`;
+}
+
+/* ── Window dialog helpers ── */
+let editWinId = 0;
+function openAddWin() {
+  editWinId = 0;
+  $('#wdTitle').textContent = 'Add free time';
+  $('#wdSub').textContent = `${fmtLong(calDay)} · exact availability for recovery planner`;
+  $('#wdErr').hidden = true;
+  $('#windowDlg').showModal();
+}
+function openEditWin(id) {
+  editWinId = id;
+  const w = S.windows.find(x=>x.id===id);
+  if (!w) return;
+  $('#wdTitle').textContent = 'Edit free time';
+  $('#wdSub').textContent = fmtLong(calDay);
+  const f = $('#windowForm');
+  f.start.value = minToTime(w.start);
+  f.end.value   = minToTime(w.end);
+  $('#wdErr').hidden = true;
+  $('#windowDlg').showModal();
+}
+function setWin(s,e) { const f=$('#windowForm'); f.start.value=s; f.end.value=e; }
+function deleteWin(id) {
+  S.windows = S.windows.filter(w=>w.id!==id);
+  invalidatePending(); save(); render();
+}
+function clearDay(d) {
+  if (!confirm(`Remove all free-time windows on ${fmtShort(d)}?`)) return;
+  S.windows = S.windows.filter(w=>w.day!==d);
+  invalidatePending(); save(); render(); toast('Day set to rest day');
+}
+function addPreset(s,e) {
+  if (winOverlap(calDay,s,e)) { toast(`Overlaps an existing window – try another slot`); return; }
+  S.windows.push({id:Date.now()+Math.random(),day:calDay,start:s,end:e});
+  invalidatePending(); save(); render(); toast('Free time added');
+}
+
+$('#windowForm').onsubmit = e => {
+  e.preventDefault();
+  const f = e.target;
+  const s = timeToMin(f.start.value);
+  const e2 = timeToMin(f.end.value);
+  if (e2<=s) { showWdErr('End time must be after start time'); return; }
+  if (e2-s<5) { showWdErr('Window must be at least 5 minutes'); return; }
+  if (winOverlap(calDay,s,e2,editWinId)) { showWdErr('This overlaps an existing window'); return; }
+  if (editWinId) {
+    const w=S.windows.find(x=>x.id===editWinId);
+    if (w) { w.start=s; w.end=e2; }
+  } else {
+    S.windows.push({id:Date.now(),day:calDay,start:s,end:e2});
+  }
+  invalidatePending(); save(); $('#windowDlg').close(); render(); toast('Free time saved');
+};
+function showWdErr(msg) { const el=$('#wdErr'); el.textContent=msg; el.hidden=false; }
+
+/* ── Copy Windows ── */
+function openCopyDlg() {
+  const wins = winsForDay(calDay);
+  if (!wins.length) { toast('No windows on this date to copy'); return; }
+  const dates = Array.from({length:7},(_,i)=>plusDays(calDay,i+1)).filter(d=>d>=TODAY);
+  $('#copyDateList').innerHTML = dates.map(d=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.8);border-radius:10px;cursor:pointer">
+      <input type="checkbox" name="dates" value="${d}"> <span class="small">${fmtLong(d)}</span>
+    </label>`).join('');
+  $('#copyErr').hidden = true;
+  $('#copyDlg').showModal();
+}
+$('#copyForm').onsubmit = e => {
+  e.preventDefault();
+  const chosen = [...new FormData(e.target).getAll('dates')];
+  if (!chosen.length) { const el=$('#copyErr'); el.textContent='Select at least one date'; el.hidden=false; return; }
+  const src = winsForDay(calDay);
+  for (const d of chosen) {
+    for (const w of src) {
+      if (winOverlap(d,w.start,w.end)) {
+        const el=$('#copyErr'); el.textContent=`${fmtShort(d)}: overlaps existing window – nothing copied`; el.hidden=false; return;
+      }
+    }
+  }
+  for (const d of chosen) {
+    src.forEach(w=>S.windows.push({...w,id:Date.now()+Math.random(),day:d}));
+  }
+  invalidatePending(); save(); $('#copyDlg').close(); render(); toast(`Windows copied to ${chosen.length} date(s)`);
+};
+
+/* ── Add / Edit Topic ── */
+function renderAdd() {
+  const t = S.tasks.find(tk=>tk.id===editId);
+  const minMins = t ? Math.max(1, taskDone(t.id)||1) : 15;
+  return `<div>
+    <div class="row-between" style="margin-bottom:10px">
+      <h2>${t?'Edit topic':'New topic'}</h2>
+      <button class="quiet small" onclick="go('home')">✕</button>
+    </div>
+    <p class="small" style="color:var(--muted);margin-bottom:16px">Estimate honestly. Nearest exam date is scheduled first; priority breaks ties.</p>
+    <form id="addForm">
+      <label class="field">Subject<input name="subject" required maxlength="80" value="${esc(t?t.subject:'')}" placeholder="e.g. Operating Systems"></label>
+      <label class="field">Topic name<input name="topic" required maxlength="120" value="${esc(t?t.topic:'')}" placeholder="e.g. CPU Scheduling"></label>
+      <label class="field">Exam deadline<input name="exam" type="date" required min="${plusDays(TODAY,1)}" value="${t?t.exam:plusDays(TODAY,10)}"></label>
+      <label class="field">Estimated work (minutes)<input name="minutes" type="number" required min="${minMins}" max="100000" step="1" value="${t?t.minutes:120}"></label>
+      <div class="presets">
+        <button type="button" class="secondary small" onclick="const x=document.querySelector('[name=minutes]');x.value=+x.value+30">+30 min</button>
+        <button type="button" class="secondary small" onclick="const x=document.querySelector('[name=minutes]');x.value=+x.value+60">+60 min</button>
+      </div>
+      <label class="field">Priority
+        <select name="priority">
+          <option value="3"${t&&t.priority===3?' selected':''}>High</option>
+          <option value="2"${!t||t.priority===2?' selected':''}>Medium</option>
+          <option value="1"${t&&t.priority===1?' selected':''}>Low</option>
+        </select>
+      </label>
+      <div style="margin-top:20px">
+        <button type="submit" class="full">${t?'Save changes':'Create topic'}</button>
+        <button type="button" class="quiet full" style="margin-top:8px" onclick="go('home')">Cancel</button>
+      </div>
+    </form>
+  </div>`;
+}
+function bindAddForm() {
+  $('#addForm').onsubmit = e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const subject = f.get('subject').trim();
+    const topic   = f.get('topic').trim();
+    if (!subject||!topic) { toast('Enter a subject and topic name'); return; }
+    const task = {id:editId||Date.now(),subject,topic,minutes:+f.get('minutes'),exam:f.get('exam'),priority:+f.get('priority')};
+    if (editId) S.tasks = S.tasks.map(t=>t.id===editId?task:t);
+    else S.tasks.push(task);
+    invalidatePending(); save(); go('home'); toast(editId?'Topic updated':'Topic added');
+  };
+}
+function deleteTopic(id) {
+  if (!confirm('Delete this topic and its pending sessions?')) return;
+  S.tasks    = S.tasks.filter(t=>t.id!==id);
+  S.sessions = S.sessions.filter(s=>s.taskId!==id);
+  save(); render(); toast('Topic deleted');
+}
+
+/* ── Recovery Planner ── */
+function generatePlan() {
+  const curNow = nowMin();
+  // Reserve completed work at its actual clock position, then exclude elapsed time.
+  const slots = [];
+  const days = [...new Set(S.windows.map(w=>w.day))].filter(d=>d>=TODAY).sort();
+  for (const d of days) {
+    let ranges = winsForDay(d).map(w=>[w.start,w.end]);
+    const done = S.sessions.filter(x=>x.day===d && x.recorded && x.done>0);
+    for (const x of done.filter(x=>x.start!=null)) {
+      const start=x.start,end=start+x.done;
+      ranges=ranges.flatMap(([a,b])=>end<=a||start>=b?[[a,b]]:
+        [[a,Math.min(b,start)],[Math.max(a,end),b]].filter(([c,e])=>e>c));
+    }
+    let reserve=done.filter(x=>x.start==null).reduce((n,x)=>n+x.done,0);
+    for (let [start,end] of ranges) {
+      if(d===TODAY)start=Math.max(start,curNow);
+      const take=Math.min(Math.max(0,end-start),reserve);start+=take;reserve-=take;
+      if(end>start)slots.push({day:d,start,end,avail:end-start});
+    }
+  }
+  // Sort tasks: nearest exam, highest priority, stable id
+  const tasks = [...S.tasks].filter(t=>taskLeft(t)>0)
+    .sort((a,b)=>a.exam.localeCompare(b.exam)||b.priority-a.priority||a.id-b.id);
+
+  const proposed=[], unplaced=[];
+  for (const task of tasks) {
+    let rem = taskLeft(task);
+    if (splitMode) {
+      for (const slot of slots) {
+        if (slot.day>=task.exam||rem<=0||slot.avail<=0) continue;
+        const take=Math.min(slot.avail,rem);
+        proposed.push({id:Date.now()+Math.random(),taskId:task.id,day:slot.day,start:slot.start,end:slot.start+take,minutes:take,done:0,recorded:false});
+        slot.start+=take; slot.avail-=take; rem-=take;
+      }
+    } else {
+      let placed=false;
+      for (const slot of slots) {
+        if (slot.day>=task.exam) continue;
+        if (slot.avail>=rem) {
+          proposed.push({id:Date.now()+Math.random(),taskId:task.id,day:slot.day,start:slot.start,end:slot.start+rem,minutes:rem,done:0,recorded:false});
+          slot.start+=rem; slot.avail-=rem; placed=true; rem=0; break;
+        }
+      }
+      if (!placed) rem>0 && (void 0);
+    }
+    if (rem>0) unplaced.push({task,minutes:rem,reason:splitMode?'Exceeds free capacity before exam':'Needs one continuous window (or enable splitting)'});
+  }
+  proposed.sort((a,b)=>a.day.localeCompare(b.day)||a.start-b.start);
+  preview = {sessions:proposed, unplaced, createdAt:Date.now(), day:localDay(new Date()), revision:JSON.stringify(S)};
+  render();
+}
+
+function acceptPlan() {
+  if (!preview) return;
+  const curNow = nowMin();
+  if (preview.day!==localDay(new Date())||preview.revision!==JSON.stringify(S)||preview.sessions.some(s=>s.day===TODAY&&s.start!=null&&s.start<curNow)) {
+    preview=null; render(); toast('Plan is stale or a start time passed — recalculate'); return;
+  }
+  S.sessions = [...S.sessions.filter(s=>s.recorded||s.day<TODAY), ...preview.sessions];
+  save(); preview=null; go('home'); toast('Recovery plan saved!');
+}
+
+function renderRecover() {
+  const outstanding = S.tasks.filter(t=>taskLeft(t)>0).reduce((a,t)=>a+taskLeft(t),0);
+  return `<div>
+    <div class="row-between" style="margin-bottom:8px">
+      <h2>Recovery Plan</h2>
+      <span class="badge a">${outstanding} min needed</span>
+    </div>
+    <p class="small" style="color:var(--muted);margin-bottom:14px">Schedules unfinished work into your exact free-time windows: nearest exam first, then priority.</p>
+
+    <div class="card row-between" style="padding:12px 14px;margin-bottom:12px">
+      <div>
+        <div class="section-label">Split topics across days</div>
+        <div class="tiny">Allow one topic to span multiple windows</div>
+      </div>
+      <input type="checkbox" ${splitMode?'checked':''} style="width:20px;height:20px;accent-color:var(--brand)"
+             onchange="splitMode=this.checked;preview=null;render()">
+    </div>
+
+    <div class="row" style="gap:8px;margin-bottom:14px">
+      <button class="secondary small full" onclick="go('calendar')">Edit free time</button>
+      <button class="small full" onclick="generatePlan()">${preview?'Recalculate':'Create plan'}</button>
+    </div>
+
+    ${!preview?`<div class="card empty-state">
+      <div class="ei">♧</div>
+      <h3>Preview your plan first</h3>
+      <p>Tap "Create plan" to simulate placement. Your saved sessions stay untouched until you accept.</p>
+    </div>`:`
+    <div class="card ${preview.unplaced.length?'amber':'sage'}" style="margin-bottom:10px">
+      <div class="row-between">
+        <strong>${preview.sessions.reduce((a,s)=>a+s.minutes,0)} min scheduled</strong>
+        <span class="badge ${preview.unplaced.length?'a':'g'}">${preview.unplaced.length?`${preview.unplaced.reduce((a,u)=>a+u.minutes,0)}m shortfall`:'All placed ✓'}</span>
+      </div>
+      <p class="small" style="margin-top:6px;color:${preview.unplaced.length?'var(--amber)':'var(--sage)'}">
+        ${preview.unplaced.length?'Some work cannot fit — add more free time or enable splitting.':'All pending study fits in your free windows before each exam.'}
+      </p>
+    </div>
+
+    ${preview.unplaced.map(u=>`<div class="card amber" style="padding:10px 14px;margin-bottom:8px">
+      <div class="row-between">
+        <strong style="font-size:13px;color:var(--amber)">${esc(u.task.topic)}</strong>
+        <span class="badge a">${u.minutes} min</span>
+      </div>
+      <div class="tiny" style="margin-top:2px">${u.reason} · Exam ${fmtShort(u.task.exam)}</div>
+    </div>`).join('')}
+
+    <div class="section-label" style="margin:14px 0 8px">Proposed timeline</div>
+    ${[...new Set(preview.sessions.map(s=>s.day))].sort().map(d=>{
+      const daySess = preview.sessions.filter(s=>s.day===d);
+      return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
+        <div class="row-between" style="margin-bottom:8px">
+          <strong>${fmtLong(d)}</strong>
+          <span class="badge">${daySess.reduce((a,s)=>a+s.minutes,0)} min</span>
+        </div>
+        ${daySess.map(s=>{
+          /* Each session gets exactly one start–end label directly from s.start and s.end */
+          const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:d};
+          const timeLabel = s.start!=null ? `${minToTime(s.start)} – ${minToTime(s.end)}` : `${s.minutes} min`;
+          return `<div style="border-top:1px solid var(--line);padding-top:8px;margin-top:8px">
+            <div class="row-between">
+              <span class="tiny" style="font-weight:700;color:var(--brand)">${esc(t.subject)}</span>
+              <span class="tiny" style="font-weight:600">${timeLabel}</span>
+            </div>
+            <div class="section-label" style="margin:2px 0">${esc(t.topic)}</div>
+            <div class="meta">Exam ${fmtShort(t.exam)} · ${s.minutes} min · ${priLabel(t.priority)} priority</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('')}
+
+    <div style="margin-top:16px">
+      <button class="full" onclick="acceptPlan()">✓ Accept & save plan</button>
+      <button class="quiet full" style="margin-top:6px" onclick="preview=null;render()">Discard preview</button>
+    </div>
+    <p class="tiny" style="color:var(--muted);text-align:center;margin-top:8px">Applies to this browser preview only.</p>
+    `}
+  </div>`;
+}
+
+/* ── Profile ── */
+function renderProfile() {
+  const p = S.profile;
+  const doneTopics = S.tasks.filter(t=>taskLeft(t)<=0).length;
+  const totalFocus = S.sessions.reduce((a,s)=>a+s.done,0);
+  const openCount  = S.tasks.filter(t=>taskLeft(t)>0).length;
+  const avatars = ['👩🏻‍💻','🧑🏽‍💻','👨🏻‍🎓','👩🏽‍🎓','📚','⚡'];
+
+  return `<div>
+    <div class="row-between" style="margin-bottom:10px">
+      <h2>Profile</h2>
+      <button class="quiet small" onclick="$('#aboutDlg').showModal()">About</button>
+    </div>
+
+    <div class="p-hero">
+      <div class="av">${esc(p.avatar||'👩🏻‍💻')}</div>
+      <h3>${esc(p.name)}</h3>
+      <p>Local student profile · 100% on-device</p>
+      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+        ${avatars.map(av=>`<button class="secondary small" style="font-size:20px;padding:4px 8px;min-height:38px;${p.avatar===av?'border-color:var(--brand);background:var(--brand-light)':''}" onclick="setAvatar('${av}')">${av}</button>`).join('')}
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="si">✓</div><strong>${doneTopics}</strong><span>Done</span></div>
+      <div class="stat-box"><div class="si">◷</div><strong>${Math.floor(totalFocus/60)}h ${totalFocus%60}m</strong><span>Focus</span></div>
+      <div class="stat-box"><div class="si">ϟ</div><strong>${openCount}</strong><span>Open</span></div>
+    </div>
+
+    <form id="profileForm">
+      <label class="field" style="margin-top:4px">Display name
+        <input name="name" required maxlength="40" value="${esc(p.name)}" placeholder="Your name">
+      </label>
+      <label class="field">Daily study goal (minutes)
+        <input name="goal" type="number" min="15" max="1440" required value="${p.goal||120}">
+      </label>
+      <div class="presets">
+        <button type="button" class="secondary small" onclick="document.querySelector('[name=goal]').value=60">60</button>
+        <button type="button" class="secondary small" onclick="document.querySelector('[name=goal]').value=120">120</button>
+        <button type="button" class="secondary small" onclick="document.querySelector('[name=goal]').value=180">180</button>
+        <button type="button" class="secondary small" onclick="document.querySelector('[name=goal]').value=240">240</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer">
+        <input name="split" type="checkbox" ${p.split?'checked':''} style="width:18px;height:18px;accent-color:var(--brand)">
+        <span class="small" style="color:var(--ink)">Split topics across multiple windows by default</span>
+      </label>
+      <button type="submit" class="full" style="margin-top:18px">Save preferences</button>
+    </form>
+
+    <div class="card" style="margin-top:14px;padding:0">
+      <div class="row-between" style="padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--line)" onclick="go('calendar')">
+        <div class="row"><span style="font-size:16px">📅</span><span class="section-label">Manage free-time windows</span></div>
+        <span style="color:var(--muted)">›</span>
+      </div>
+      <div class="row-between" style="padding:12px 14px;cursor:pointer" onclick="$('#aboutDlg').showModal()">
+        <div class="row"><span style="font-size:16px">ℹ️</span><span class="section-label">About Ora Rescue</span></div>
+        <span style="color:var(--muted)">›</span>
+      </div>
+    </div>
+
+    <p class="tiny" style="color:var(--muted);text-align:center;margin-top:14px">Data stored locally in this browser. Separate from the Android app.</p>
+  </div>`;
+}
+
+function setAvatar(av) { S.profile.avatar=av; save(); render(); toast('Avatar updated'); }
+
+// Profile form binding (called after render)
+document.addEventListener('submit', e => {
+  if (e.target.id==='profileForm') {
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const name=f.get('name').trim();
+    if (!name) { toast('Enter a name'); return; }
+    S.profile={...S.profile,name,goal:+f.get('goal'),split:f.has('split')};
+    splitMode=S.profile.split;
+    save(); render(); toast('Profile saved');
+  }
+});
+
+/* ── Progress dialog ── */
+let progressSessId=null;
+function openProgress(id) {
+  const session=S.sessions.find(x=>x.id===id), task=S.tasks.find(t=>t.id===session?.taskId);
+  if(!task || !canRecord(session)){toast('Progress can be recorded once the session starts.');return}
+  progressSessId=id;
+  const max=Math.min(session.minutes,taskLeft(task));
+  $('#progressSub').textContent=`${task.topic} · max ${max} min`;
+  const form=$('#progressForm');form.elements.done.max=max;form.elements.done.value=max;
+  $('#progressPresets').innerHTML=[...new Set([0,Math.floor(max/2),max])].map(n=>
+    `<button type="button" class="secondary small" onclick="document.querySelector('[name=done]').value=${n}">${n} min</button>`).join('');
+  $('#progressDlg').showModal();
+}
+$('#progressForm').onsubmit=e=>{
+  e.preventDefault();
+  const session=S.sessions.find(x=>x.id===progressSessId), task=S.tasks.find(t=>t.id===session?.taskId);
+  if(!task || !canRecord(session)){toast('This session changed or has not started yet.');$('#progressDlg').close();return}
+  const val=Number(new FormData(e.target).get('done')),max=Math.min(session.minutes,taskLeft(task));
+  if(!Number.isInteger(val)||val<0||val>max){toast(`Enter 0 to ${max} whole minutes.`);return}
+  session.done=val;session.recorded=true;
+  S.sessions=S.sessions.filter(x=>x.id===session.id||x.recorded||x.taskId!==task.id||x.day<TODAY);
+  save();$('#progressDlg').close();render();
+  toast(val?`${val} min recorded — well done!`:'Missed session recorded. Create a new recovery plan.');
+};
+
+/* ── Utilities ── */
+function invalidatePending() {
+  // Clear unrecorded future sessions when availability changes
+  S.sessions=S.sessions.filter(s=>s.recorded||s.day<TODAY);
+}
+
+function toast(msg) {
+  const el=$('#toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(window._toastT); window._toastT=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+// Clock
+(function tick() { const d=new Date(); $('#clock').textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}`; setTimeout(tick,1000); })();
+
+render();
+</script>
+</body>
+</html>

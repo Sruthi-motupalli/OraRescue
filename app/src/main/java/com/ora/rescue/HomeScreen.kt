@@ -1,10 +1,17 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class
+)
 
 package com.ora.rescue
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
@@ -14,10 +21,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Composable
 fun HomeScreen(
@@ -26,95 +36,274 @@ fun HomeScreen(
     onAdd: () -> Unit,
     onEdit: (Long) -> Unit,
     onRecover: () -> Unit,
-    onAvailability: (Long, Int) -> Unit,
+    onCalendar: () -> Unit,
     onProgress: (Long, Int) -> Unit
 ) {
-    var selectedDay by rememberSaveable { mutableLongStateOf(LocalDate.now().toEpochDay()) }
-    var tab by rememberSaveable { mutableIntStateOf(0) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showAvailabilityDialog by remember { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedFilter by rememberSaveable { mutableStateOf("All") } // "All", "In Progress", "Completed", or a subject name
+    var tab by rememberSaveable { mutableIntStateOf(0) } // 0: Today's Plan, 1: All Topics
     var progressSession by remember { mutableStateOf<StudySession?>(null) }
 
-    val today = LocalDate.now().toEpochDay()
-    val daySessions = snapshot.sessions.filter { it.day == selectedDay }
-    val dayCapacity = snapshot.availability.find { it.day == selectedDay }?.minutes ?: 0
-    val worked = daySessions.sumOf { it.completedMinutes }
-    val planned = daySessions.filter { it.status == StudySession.PENDING }.sumOf { it.allocatedMinutes }
+    val today = LocalDate.now()
+    val todayEpoch = today.toEpochDay()
+    val profile = snapshot.profile
+
+    // Real stats
+    val todaySessions = snapshot.sessions.filter { it.day == todayEpoch }
+    val todayWorked = todaySessions.sumOf { it.completedMinutes }
+    val todayPlanned = todaySessions.filter { it.status == StudySession.PENDING }.sumOf { it.allocatedMinutes }
+    val todayCapacity = snapshot.dayCapacity(todayEpoch)
+    val totalDoneMinutes = snapshot.sessions.sumOf { it.completedMinutes }
+    val doneTopics = snapshot.tasks.count { snapshot.remaining(it) == 0 }
     val openTasks = snapshot.tasks.count { snapshot.remaining(it) > 0 }
     val outstanding = snapshot.tasks.sumOf { snapshot.remaining(it) }
 
+    // Nearest exam calculation
+    val nearestExamTask = snapshot.tasks
+        .filter { it.examDay >= todayEpoch && snapshot.remaining(it) > 0 }
+        .minByOrNull { it.examDay }
+
+    val greetingTime = when (LocalTime.now().hour) {
+        in 0..11 -> "Good Morning"
+        in 12..17 -> "Good Afternoon"
+        else -> "Good Evening"
+    }
+
+    // Filtered topics
+    val filteredTasks = snapshot.tasks.filter { task ->
+        val matchesSearch = searchQuery.isBlank() ||
+                task.topic.contains(searchQuery, ignoreCase = true) ||
+                task.subject.contains(searchQuery, ignoreCase = true)
+        val matchesFilter = when (selectedFilter) {
+            "All" -> true
+            "In Progress" -> snapshot.remaining(task) > 0
+            "Completed" -> snapshot.remaining(task) == 0
+            else -> task.subject.equals(selectedFilter, ignoreCase = true)
+        }
+        matchesSearch && matchesFilter
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 32.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Greeting & Avatar Header
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Eyebrow(greetingTime)
+                    Text(
+                        text = "Hello, ${profile.name} 👋",
+                        fontFamily = OraFontFamily,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = OraPlumInk
+                    )
+                    Text(
+                        text = "Make today productive and achieve your goals.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = OraPlumMuted
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(Color(0xFFB5CEFF), Color(0xFF907AFF))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        StudentAvatars.getOrElse(profile.avatarIndex) { "👩🏻‍💻" },
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            }
+        }
+
+        // 3 Real Stats Tiles
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Eyebrow("YOUR STUDY DESK")
-                    Text(
-                        text = "One step at a time.",
-                        fontFamily = FontFamily.Serif,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = OraPlumInk
-                    )
-                }
-                FilledTonalIconButton(
-                    onClick = onAdd,
-                    enabled = !busy,
-                    modifier = Modifier.size(48.dp)
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.85f),
+                    shape = RoundedCornerShape(18.dp)
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add study topic", tint = OraRose)
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(shape = CircleShape, color = Color(0xFFECE7FF), modifier = Modifier.size(28.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("✓", color = Color(0xFF6B58E8), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                        Text("$doneTopics", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OraPlumInk)
+                        Text("Topics Done", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.85f),
+                    shape = RoundedCornerShape(18.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(shape = CircleShape, color = Color(0xFFE5EEFF), modifier = Modifier.size(28.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("◷", color = Color(0xFF4C7BFE), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                        Text("${totalDoneMinutes / 60} h ${totalDoneMinutes % 60} m", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OraPlumInk)
+                        Text("Focus Time", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.85f),
+                    shape = RoundedCornerShape(18.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(shape = CircleShape, color = Color(0xFFFFE8ED), modifier = Modifier.size(28.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("ϟ", color = Color(0xFFE2617C), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                        Text("$openTasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OraPlumInk)
+                        Text("Open Topics", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
         }
 
+        // Today's Goal & Recovery Shortcut Banner
         item {
-            DeskSummaryBanner(
-                planned = planned,
-                worked = worked,
-                capacity = dayCapacity,
-                openTasks = openTasks,
-                outstanding = outstanding
-            )
-        }
+            val goal = profile.studyGoalMinutes
+            val goalProgress = if (goal > 0) (todayWorked.toFloat() / goal).coerceIn(0f, 1f) else 0f
+            val goalPercent = (goalProgress * 100).toInt()
 
-        item {
-            DaySelector(
-                selectedDay = selectedDay,
-                today = today,
-                onPrevious = { selectedDay-- },
-                onNext = { selectedDay++ },
-                onOpenDatePicker = { showDatePicker = true },
-                onJumpToToday = { selectedDay = today }
-            )
-        }
-
-        item {
-            val isPast = selectedDay < today
-            OutlinedButton(
-                onClick = { showAvailabilityDialog = true },
-                enabled = !busy && !isPast,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = 48.dp),
-                shape = RoundedCornerShape(14.dp)
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.Transparent
             ) {
-                Icon(Icons.Rounded.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = when {
-                        isPast -> "Past date · $dayCapacity min was allocated"
-                        dayCapacity == 0 -> "Set available study time (currently 0 min)"
-                        else -> "Edit availability · $dayCapacity min configured"
+                Box(
+                    modifier = Modifier
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF668BFF), Color(0xFF7C6AFF), Color(0xFFA47CF4))
+                            )
+                        )
+                        .padding(18.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("◉ Today's Goal", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.9f))
+                            IconButton(
+                                onClick = onRecover,
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                            ) {
+                                Icon(Icons.Rounded.AutoAwesome, contentDescription = "Open Recovery", tint = OraRose, modifier = Modifier.size(16.dp))
+                            }
+                        }
+
+                        Text(
+                            text = if (todayWorked >= goal && goal > 0) "Goal Reached! Excellent work 🎉"
+                            else if (todayWorked > 0) "$todayWorked min logged today ($goalPercent%)"
+                            else "Keep Going!",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                        Text(
+                            text = if (todayCapacity > 0)
+                                "$todayPlanned min planned · $todayCapacity min available today."
+                            else
+                                "No free time set today. Open Calendar to set study windows.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            LinearProgressIndicator(
+                                progress = { goalProgress },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = Color.White,
+                                trackColor = Color.White.copy(alpha = 0.3f)
+                            )
+                            Text(
+                                "$goalPercent%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
-                )
+                }
             }
         }
 
+        // Nearest Exam Spotlight Banner (if an exam is upcoming)
+        nearestExamTask?.let { task ->
+            item {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White.copy(alpha = 0.85f),
+                    modifier = Modifier.fillMaxWidth().border(1.dp, OraBorderLight, RoundedCornerShape(16.dp))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(shape = CircleShape, color = Color(0xFFFFECEF), modifier = Modifier.size(32.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Rounded.Event, contentDescription = null, tint = Color(0xFFD83B5E), modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                "Nearest Exam: ${task.subject} · ${task.topic}",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = OraPlumInk
+                            )
+                            Text(
+                                "${daysRemainingLabel(task.examDay, todayEpoch)} (${dateLabel(task.examDay)}) · ${snapshot.remaining(task)} min left",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = OraPlumMuted
+                            )
+                        }
+                        TextButton(onClick = { onEdit(task.id) }) {
+                            Text("View", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section Tabs: Today's Plan vs All Topics
         item {
             TabRow(
                 selectedTabIndex = tab,
@@ -126,8 +315,8 @@ fun HomeScreen(
                     onClick = { tab = 0 },
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Rounded.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Text("Daily Plan (${daySessions.size})")
+                            Icon(Icons.Rounded.Today, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Text("Today's Plan (${todaySessions.size})")
                         }
                     }
                 )
@@ -144,139 +333,186 @@ fun HomeScreen(
             }
         }
 
-        if (snapshot.tasks.isEmpty()) {
+        if (tab == 0) {
+            // TAB 0: TODAY'S PLAN
             item {
-                EmptyStateCard(
-                    icon = Icons.AutoMirrored.Rounded.MenuBook,
-                    title = "A fresh page awaits",
-                    description = "Add your first study topic, set your exam deadline, and define your available study time.",
-                    actionText = "Add Your First Topic",
-                    onAction = onAdd
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Today's Study Sessions",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = OraPlumInk
+                    )
+                    TextButton(onClick = onCalendar) {
+                        Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Open Calendar ›", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
             }
-        } else if (tab == 0) {
-            if (daySessions.isEmpty()) {
+
+            if (todaySessions.isEmpty()) {
                 item {
-                    if (dayCapacity == 0) {
-                        EmptyStateCard(
-                            icon = Icons.Rounded.Schedule,
-                            title = "No study hours set for this day",
-                            description = if (selectedDay >= today)
-                                "Set how many minutes you want to study on ${dateLabel(selectedDay)}, or enjoy a restful day off. Once set, generate a recovery preview."
-                            else "No study sessions were scheduled for this day.",
-                            actionText = if (selectedDay >= today) "Set Available Time" else null,
-                            onAction = { showAvailabilityDialog = true }
-                        )
-                    } else {
-                        EmptyStateCard(
-                            icon = Icons.Rounded.AutoAwesome,
-                            title = "Ready for study recovery",
-                            description = "You have $dayCapacity min available on ${dateLabel(selectedDay)}. Open Recover Plan to preview and assign your study topics.",
-                            actionText = "Preview Recovery Plan",
-                            onAction = onRecover
-                        )
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.outlinedCardColors(containerColor = Color.White.copy(alpha = 0.85f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "No sessions scheduled for today",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = OraPlumInk
+                            )
+                            Text(
+                                text = if (todayCapacity > 0)
+                                    "You have $todayCapacity min available today. Open Recover Plan to generate and apply study sessions for your topics."
+                                else
+                                    "Configure your free-time windows in Calendar so recovery can schedule your study topics.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = OraPlumMuted
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
+                                if (todayCapacity == 0) {
+                                    Button(onClick = onCalendar, shape = RoundedCornerShape(12.dp)) {
+                                        Text("Set Free Windows")
+                                    }
+                                } else if (openTasks > 0) {
+                                    Button(onClick = onRecover, shape = RoundedCornerShape(12.dp)) {
+                                        Text("Preview Recovery Plan")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             } else {
-                items(daySessions, key = { "session-${it.id}" }) { session ->
+                items(todaySessions, key = { "today-session-${it.id}" }) { session ->
                     val task = snapshot.tasks.find { it.id == session.taskId }
                     if (task != null) {
                         SessionCard(
                             task = task,
                             session = session,
                             busy = busy,
-                            canRecord = selectedDay <= today,
+                            canRecord = session.startMinute < 0 || session.startMinute <= java.time.LocalTime.now().let { it.hour * 60 + it.minute },
                             onEdit = { onEdit(task.id) },
                             onProgress = { progressSession = session }
                         )
                     }
                 }
+            }
+        } else {
+            // TAB 1: ALL TOPICS WITH SEARCH & FILTER
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Search Bar
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search by topic or subject...") },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Search, contentDescription = null, tint = OraRose)
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Rounded.Close, contentDescription = "Clear search")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    )
 
-                if (openTasks > 0) {
-                    item {
-                        Button(
-                            onClick = onRecover,
-                            enabled = !busy,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .defaultMinSize(minHeight = 50.dp)
-                        ) {
-                            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Preview a recovery plan")
+                    // Filter Chips Row
+                    val distinctSubjects = snapshot.tasks.map { it.subject }.distinct()
+                    val filterOptions = listOf("All", "In Progress", "Completed") + distinctSubjects
+
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        filterOptions.forEach { filter ->
+                            FilterChip(
+                                selected = selectedFilter == filter,
+                                onClick = { selectedFilter = filter },
+                                label = { Text(filter, style = MaterialTheme.typography.labelSmall) }
+                            )
                         }
                     }
                 }
             }
-        } else {
-            // All Topics Tab
-            items(snapshot.tasks, key = { "task-${it.id}" }) { task ->
-                TopicCard(
-                    task = task,
-                    remaining = snapshot.remaining(task),
-                    completed = snapshot.completed(task.id),
-                    today = today,
-                    onClick = { onEdit(task.id) }
-                )
+
+            if (filteredTasks.isEmpty()) {
+                item {
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.outlinedCardColors(containerColor = Color.White.copy(alpha = 0.85f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = if (searchQuery.isNotBlank() || selectedFilter != "All") "No matching study topics found" else "No study topics added yet",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = OraPlumInk
+                            )
+                            Text(
+                                text = if (searchQuery.isNotBlank()) "Try a different search term or reset the filter."
+                                else "Add your first study topic to start planning your exam preparation.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = OraPlumMuted
+                            )
+                            if (searchQuery.isBlank() && selectedFilter == "All") {
+                                Button(onClick = onAdd, shape = RoundedCornerShape(12.dp)) {
+                                    Text("Add First Topic")
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                items(filteredTasks, key = { "topic-${it.id}" }) { task ->
+                    TopicCard(
+                        task = task,
+                        remaining = snapshot.remaining(task),
+                        completed = snapshot.completed(task.id),
+                        today = todayEpoch,
+                        onClick = { onEdit(task.id) }
+                    )
+                }
             }
 
             item {
                 OutlinedButton(
                     onClick = onAdd,
                     enabled = !busy,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 48.dp)
+                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Add another study topic")
+                    Text("Add Another Study Topic")
                 }
             }
         }
-
-        item {
-            Text(
-                text = "Small steps count. Your progress stays securely on this device.",
-                style = MaterialTheme.typography.bodySmall,
-                color = OraPlumMuted,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
     }
 
-    if (showDatePicker) {
-        ChooseDateDialog(
-            initialDay = selectedDay,
-            onDismiss = { showDatePicker = false },
-            onChoose = {
-                selectedDay = it
-                showDatePicker = false
-            }
-        )
-    }
-
-    if (showAvailabilityDialog) {
-        MinutesDialog(
-            title = "Study Time for ${dateLabel(selectedDay)}",
-            initial = dayCapacity,
-            max = 1440,
-            explanation = "Set a realistic daily study target. 0 minutes indicates a day off. Note: Saving availability clears the future uncompleted plan so you can preview a fresh schedule.",
-            quickPresets = listOf(
-                "Day off (0m)" to 0,
-                "1h (60m)" to 60,
-                "2h (120m)" to 120,
-                "3h (180m)" to 180,
-                "4h (240m)" to 240
-            ),
-            onDismiss = { showAvailabilityDialog = false },
-            onSave = {
-                onAvailability(selectedDay, it)
-                showAvailabilityDialog = false
-            }
-        )
-    }
-
+    // Progress Dialog
     progressSession?.let { session ->
         val task = snapshot.tasks.find { it.id == session.taskId }
         val remaining = task?.let { snapshot.remaining(it) } ?: 0
@@ -300,4 +536,3 @@ fun HomeScreen(
         )
     }
 }
-

@@ -11,8 +11,8 @@ android {
         applicationId = "com.ora.rescue"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -21,6 +21,7 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
