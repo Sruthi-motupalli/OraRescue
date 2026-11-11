@@ -2,7 +2,6 @@
 
 package com.ora.rescue
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
 
 @Composable
 fun RecoveryScreen(
@@ -29,17 +27,82 @@ fun RecoveryScreen(
     onAvailability: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
-    val accents = LocalOraAccents.current
     var split by rememberSaveable(snapshot.profile.preferredSplit) { mutableStateOf(snapshot.profile.preferredSplit) }
-    val today = LocalDate.now().toEpochDay()
+    val clock by rememberStudyClock()
+    val today = clock.toLocalDate().toEpochDay()
     val isCurrent = preview?.revision == snapshot.revision &&
             preview.startDay == today &&
             preview.splitTasks == split
     val plan = if (isCurrent) preview else null
+    val currentMinute = clock.hour * 60 + clock.minute
+    val canSave = plan != null && plan.sessions.none {
+        it.day == today && it.hasExactTimes && it.startMinute < currentMinute
+    }
     val hasUnfinishedTasks = snapshot.tasks.any { snapshot.remaining(it) > 0 }
+    val editFreeTime = {
+        onCancel()
+        onAvailability()
+    }
 
+    Column(Modifier.fillMaxSize()) {
+        RecoveryContent(
+            snapshot = snapshot,
+            plan = plan,
+            busy = busy,
+            split = split,
+            hasUnfinishedTasks = hasUnfinishedTasks,
+            onSplitChange = { split = it; onCancel() },
+            onGenerate = onGenerate,
+            onAvailability = editFreeTime,
+            modifier = Modifier.weight(1f)
+        )
+        if (plan != null) {
+            Surface(color = cs.surface, tonalElevation = 2.dp) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    if (!canSave) {
+                        Text(
+                            "A proposed session has started. Recalculate to update the times.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = cs.error
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = onCancel, enabled = !busy, modifier = Modifier.weight(1f)) {
+                            Text("Discard preview")
+                        }
+                        Button(
+                            onClick = { if (canSave) onAccept() else onGenerate(split) },
+                            enabled = !busy,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(if (canSave) "Save plan" else "Recalculate")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecoveryContent(
+    snapshot: StudySnapshot,
+    plan: RecoveryPlan?,
+    busy: Boolean,
+    split: Boolean,
+    hasUnfinishedTasks: Boolean,
+    onSplitChange: (Boolean) -> Unit,
+    onGenerate: (Boolean) -> Unit,
+    onAvailability: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val cs = MaterialTheme.colorScheme
+    val accents = LocalOraAccents.current
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -54,7 +117,7 @@ fun RecoveryScreen(
                     color = cs.onSurface
                 )
                 Text(
-                    text = "Let’s make room to catch up.",
+                    text = "${snapshot.tasks.sumOf { snapshot.remaining(it) }} min remaining across topics.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = cs.onSurfaceVariant
                 )
@@ -89,10 +152,7 @@ fun RecoveryScreen(
                     }
                     Switch(
                         checked = split,
-                        onCheckedChange = {
-                            split = it
-                            onCancel()
-                        },
+                        onCheckedChange = onSplitChange,
                         enabled = !busy
                     )
                 }
@@ -105,10 +165,7 @@ fun RecoveryScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedButton(
-                    onClick = {
-                        onCancel()
-                        onAvailability()
-                    },
+                    onClick = onAvailability,
                     enabled = !busy,
                     modifier = Modifier
                         .weight(1f)
@@ -117,7 +174,7 @@ fun RecoveryScreen(
                 ) {
                     Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Edit Availability")
+                    Text("Edit free time")
                 }
 
                 Button(
@@ -130,7 +187,7 @@ fun RecoveryScreen(
                 ) {
                     Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(if (plan == null) "Generate Preview" else "Recalculate")
+                    Text(if (plan == null) "Create plan" else "Recalculate")
                 }
             }
         }
@@ -189,17 +246,20 @@ fun RecoveryScreen(
                         }
                         Text(
                             text = if (totalShortfall > 0)
-                                "$totalShortfall min remain unallocated due to capacity or deadline limits. Review unallocated topics below."
+                                "$totalShortfall min could not fit before their exams. Review the affected topics below."
                             else
                                 "All outstanding study work successfully scheduled into your free-time windows before upcoming exams!",
                             style = MaterialTheme.typography.bodyMedium,
                             color = cs.onSurface
                         )
-                        Text(
-                            text = "Daily capacity accounts for work already completed today. Completed work history is fully preserved.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = cs.onSurfaceVariant
-                        )
+                        if (totalShortfall > 0) {
+                            Text(
+                                if (split) "Add free time before the affected exams, or check the dates and estimates."
+                                else "Add a longer window before the exam, or turn on splitting and recalculate.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            TextButton(onClick = onAvailability, enabled = !busy) { Text("Edit free time") }
+                        }
                     }
                 }
             }
@@ -367,10 +427,7 @@ fun RecoveryScreen(
                                         task?.priority?.let { PriorityBadge(it) }
                                     }
 
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                         Text(
                                             text = if (session.hasExactTimes)
                                                 "${session.timeRangeString} (${session.minutes} min) · exam ${task?.examDay?.let(::dateLabel)}"
@@ -401,41 +458,11 @@ fun RecoveryScreen(
             }
 
             item {
-                Column(
-                    modifier = Modifier.padding(top = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = onAccept,
-                        enabled = !busy,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .defaultMinSize(minHeight = 52.dp),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Accept Recovery Plan")
-                    }
-
-                    OutlinedButton(
-                        onClick = onCancel,
-                        enabled = !busy,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .defaultMinSize(minHeight = 48.dp),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Text("Discard Preview")
-                    }
-
-                    Text(
-                        text = "Accepting saves your new schedule. If your topics, availability, or the date change, generate a fresh preview before accepting.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = cs.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
-                }
+                Text(
+                    "Saving replaces upcoming pending sessions. Completed study stays in your history.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant
+                )
             }
         }
     }

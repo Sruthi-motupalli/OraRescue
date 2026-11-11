@@ -108,7 +108,7 @@ body{
 
 /* ── Phone Frame ── */
 .phone{
-  width:390px;height:min(844px, calc(100dvh - 48px));min-height:520px;
+  width:390px;height:min(844px, calc(100dvh - 48px));
   border:7px solid var(--frame);
   border-radius:46px;
   background:linear-gradient(155deg,var(--screen-a),var(--screen-b) 65%,var(--paper));
@@ -145,14 +145,6 @@ nav button{
 nav button .ic{font-size:21px;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;transition:all .15s}
 nav button.active{color:var(--brand);font-weight:700}
 nav button.active .ic{background:var(--brand-light)}
-nav button.add-btn{
-  width:52px;height:52px;max-width:52px;min-height:52px;flex:none;
-  border-radius:50%;background:var(--banner);
-  color:var(--on-banner);box-shadow:0 8px 20px rgba(119,99,255,.38);margin:0 6px;
-  padding:0;
-}
-nav button.add-btn .ic{font-size:28px;background:transparent;color:var(--on-banner);border-radius:50%}
-
 /* ── Typography helpers ── */
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--brand)}
 h2{font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--ink);margin:4px 0 8px}
@@ -174,6 +166,11 @@ strong{font-weight:600}
 .card.amber{background:var(--amber-bg);border-color:rgba(192,91,0,.2)}
 .card.brand{background:var(--brand-light);border-color:rgba(119,99,255,.2)}
 .row{display:flex;align-items:center;gap:8px}
+.action-row{display:flex;flex-wrap:wrap;gap:8px}
+.action-row button{flex:1 0 auto}
+.plan-actions{position:sticky;bottom:-20px;z-index:1;background:var(--surface);border-top:1px solid var(--line);padding:10px 0;display:flex;gap:8px}
+.plan-actions button{flex:1;min-width:0;padding:6px 8px}
+.section-label,h2,h3,.meta,.small{overflow-wrap:anywhere}
 .row-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
 
 /* ── Stat chips ── */
@@ -209,7 +206,7 @@ strong{font-weight:600}
 
 /* ── Calendar ── */
 .cal-wdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:12px}
 .cell{
   aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;
@@ -236,6 +233,8 @@ strong{font-weight:600}
 .win-dur{font-size:12px;color:var(--muted)}
 
 /* ── Forms ── */
+.time-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 4px}
+@media(max-width:380px){.time-fields{grid-template-columns:1fr}}
 .field{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:12px}
 .field input,.field select{
   display:block;width:100%;margin-top:5px;padding:12px 14px;
@@ -252,6 +251,7 @@ button{cursor:pointer;font:600 14px/1 var(--ff);border:0;border-radius:12px;min-
 button:hover{filter:brightness(.95)}
 button:disabled{opacity:.4;cursor:default;filter:none}
 button.secondary{background:var(--field);color:var(--brand);border:1px solid var(--control-line)}
+button[data-filter][aria-pressed="true"]{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
 button.quiet{background:transparent;color:var(--muted);min-height:36px;padding:4px 10px}
 button.quiet:hover{color:var(--ink);background:var(--brand-light)}
 button.danger{background:var(--error-bg);color:var(--error);border:1px solid var(--error)}
@@ -294,7 +294,7 @@ dialog p{font-size:14px;color:var(--ink2);margin-bottom:16px}
 @media(max-width:830px){
   .layout{flex-direction:column;align-items:center;margin:12px auto;padding:0 12px;gap:0}
   .sidebar{display:none}
-  .phone{width:100%;max-width:390px}
+  .phone{width:100%;max-width:390px;height:min(844px, calc(100dvh - 24px))}
 }
 
 /* Final readability and keyboard pass. */
@@ -349,18 +349,12 @@ applyAppearance();
   <aside class="sidebar">
     <span class="eyebrow">Ora Rescue · Browser Preview</span>
     <h1>Your study time, reclaimed.</h1>
-    <p>A deterministic study-recovery planner with exact free-time windows, local Room persistence, and zero cloud tracking. All five Android screens are recreated here.</p>
-    <div class="pills">
-      <span class="pill">Icy Lavender</span>
-      <span class="pill g">Exact Windows</span>
-      <span class="pill a">Deterministic</span>
-      <span class="pill">100% Local</span>
-    </div>
+    <p>Add exam topics, set your free time and preview a recovery plan.</p>
     <div class="sidebar-note">
       This is a browser simulation. Data lives in <code>localStorage</code>, separate from the Android Room database. Font: Apple SF system font on macOS/iOS; Inter (OFL-licensed, bundled) on other platforms.
     </div>
     <div style="margin-top:18px">
-      <button class="secondary small" onclick="resetData()">↺ Reset sample data</button>
+      <button class="secondary small" onclick="confirmAction('Reset sample data?', 'This replaces your study data and profile in this browser.', 'Reset', resetData)">↺ Reset sample data</button>
     </div>
   </aside>
 
@@ -372,21 +366,21 @@ applyAppearance();
     </div>
     <main class="screen" id="screen" aria-live="polite"></main>
     <nav aria-label="Bottom navigation">
-      <button data-p="home" onclick="go('home')"><span class="ic">⌂</span>Home</button>
-      <button data-p="calendar" onclick="go('calendar')"><span class="ic">▦</span>Calendar</button>
-      <button class="add-btn" aria-label="Add topic" onclick="go('add')"><span class="ic">＋</span></button>
-      <button data-p="recover" onclick="go('recover')"><span class="ic">♧</span>Recovery</button>
-      <button data-p="profile" onclick="go('profile')"><span class="ic">♙</span>Profile</button>
+      <button data-p="home" onclick="go('home')"><span class="ic" aria-hidden="true">⌂</span>Home</button>
+      <button data-p="calendar" onclick="go('calendar')"><span class="ic" aria-hidden="true">▦</span>Calendar</button>
+      <button data-p="add" onclick="go('add')"><span class="ic" aria-hidden="true">＋</span>Add topic</button>
+      <button data-p="recover" onclick="go('recover')"><span class="ic" aria-hidden="true">♧</span>Recovery</button>
+      <button data-p="profile" onclick="go('profile')"><span class="ic" aria-hidden="true">♙</span>Profile</button>
     </nav>
   </div>
 </div>
 
 <!-- Dialogs -->
-<dialog id="windowDlg">
+<dialog id="windowDlg" aria-labelledby="wdTitle" aria-describedby="wdSub">
   <form id="windowForm">
     <h2 id="wdTitle">Add free time</h2>
     <p id="wdSub" class="small" style="color:var(--muted)"></p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px">
+    <div class="time-fields">
       <label class="field">Start time<input type="time" name="start" required value="16:00"></label>
       <label class="field">End time<input type="time" name="end" required value="18:00"></label>
     </div>
@@ -396,7 +390,7 @@ applyAppearance();
       <button type="button" class="secondary small" onclick="setWin('19:30','21:30')">19:30–21:30</button>
       <button type="button" class="secondary small" onclick="setWin('21:00','23:00')">21–23</button>
     </div>
-    <div class="error-msg" id="wdErr" hidden></div>
+    <div class="error-msg" id="wdErr" role="alert" hidden></div>
     <div class="row-between" style="margin-top:16px">
       <button type="button" class="quiet" onclick="$('#windowDlg').close()">Cancel</button>
       <button type="submit">Save window</button>
@@ -404,12 +398,12 @@ applyAppearance();
   </form>
 </dialog>
 
-<dialog id="copyDlg">
+<dialog id="copyDlg" aria-labelledby="copyTitle">
   <form id="copyForm">
-    <h2>Copy free time</h2>
-    <p>Add today's windows to selected upcoming dates. Existing windows are preserved; overlaps skip the whole day.</p>
+    <h2 id="copyTitle">Copy free time</h2>
+    <p>Copy the selected day’s windows to upcoming dates. If any date has a conflict, the copy is cancelled.</p>
     <div id="copyDateList" style="display:grid;gap:8px;margin:12px 0 4px"></div>
-    <div class="error-msg" id="copyErr" hidden></div>
+    <div class="error-msg" id="copyErr" role="alert" hidden></div>
     <div class="row-between" style="margin-top:16px">
       <button type="button" class="quiet" onclick="$('#copyDlg').close()">Cancel</button>
       <button type="submit">Copy windows</button>
@@ -417,9 +411,9 @@ applyAppearance();
   </form>
 </dialog>
 
-<dialog id="progressDlg">
+<dialog id="progressDlg" aria-labelledby="progressTitle">
   <form id="progressForm">
-    <h2>Record progress</h2>
+    <h2 id="progressTitle">Record progress</h2>
     <p id="progressSub" class="small" style="color:var(--muted)"></p>
     <label class="field">Completed minutes
       <input type="number" name="done" min="0" required>
@@ -432,14 +426,25 @@ applyAppearance();
   </form>
 </dialog>
 
-<dialog id="aboutDlg">
-  <h2>About Ora Rescue</h2>
+<dialog id="aboutDlg" aria-labelledby="aboutTitle">
+  <h2 id="aboutTitle">About Ora Rescue</h2>
   <p>Kotlin · Jetpack Compose · Material 3 · Room SQLite · 100% offline. Zero accounts, telemetry, or cloud storage.</p>
   <p style="margin-top:8px;font-size:13px;color:var(--muted)">Font: Apple SF system font where available (macOS/iOS); Inter (OFL, bundled) elsewhere. SF Pro files are not redistributed.</p>
   <div style="margin-top:16px"><button class="full secondary" onclick="$('#aboutDlg').close()">Close</button></div>
 </dialog>
 
-<div id="toast"></div>
+<dialog id="confirmDlg" aria-labelledby="confirmTitle" aria-describedby="confirmDetail">
+  <form id="confirmForm" method="dialog">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmDetail"></p>
+    <div class="row-between">
+      <button type="submit" class="secondary" value="cancel" autofocus>Cancel</button>
+      <button type="submit" class="danger" id="confirmButton" value="confirm"></button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
 
 <script>
 /* =====================================================================
@@ -465,25 +470,25 @@ function minToTime(m) { return `${pad(Math.floor(m/60))}:${pad(m%60)}`; }
 function timeToMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
 function canRecord(s) { const date=localDay(new Date()); return !!s && !s.recorded && (s.day<date || s.day===date && (s.start==null || s.start<=nowMin())); }
 function nowMin() { const n=new Date(); return n.getHours()*60+n.getMinutes(); }
-const TODAY = localDay(new Date());
+function today() { return localDay(new Date()); }
 
 /* ── Sample data factory ── */
 function mkSamples() {
   return {
     tasks: [
-      {id:1,subject:'Operating Systems',topic:'CPU Scheduling & Semaphores',minutes:120,exam:plusDays(TODAY,5),priority:3},
-      {id:2,subject:'Machine Learning',topic:'Decision Trees & Ensembles',minutes:90,exam:plusDays(TODAY,8),priority:2},
-      {id:3,subject:'Mobile Dev',topic:'Compose & Room Migration',minutes:60,exam:plusDays(TODAY,12),priority:2}
+      {id:1,subject:'Operating Systems',topic:'CPU Scheduling & Semaphores',minutes:120,exam:plusDays(today(),5),priority:3},
+      {id:2,subject:'Machine Learning',topic:'Decision Trees & Ensembles',minutes:90,exam:plusDays(today(),8),priority:2},
+      {id:3,subject:'Mobile Dev',topic:'Compose & Room Migration',minutes:60,exam:plusDays(today(),12),priority:2}
     ],
     windows: [
-      {id:101,day:TODAY,            start:960, end:1080},
-      {id:102,day:TODAY,            start:1170,end:1290},
-      {id:103,day:plusDays(TODAY,1),start:960, end:1080},
-      {id:104,day:plusDays(TODAY,2),start:1020,end:1200},
+      {id:101,day:today(),            start:960, end:1080},
+      {id:102,day:today(),            start:1170,end:1290},
+      {id:103,day:plusDays(today(),1),start:960, end:1080},
+      {id:104,day:plusDays(today(),2),start:1020,end:1200},
     ],
     sessions: [
-      {id:1,taskId:1,day:TODAY,start:960, end:1080,minutes:120,done:0,recorded:false},
-      {id:2,taskId:2,day:TODAY,start:1170,end:1260,minutes:90, done:0,recorded:false},
+      {id:1,taskId:1,day:today(),start:960, end:1080,minutes:120,done:0,recorded:false},
+      {id:2,taskId:2,day:today(),start:1170,end:1260,minutes:90, done:0,recorded:false},
     ],
     profile: {name:'Shruthi',goal:120,split:true,avatar:'👩🏻‍💻'}
   };
@@ -509,12 +514,12 @@ if (!S.profile) S.profile = {name:'Student',goal:120,split:true,avatar:'👩🏻
 if (!S.windows)  S.windows = [];
 
 function save() { localStorage.setItem(STORE, JSON.stringify(S)); }
-function resetData() { S = mkSamples(); save(); calDay = TODAY; calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); go('home'); toast('Sample data restored'); }
+function resetData() { S = mkSamples(); splitMode = S.profile.split; save(); calDay = today(); calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); go('home'); toast('Sample data restored'); }
 
 /* ── Navigation ── */
-let page = 'home', editId = null, calDay = TODAY;
+let page = 'home', editId = null, calDay = today();
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
-let searchQ = '', subjectF = '', preview = null, splitMode = true;
+let searchQ = '', subjectF = '', preview = null, splitMode = S.profile.split;
 
 function go(p, id=null) {
   page = p; editId = id;
@@ -523,8 +528,12 @@ function go(p, id=null) {
 }
 
 function render() {
-  document.querySelectorAll('nav button[data-p]').forEach(b =>
-    b.classList.toggle('active', b.dataset.p === page));
+  document.querySelectorAll('nav button[data-p]').forEach(button => {
+    const active = button.dataset.p === page;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
   $('#screen').innerHTML = {
     home: renderHome, calendar: renderCalendar, add: renderAdd,
     recover: renderRecover, profile: renderProfile
@@ -538,6 +547,9 @@ function taskLeft(t)  { return Math.max(0, t.minutes - taskDone(t.id)); }
 function priLabel(p)  { return ['Low','Low','Medium','High'][p]||'Medium'; }
 function greeting()   { const h=new Date().getHours(); return h<12?'Good Morning':h<18?'Good Afternoon':'Good Evening'; }
 function winsForDay(d){ return S.windows.filter(w=>w.day===d).sort((a,b)=>a.start-b.start); }
+function sessionsForDay(day) {
+  return S.sessions.filter(s => s.day === day).sort((a, b) => (a.start ?? -1) - (b.start ?? -1));
+}
 function dayCapMin(d) { return winsForDay(d).reduce((a,w)=>a+(w.end-w.start),0); }
 
 function winOverlap(d, s, e, skipId=0) {
@@ -548,48 +560,37 @@ function winOverlap(d, s, e, skipId=0) {
 function renderHome() {
   const p = S.profile;
   const goalMin = p.goal || 120;
-  const todaySess = S.sessions.filter(s=>s.day===TODAY);
+  const date = today();
+  const minute = nowMin();
+  const todaySess = sessionsForDay(date);
+  const next = todaySess.find(s => !s.recorded && s.start != null && s.end > minute);
+  const nextTopic = next && S.tasks.find(t => t.id === next.taskId);
+  const plannedToday = todaySess.filter(s => !s.recorded).reduce((sum, s) => sum + s.minutes, 0);
+  const remaining = S.tasks.reduce((sum, t) => sum + taskLeft(t), 0);
   const doneToday = todaySess.reduce((a,s)=>a+s.done, 0);
   const pct = Math.min(100, Math.round(doneToday/goalMin*100));
   const doneTopics = S.tasks.filter(t=>taskLeft(t)<=0).length;
   const totalFocus = S.sessions.reduce((a,s)=>a+s.done, 0);
   const openCount  = S.tasks.filter(t=>taskLeft(t)>0).length;
 
-  const nearest = S.tasks.filter(t=>taskLeft(t)>0).sort((a,b)=>a.exam.localeCompare(b.exam))[0];
+  const nearest = S.tasks.filter(t=>t.exam>=date).sort((a,b)=>a.exam.localeCompare(b.exam)||b.priority-a.priority||a.id-b.id)[0];
 
   const filters = ['All','In Progress','Completed',...new Set(S.tasks.map(t=>t.subject))];
-  const filtered = S.tasks.filter(t => {
-    const qs = searchQ.toLowerCase();
-    const matchQ = !qs || t.topic.toLowerCase().includes(qs) || t.subject.toLowerCase().includes(qs);
-    if (!matchQ) return false;
-    if (subjectF==='In Progress') return taskLeft(t)>0;
-    if (subjectF==='Completed')   return taskLeft(t)<=0;
-    if (subjectF && subjectF!=='All') return t.subject===subjectF;
-    return true;
-  });
-
   return `
   <div>
     <div class="row-between" style="margin-bottom:12px">
       <div>
         <div class="eyebrow">${greeting()}</div>
-        <h2>Hello, ${esc(p.name)} 👋</h2>
+        <h2>Hello, ${esc(p.name)}</h2>
       </div>
-      <div style="font-size:48px;cursor:pointer" onclick="go('profile')" title="Profile">${esc(p.avatar||'👩🏻‍💻')}</div>
+      <button class="quiet" style="font-size:38px" onclick="go('profile')" aria-label="Open profile">${esc(p.avatar||'👩🏻‍💻')}</button>
     </div>
 
-    <div class="stats-row">
-      <div class="stat-box"><div class="si">✓</div><strong>${doneTopics}</strong><span>Done</span></div>
-      <div class="stat-box"><div class="si">◷</div><strong>${Math.floor(totalFocus/60)}h ${totalFocus%60}m</strong><span>Focus</span></div>
-      <div class="stat-box"><div class="si">ϟ</div><strong>${openCount}</strong><span>Open</span></div>
-    </div>
-
-    <div class="goal-card">
-      <div class="row-between"><span class="tiny" style="color:var(--on-banner)">TODAY'S GOAL</span><span class="tiny" style="color:var(--on-banner)">${doneToday} / ${goalMin} min</span></div>
-      <h3>${pct>=100?'Goal reached 🎉':pct>0?'Keep going!':'Ready to start?'}</h3>
-      <p class="sub">${pct>=100?'Outstanding focus today.':pct>0?`${pct}% of your ${goalMin}-min goal.`:'Every small session adds up.'}</p>
-      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
-    </div>
+    ${nextTopic?`
+    <div class="card brand">
+      <span class="section-label">${next.start <= minute ? 'Study session now' : 'Next session today'}</span>
+      <div class="meta">${minToTime(next.start)}–${minToTime(next.end)} · ${esc(nextTopic.subject)} · ${esc(nextTopic.topic)}</div>
+    </div>`:''}
 
     ${nearest?`
     <div class="card" style="border-left:4px solid var(--brand);padding:12px 14px;margin-bottom:12px">
@@ -601,13 +602,26 @@ function renderHome() {
       <div class="meta" style="margin-top:2px">${taskLeft(nearest)} min remaining</div>
     </div>`:''}
 
+    <div class="stats-row">
+      <div class="stat-box"><div class="si">✓</div><strong>${doneTopics}</strong><span>Done</span></div>
+      <div class="stat-box"><div class="si">◷</div><strong>${Math.floor(totalFocus/60)}h ${totalFocus%60}m</strong><span>Focus</span></div>
+      <div class="stat-box"><div class="si">ϟ</div><strong>${openCount}</strong><span>Open</span></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="row-between"><span class="tiny" style="color:var(--on-banner)">TODAY'S GOAL</span><span class="tiny" style="color:var(--on-banner)">${doneToday} / ${goalMin} min</span></div>
+      <h3>${doneToday} min completed today</h3>
+      <p class="sub">${plannedToday} min planned today · ${remaining} min remaining across topics</p>
+      <div class="prog-bg" role="progressbar" aria-label="Daily study goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="prog-fill" style="width:${pct}%"></div></div>
+    </div>
+
     <div class="row-between" style="margin:16px 0 6px">
       <div class="section-label">Today's Sessions</div>
       <button class="quiet small" onclick="go('calendar')">Calendar ›</button>
     </div>
-    ${todaySess.length===0?`<div class="card empty-state"><div class="ei">📅</div><h3>No sessions today</h3><p>Add free-time windows in Calendar, then generate a plan.</p><div class="row" style="justify-content:center;gap:8px"><button class="secondary small" onclick="go('calendar')">Set free time</button><button class="small" onclick="go('recover')">Create plan</button></div></div>`:
+    ${todaySess.length===0?`<div class="card empty-state"><div class="ei">📅</div><h3>No sessions today</h3><p>${remaining?'Choose free time before your exams and create a plan.':'Add a study topic to start planning.'}</p><div class="action-row">${remaining?`<button class="secondary small" onclick="go('calendar')">Add free time</button><button class="small" onclick="go('recover')">Create plan</button>`:`<button class="small" onclick="go('add')">Add topic</button>`}</div></div>`:
       todaySess.map(s=>{
-        const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:TODAY};
+        const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:today()};
         const tr=s.start!=null?`${minToTime(s.start)} – ${minToTime(s.end)}`:`${s.minutes} min`;
         return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
           <div class="row-between">
@@ -616,8 +630,8 @@ function renderHome() {
           </div>
           <div class="section-label" style="margin:4px 0 6px">${esc(t.topic)}</div>
           <div class="row-between">
-            <span class="tiny">${s.recorded?`${s.done} min recorded`:'Pending'}</span>
-            ${s.recorded?`<span class="badge g">✓ Done</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
+            <span class="tiny">${s.recorded?(s.done?`${s.done} min completed`:'Missed'):`${s.minutes} min planned`}</span>
+            ${s.recorded?'':`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
           </div>
         </div>`;
       }).join('')}
@@ -627,11 +641,29 @@ function renderHome() {
       <button class="quiet small" onclick="go('add')">+ Add topic</button>
     </div>
     <input type="search" placeholder="Search topics or subjects…" value="${esc(searchQ)}"
-           oninput="searchQ=this.value;render()"
+           aria-label="Search topics or subjects"
+           oninput="searchQ=this.value;refreshHomeTopics()"
            style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--control-line);font:14px/1 var(--ff);background:var(--field);color:var(--ink);margin-bottom:8px">
     <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">
-      ${filters.map(f=>`<button class="secondary small" style="${subjectF===f||(!subjectF&&f==='All')?'background:var(--brand);color:var(--on-brand);border-color:var(--brand)':''}" onclick="subjectF='${f==='All'?'':f}';render()">${esc(f)}</button>`).join('')}
+      ${filters.map(f=>`<button class="secondary small" aria-pressed="${subjectF===(f==='All'?'':f)}" data-filter="${esc(f==='All'?'':f)}" onclick="subjectF=this.dataset.filter;refreshHomeTopics()">${esc(f)}</button>`).join('')}
     </div>
+    <div id="homeTopics">${renderHomeTopics()}</div>
+  </div>`;
+}
+
+/* ── Calendar ── */
+function renderHomeTopics() {
+  const filtered = S.tasks.filter(t => {
+    const qs = searchQ.toLowerCase();
+    const matchQ = !qs || t.topic.toLowerCase().includes(qs) || t.subject.toLowerCase().includes(qs);
+    if (!matchQ) return false;
+    if (subjectF==='In Progress') return taskLeft(t)>0;
+    if (subjectF==='Completed')   return taskLeft(t)<=0;
+    if (subjectF && subjectF!=='All') return t.subject===subjectF;
+    return true;
+  });
+
+  return `
     ${filtered.length===0?`<div class="card"><p class="small" style="text-align:center;color:var(--muted);padding:16px 0">No topics match your filter.</p></div>`:''}
     ${filtered.map(t=>`
     <div class="card" style="padding:12px 14px;margin-bottom:8px">
@@ -650,11 +682,16 @@ function renderHome() {
       </div>
     </div>`).join('')}
 
-    <div class="tiny" style="text-align:center;color:var(--muted);margin-top:20px">ORA RESCUE · BROWSER PREVIEW · DATA STORED LOCALLY</div>
-  </div>`;
+    <div class="tiny" style="text-align:center;color:var(--muted);margin-top:20px">ORA RESCUE · BROWSER PREVIEW · DATA STORED LOCALLY</div>`;
 }
 
-/* ── Calendar ── */
+function refreshHomeTopics() {
+  $('#homeTopics').innerHTML = renderHomeTopics();
+  document.querySelectorAll('[data-filter]').forEach(button => {
+    button.setAttribute('aria-pressed', button.dataset.filter === subjectF);
+  });
+}
+
 function renderCalendar() {
   const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const first = new Date(calYear, calMonth, 1);
@@ -663,18 +700,20 @@ function renderCalendar() {
 
   const wins = winsForDay(calDay);
   const totalMin = dayCapMin(calDay);
-  const sessDay  = S.sessions.filter(s=>s.day===calDay);
+  const sessDay = sessionsForDay(calDay);
+  const done = sessDay.reduce((sum, session) => sum + session.done, 0);
+  const planned = sessDay.filter(session => !session.recorded).reduce((sum, session) => sum + session.minutes, 0);
   const curNow   = nowMin();
 
   let cells = '<span></span>'.repeat(startOffset);
   for (let d=1; d<=days; d++) {
     const ds = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
-    const isSel = ds===calDay, isToday = ds===TODAY;
-    const isPast = ds<TODAY && !isSel;
+    const isSel = ds===calDay, isToday = ds===today();
+    const isPast = ds<today() && !isSel;
     const hw = S.windows.some(w=>w.day===ds);
     const hs = S.sessions.some(s=>s.day===ds);
     const he = S.tasks.some(t=>t.exam===ds);
-    cells += `<button type="button" aria-label="Select ${ds}" aria-pressed="${isSel}" class="cell${isSel?' sel':''}${isToday?' today':''}${isPast?' past':''}" onclick="calDay='${ds}';render()">
+    cells += `<button type="button" aria-label="${fmtLong(ds)}${hw?', free time':''}${hs?', study sessions':''}${he?', exam':''}" aria-pressed="${isSel}" class="cell${isSel?' sel':''}${isToday?' today':''}${isPast?' past':''}" onclick="calDay='${ds}';render()">
       <span>${d}</span>
       <span class="dots" aria-hidden="true">${hw?'<span class="dot g"></span>':''}${hs?'<span class="dot p"></span>':''}${he?'<span class="dot a"></span>':''}</span>
     </button>`;
@@ -683,7 +722,7 @@ function renderCalendar() {
   return `<div>
     <div class="row-between" style="margin-bottom:10px">
       <h2>Calendar</h2>
-      <button class="secondary small" onclick="calDay=TODAY;calYear=new Date().getFullYear();calMonth=new Date().getMonth();render()">Today</button>
+      <button class="secondary small" onclick="calDay=today();calYear=new Date().getFullYear();calMonth=new Date().getMonth();render()">Today</button>
     </div>
 
     <div class="row-between" style="margin-bottom:10px">
@@ -708,43 +747,44 @@ function renderCalendar() {
           <div class="eyebrow">Free time</div>
           <div class="section-label">${fmtLong(calDay)}</div>
         </div>
-        <span class="badge ${totalMin>0?'g':''}">${totalMin>0?`${totalMin} min total`:'Day off'}</span>
+        <span class="badge ${totalMin>0?'g':''}">${totalMin>0?`${totalMin} min total`:'No free time'}</span>
       </div>
       <div style="margin:12px 0 8px">
-        ${wins.length===0?`<p class="small" style="color:var(--muted);text-align:center;padding:8px 0">No free-time windows. Rest day.</p>`:''}
+        ${wins.length===0?`<p class="small" style="color:var(--muted);text-align:center;padding:8px 0">No free-time windows on this date.</p>`:''}
         ${wins.map(w=>{
-          const elapsed = calDay===TODAY && w.end<=curNow;
+          const elapsed = calDay===today() && w.end<=curNow;
           return `<div class="win-row">
             <div>
               <div class="win-time">${minToTime(w.start)} – ${minToTime(w.end)}</div>
               <div class="win-dur">${w.end-w.start} min${elapsed?' · <em style="color:var(--muted)">elapsed</em>':''}</div>
             </div>
             <div class="row">
-              <button class="secondary small" onclick="openEditWin(${w.id})" ${calDay<TODAY?'disabled':''}>Edit</button>
-              <button class="danger small" onclick="deleteWin(${w.id})" ${calDay<TODAY?'disabled':''}>✕</button>
+              <button class="secondary small" onclick="openEditWin(${w.id})" ${calDay<today()?'disabled':''}>Edit</button>
+              <button class="danger small" onclick="deleteWin(${w.id})" ${calDay<today()?'disabled':''}>✕</button>
             </div>
           </div>`;
         }).join('')}
       </div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
-        <button class="small" onclick="openAddWin()" ${calDay<TODAY?'disabled':''}>+ Add time</button>
-        <button class="secondary small" onclick="openCopyDlg()" ${calDay<TODAY||wins.length===0?'disabled':''}>Copy to dates</button>
-        <button class="quiet small" onclick="clearDay('${calDay}')" ${calDay<TODAY?'disabled':''}>Day off</button>
+        <button class="small" onclick="openAddWin()" ${calDay<today()?'disabled':''}>Add free time</button>
+        <button class="secondary small" onclick="openCopyDlg()" ${calDay<today()||wins.length===0?'disabled':''}>Copy to dates</button>
+        <button class="quiet small" onclick="clearDay('${calDay}')" ${calDay<today()?'disabled':''}>Day off</button>
       </div>
       <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
         <span class="tiny">Quick presets:</span>
         <div class="presets">
-          <button class="secondary small" onclick="addPreset(960,1080)" ${calDay<TODAY?'disabled':''}>Afternoon 16–18</button>
-          <button class="secondary small" onclick="addPreset(1170,1290)" ${calDay<TODAY?'disabled':''}>Evening 19:30–21:30</button>
-          <button class="secondary small" onclick="addPreset(1260,1380)" ${calDay<TODAY?'disabled':''}>Night 21–23</button>
+          <button class="secondary small" onclick="addPreset(960,1080)" ${calDay<today()?'disabled':''}>Afternoon 16–18</button>
+          <button class="secondary small" onclick="addPreset(1170,1290)" ${calDay<today()?'disabled':''}>Evening 19:30–21:30</button>
+          <button class="secondary small" onclick="addPreset(1260,1380)" ${calDay<today()?'disabled':''}>Night 21–23</button>
         </div>
       </div>
     </div>
 
     <!-- Agenda for selected date -->
-    <div class="section-label" style="margin-bottom:8px">Agenda – ${fmtShort(calDay)}</div>
+    <div class="section-label">Agenda · ${fmtShort(calDay)}</div>
+    <p class="meta" style="margin-bottom:8px">${done} min completed · ${planned} min planned</p>
     ${S.tasks.filter(t=>t.exam===calDay).map(t=>`<div class="card amber" style="padding:10px 14px;margin-bottom:8px">★ Exam – ${esc(t.subject)} · ${esc(t.topic)}</div>`).join('')}
-    ${sessDay.length===0?`<p class="small" style="color:var(--muted)">No study sessions scheduled on this date.</p>`:''}
+    ${sessDay.length===0?`<p class="small" style="color:var(--muted)">No study sessions saved for this date.</p>`:''}
     ${sessDay.map(s=>{
       const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session'};
       const tr=s.start!=null?`${minToTime(s.start)}–${minToTime(s.end)}`:`${s.minutes} min`;
@@ -754,12 +794,12 @@ function renderCalendar() {
           <span class="badge ${s.recorded?'g':'a'}">${tr}</span>
         </div>
         <div class="section-label" style="margin:4px 0">${esc(t.topic)}</div>
-        ${s.recorded?`<span class="badge g">${s.done} min completed</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
+        ${s.recorded?`<span class="badge ${s.done?'g':'r'}">${s.done?`${s.done} min completed`:'Missed'}</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
       </div>`;
     }).join('')}
 
     <div style="margin-top:16px">
-      <button class="full" onclick="go('recover')">Build recovery plan →</button>
+      <button class="full" onclick="go('recover')">Create plan</button>
     </div>
   </div>`;
 }
@@ -791,9 +831,10 @@ function deleteWin(id) {
   invalidatePending(); save(); render();
 }
 function clearDay(d) {
-  if (!confirm(`Remove all free-time windows on ${fmtShort(d)}?`)) return;
-  S.windows = S.windows.filter(w=>w.day!==d);
-  invalidatePending(); save(); render(); toast('Day set to rest day');
+  confirmAction('Make this a day off?', `Free time on ${fmtShort(d)} will be cleared. Create a new plan afterwards.`, 'Mark day off', () => {
+    S.windows = S.windows.filter(w=>w.day!==d);
+    invalidatePending(); save(); render(); toast('Day set to rest day');
+  });
 }
 function addPreset(s,e) {
   if (winOverlap(calDay,s,e)) { toast(`Overlaps an existing window – try another slot`); return; }
@@ -823,7 +864,7 @@ function showWdErr(msg) { const el=$('#wdErr'); el.textContent=msg; el.hidden=fa
 function openCopyDlg() {
   const wins = winsForDay(calDay);
   if (!wins.length) { toast('No windows on this date to copy'); return; }
-  const dates = Array.from({length:7},(_,i)=>plusDays(calDay,i+1)).filter(d=>d>=TODAY);
+  const dates = Array.from({length:7},(_,i)=>plusDays(calDay,i+1)).filter(d=>d>=today());
   $('#copyDateList').innerHTML = dates.map(d=>`
     <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--field);color:var(--ink);border-radius:10px;cursor:pointer">
       <input type="checkbox" name="dates" value="${d}"> <span class="small">${fmtLong(d)}</span>
@@ -858,11 +899,11 @@ function renderAdd() {
       <h2>${t?'Edit topic':'New topic'}</h2>
       <button class="quiet small" onclick="go('home')">✕</button>
     </div>
-    <p class="small" style="color:var(--muted);margin-bottom:16px">Estimate honestly. Nearest exam date is scheduled first; priority breaks ties.</p>
+    <p class="small" style="color:var(--muted);margin-bottom:16px">Enter the total time you expect to spend on this topic.</p>
     <form id="addForm">
       <label class="field">Subject<input name="subject" required maxlength="80" value="${esc(t?t.subject:'')}" placeholder="e.g. Operating Systems"></label>
       <label class="field">Topic name<input name="topic" required maxlength="120" value="${esc(t?t.topic:'')}" placeholder="e.g. CPU Scheduling"></label>
-      <label class="field">Exam deadline<input name="exam" type="date" required min="${plusDays(TODAY,1)}" value="${t?t.exam:plusDays(TODAY,10)}"></label>
+      <label class="field">Exam deadline<input name="exam" type="date" required min="${plusDays(today(),1)}" value="${t?t.exam:plusDays(today(),10)}"></label>
       <label class="field">Estimated work (minutes)<input name="minutes" type="number" required min="${minMins}" max="100000" step="1" value="${t?t.minutes:120}"></label>
       <div class="presets">
         <button type="button" class="secondary small" onclick="const x=document.querySelector('[name=minutes]');x.value=+x.value+30">+30 min</button>
@@ -875,6 +916,7 @@ function renderAdd() {
           <option value="1"${t&&t.priority===1?' selected':''}>Low</option>
         </select>
       </label>
+      <p id="topicError" class="error-msg" role="alert" hidden></p>
       <div style="margin-top:20px">
         <button type="submit" class="full">${t?'Save changes':'Create topic'}</button>
         <button type="button" class="quiet full" style="margin-top:8px" onclick="go('home')">Cancel</button>
@@ -888,26 +930,36 @@ function bindAddForm() {
     const f = new FormData(e.target);
     const subject = f.get('subject').trim();
     const topic   = f.get('topic').trim();
-    if (!subject||!topic) { toast('Enter a subject and topic name'); return; }
+    if (!subject || !topic) {
+      const missing = !subject ? 'subject' : 'topic';
+      const error = $('#topicError');
+      error.textContent = missing === 'subject' ? 'Enter a subject.' : 'Enter a topic name.';
+      error.hidden = false;
+      e.target.elements[missing].focus();
+      return;
+    }
     const task = {id:editId||Date.now(),subject,topic,minutes:+f.get('minutes'),exam:f.get('exam'),priority:+f.get('priority')};
-    if (editId) S.tasks = S.tasks.map(t=>t.id===editId?task:t);
+    const isEdit = editId != null;
+    if (isEdit) S.tasks = S.tasks.map(t=>t.id===editId?task:t);
     else S.tasks.push(task);
-    invalidatePending(); save(); go('home'); toast(editId?'Topic updated':'Topic added');
+    invalidatePending(); save(); go('home'); toast(isEdit?'Topic updated':'Topic added');
   };
 }
 function deleteTopic(id) {
-  if (!confirm('Delete this topic and its pending sessions?')) return;
-  S.tasks    = S.tasks.filter(t=>t.id!==id);
-  S.sessions = S.sessions.filter(s=>s.taskId!==id);
-  save(); render(); toast('Topic deleted');
+  confirmAction('Delete this topic?', 'Its scheduled sessions and recorded progress will be permanently removed.', 'Delete topic', () => {
+    S.tasks = S.tasks.filter(t=>t.id!==id);
+    S.sessions = S.sessions.filter(s=>s.taskId!==id);
+    save(); render(); toast('Topic deleted');
+  });
 }
 
 /* ── Recovery Planner ── */
 function generatePlan() {
+  const startDay = today();
   const curNow = nowMin();
   // Reserve completed work at its actual clock position, then exclude elapsed time.
   const slots = [];
-  const days = [...new Set(S.windows.map(w=>w.day))].filter(d=>d>=TODAY).sort();
+  const days = [...new Set(S.windows.map(w=>w.day))].filter(d=>d>=startDay).sort();
   for (const d of days) {
     let ranges = winsForDay(d).map(w=>[w.start,w.end]);
     const done = S.sessions.filter(x=>x.day===d && x.recorded && x.done>0);
@@ -918,7 +970,7 @@ function generatePlan() {
     }
     let reserve=done.filter(x=>x.start==null).reduce((n,x)=>n+x.done,0);
     for (let [start,end] of ranges) {
-      if(d===TODAY)start=Math.max(start,curNow);
+      if(d===startDay)start=Math.max(start,curNow);
       const take=Math.min(Math.max(0,end-start),reserve);start+=take;reserve-=take;
       if(end>start)slots.push({day:d,start,end,avail:end-start});
     }
@@ -938,30 +990,34 @@ function generatePlan() {
         slot.start+=take; slot.avail-=take; rem-=take;
       }
     } else {
-      let placed=false;
-      for (const slot of slots) {
-        if (slot.day>=task.exam) continue;
-        if (slot.avail>=rem) {
-          proposed.push({id:Date.now()+Math.random(),taskId:task.id,day:slot.day,start:slot.start,end:slot.start+rem,minutes:rem,done:0,recorded:false});
-          slot.start+=rem; slot.avail-=rem; placed=true; rem=0; break;
-        }
+      const slot = slots.find(slot => slot.day < task.exam && slot.avail >= rem);
+      if (slot) {
+        proposed.push({id:Date.now()+Math.random(),taskId:task.id,day:slot.day,start:slot.start,end:slot.start+rem,minutes:rem,done:0,recorded:false});
+        slot.start += rem;
+        slot.avail -= rem;
+        rem = 0;
       }
-      if (!placed) rem>0 && (void 0);
     }
-    if (rem>0) unplaced.push({task,minutes:rem,reason:splitMode?'Exceeds free capacity before exam':'Needs one continuous window (or enable splitting)'});
+    if (rem > 0) {
+      const reason = task.exam <= startDay ? 'Exam is today or earlier. Check the exam date.'
+        : splitMode ? 'Exceeds free time before the exam.'
+        : 'Needs one continuous window before the exam.';
+      unplaced.push({task, minutes:rem, reason});
+    }
   }
   proposed.sort((a,b)=>a.day.localeCompare(b.day)||a.start-b.start);
-  preview = {sessions:proposed, unplaced, createdAt:Date.now(), day:localDay(new Date()), revision:JSON.stringify(S)};
+  preview = {sessions:proposed, unplaced, createdAt:Date.now(), day:startDay, revision:JSON.stringify(S)};
   render();
 }
 
 function acceptPlan() {
   if (!preview) return;
+  const startDay = today();
   const curNow = nowMin();
-  if (preview.day!==localDay(new Date())||preview.revision!==JSON.stringify(S)||preview.sessions.some(s=>s.day===TODAY&&s.start!=null&&s.start<curNow)) {
+  if (preview.day!==startDay||preview.revision!==JSON.stringify(S)||preview.sessions.some(s=>s.day===startDay&&s.start!=null&&s.start<curNow)) {
     preview=null; render(); toast('Plan is stale or a start time passed — recalculate'); return;
   }
-  S.sessions = [...S.sessions.filter(s=>s.recorded||s.day<TODAY), ...preview.sessions];
+  S.sessions = [...S.sessions.filter(s=>s.recorded||s.day<startDay), ...preview.sessions];
   save(); preview=null; go('home'); toast('Recovery plan saved!');
 }
 
@@ -974,24 +1030,24 @@ function renderRecover() {
     </div>
     <p class="small" style="color:var(--muted);margin-bottom:14px">Schedules unfinished work into your exact free-time windows: nearest exam first, then priority.</p>
 
-    <div class="card row-between" style="padding:12px 14px;margin-bottom:12px">
-      <div>
-        <div class="section-label">Split topics across days</div>
-        <div class="tiny">Allow one topic to span multiple windows</div>
-      </div>
+    <label class="card row-between" style="padding:12px 14px;margin-bottom:12px">
+      <span>
+        <span class="section-label">Split longer topics</span>
+        <span class="tiny" style="display:block">Allow one topic to span multiple windows</span>
+      </span>
       <input type="checkbox" ${splitMode?'checked':''} style="width:20px;height:20px;accent-color:var(--brand)"
              onchange="splitMode=this.checked;preview=null;render()">
-    </div>
+    </label>
 
     <div class="row" style="gap:8px;margin-bottom:14px">
       <button class="secondary small full" onclick="go('calendar')">Edit free time</button>
-      <button class="small full" onclick="generatePlan()">${preview?'Recalculate':'Create plan'}</button>
+      <button class="small full" onclick="generatePlan()" ${outstanding?'':'disabled'}>${preview?'Recalculate':'Create plan'}</button>
     </div>
 
     ${!preview?`<div class="card empty-state">
       <div class="ei">♧</div>
-      <h3>Preview your plan first</h3>
-      <p>Tap "Create plan" to simulate placement. Your saved sessions stay untouched until you accept.</p>
+      <h3>${outstanding?'Preview your plan':'No work to schedule'}</h3>
+      <p>${outstanding?'Review the proposed sessions and any shortfall before saving.':'Add a study topic with time remaining.'}</p>
     </div>`:`
     <div class="card ${preview.unplaced.length?'amber':'sage'}" style="margin-bottom:10px">
       <div class="row-between">
@@ -999,8 +1055,9 @@ function renderRecover() {
         <span class="badge ${preview.unplaced.length?'a':'g'}">${preview.unplaced.length?`${preview.unplaced.reduce((a,u)=>a+u.minutes,0)}m shortfall`:'All placed ✓'}</span>
       </div>
       <p class="small" style="margin-top:6px;color:${preview.unplaced.length?'var(--amber)':'var(--sage)'}">
-        ${preview.unplaced.length?'Some work cannot fit — add more free time or enable splitting.':'All pending study fits in your free windows before each exam.'}
+        ${preview.unplaced.length?(splitMode?'Add free time before the affected exams, or check the dates and estimates.':'Add a longer window before the exam, or enable splitting and recalculate.'):'All pending study fits in your free windows before each exam.'}
       </p>
+      ${preview.unplaced.length?`<button class="secondary small" style="margin-top:8px" onclick="go('calendar')">Edit free time</button>`:''}
     </div>
 
     ${preview.unplaced.map(u=>`<div class="card amber" style="padding:10px 14px;margin-bottom:8px">
@@ -1035,11 +1092,11 @@ function renderRecover() {
       </div>`;
     }).join('')}
 
-    <div style="margin-top:16px">
-      <button class="full" onclick="acceptPlan()">✓ Accept & save plan</button>
-      <button class="quiet full" style="margin-top:6px" onclick="preview=null;render()">Discard preview</button>
+    <p class="tiny" style="margin:12px 0">Saving replaces upcoming pending sessions. Completed study stays in your history.</p>
+    <div class="plan-actions">
+      <button class="secondary" onclick="preview=null;render()">Discard preview</button>
+      <button onclick="acceptPlan()">Save plan</button>
     </div>
-    <p class="tiny" style="color:var(--muted);text-align:center;margin-top:8px">Applies to this browser preview only.</p>
     `}
   </div>`;
 }
@@ -1104,14 +1161,7 @@ function renderProfile() {
     </form>
 
     <div class="card" style="margin-top:14px;padding:0">
-      <div class="row-between" style="padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--line)" onclick="go('calendar')">
-        <div class="row"><span style="font-size:16px">📅</span><span class="section-label">Manage free-time windows</span></div>
-        <span style="color:var(--muted)">›</span>
-      </div>
-      <div class="row-between" style="padding:12px 14px;cursor:pointer" onclick="$('#aboutDlg').showModal()">
-        <div class="row"><span style="font-size:16px">ℹ️</span><span class="section-label">About Ora Rescue</span></div>
-        <span style="color:var(--muted)">›</span>
-      </div>
+      <button class="secondary full" onclick="go('calendar')">Manage free time</button>
     </div>
 
     <p class="tiny" style="color:var(--muted);text-align:center;margin-top:14px">Data stored locally in this browser. Separate from the Android app.</p>
@@ -1153,7 +1203,7 @@ $('#progressForm').onsubmit=e=>{
   const val=Number(new FormData(e.target).get('done')),max=Math.min(session.minutes,taskLeft(task));
   if(!Number.isInteger(val)||val<0||val>max){toast(`Enter 0 to ${max} whole minutes.`);return}
   session.done=val;session.recorded=true;
-  S.sessions=S.sessions.filter(x=>x.id===session.id||x.recorded||x.taskId!==task.id||x.day<TODAY);
+  S.sessions=S.sessions.filter(x=>x.id===session.id||x.recorded||x.taskId!==task.id||x.day<today());
   save();$('#progressDlg').close();render();
   toast(val?`${val} min recorded — well done!`:'Missed session recorded. Create a new recovery plan.');
 };
@@ -1161,7 +1211,19 @@ $('#progressForm').onsubmit=e=>{
 /* ── Utilities ── */
 function invalidatePending() {
   // Clear unrecorded future sessions when availability changes
-  S.sessions=S.sessions.filter(s=>s.recorded||s.day<TODAY);
+  S.sessions=S.sessions.filter(s=>s.recorded||s.day<today());
+}
+
+function confirmAction(title, detail, actionLabel, action) {
+  const dialog = $('#confirmDlg');
+  $('#confirmTitle').textContent = title;
+  $('#confirmDetail').textContent = detail;
+  $('#confirmButton').textContent = actionLabel;
+  dialog.returnValue = 'cancel';
+  dialog.addEventListener('close', () => {
+    if (dialog.returnValue === 'confirm') action();
+  }, {once:true});
+  dialog.showModal();
 }
 
 function toast(msg) {

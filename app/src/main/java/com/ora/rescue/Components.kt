@@ -2,6 +2,8 @@
 
 package com.ora.rescue
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,14 +27,25 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.delay
 
 val DayFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, d MMM")
 val FullDayFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, d MMM yyyy")
 
 fun dateLabel(day: Long): String = LocalDate.ofEpochDay(day).format(DayFormat)
 fun dateWithYear(day: Long): String = LocalDate.ofEpochDay(day).format(FullDayFormat)
+
+@Composable
+internal fun rememberStudyClock(): State<LocalDateTime> = produceState(LocalDateTime.now()) {
+    while (true) {
+        value = LocalDateTime.now()
+        // Session times have minute precision. Refresh at the next minute boundary.
+        delay((60_000L - value.second * 1_000L - value.nano / 1_000_000).coerceAtLeast(1L))
+    }
+}
 
 fun daysRemainingLabel(examDay: Long, today: Long): String = when {
     examDay == today -> "Exam is today"
@@ -506,10 +519,10 @@ fun SessionCard(
                 modifier = Modifier.clickable(onClick = onEdit)
             )
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = if (session.hasExactTimes)
@@ -540,7 +553,7 @@ fun SessionCard(
                     }
                     else -> Surface(color = cs.primaryContainer, shape = RoundedCornerShape(6.dp)) {
                         Text(
-                            "Pending",
+                            if (canRecord) "Planned" else "Upcoming",
                             Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                             color = cs.onPrimaryContainer,
                             style = MaterialTheme.typography.labelSmall,
@@ -571,7 +584,7 @@ fun SessionCard(
                     ) {
                         Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Record Progress")
+                        Text("Record progress")
                     }
                 }
             }
@@ -597,7 +610,7 @@ fun MinutesDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(explanation, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 if (quickPresets.isNotEmpty()) {

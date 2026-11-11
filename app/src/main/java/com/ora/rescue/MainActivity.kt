@@ -6,9 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
@@ -20,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
@@ -81,36 +78,25 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
         }
     }
 
-    val isTopLevelDestination = route in listOf("home", "calendar", "recover", "profile")
+    val isTopicForm = route == "task/{id}"
+    val isAddingTopic = isTopicForm && backStack?.arguments?.getLong("id") == 0L
     val cs = MaterialTheme.colorScheme
-    val accents = LocalOraAccents.current
 
     Scaffold(
         containerColor = cs.background,
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "ora rescue",
-                            fontFamily = OraFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            color = cs.primary
-                        )
-                        Text(
-                            text = when (route) {
-                                "calendar" -> "Your study schedule"
-                                "recover"  -> "A fresh start"
-                                "profile"  -> "Your personal space"
-                                else       -> "Make today productive"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = cs.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = if (isTopicForm) {
+                            if (isAddingTopic) "Add topic" else "Edit topic"
+                        } else "ora rescue",
+                        fontWeight = FontWeight.Bold,
+                        color = cs.primary
+                    )
                 },
                 navigationIcon = {
-                    if (!isTopLevelDestination) {
+                    if (isTopicForm) {
                         IconButton(
                             onClick = { nav.popBackStack() },
                             enabled = !busy,
@@ -135,85 +121,72 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
         },
         snackbarHost = { SnackbarHost(snackbars) },
         bottomBar = {
-            if (isTopLevelDestination) {
-                NavigationBar(
-                    containerColor = cs.surface.copy(alpha = 0.97f),
-                    tonalElevation = 6.dp
-                ) {
-                    NavigationBarItem(
-                        selected = route == "home",
-                        onClick = { navigateTab("home") },
-                        icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                        label = { Text("Home", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+            NavigationBar(
+                containerColor = cs.surface.copy(alpha = 0.97f),
+                tonalElevation = 6.dp
+            ) {
+                NavigationBarItem(
+                    selected = route == "home",
+                    onClick = { navigateTab("home") },
+                    icon = { Icon(Icons.Rounded.Home, contentDescription = null) },
+                    label = { Text("Home", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
+                )
 
-                    NavigationBarItem(
-                        selected = route == "calendar",
-                        onClick = { navigateTab("calendar") },
-                        icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = "Calendar") },
-                        label = { Text("Calendar", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+                NavigationBarItem(
+                    selected = route == "calendar",
+                    onClick = { navigateTab("calendar") },
+                    icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = null) },
+                    label = { Text("Calendar", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
+                )
 
-                    // Prominent Center Add Topic Action
-                    IconButton(
-                        onClick = {
-                            if (!busy) nav.navigate("task/0") { launchSingleTop = true }
-                        },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(
-                                accents.banner
-                            )
-                    ) {
-                        Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = "Add study topic",
-                            tint = accents.onBanner,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
+                NavigationBarItem(
+                    selected = isAddingTopic,
+                    onClick = { nav.navigate("task/0") { launchSingleTop = true } },
+                    enabled = !busy,
+                    icon = { Icon(Icons.Rounded.AddCircle, contentDescription = null) },
+                    label = { Text("Add topic", style = MaterialTheme.typography.labelSmall) }
+                )
 
-                    NavigationBarItem(
-                        selected = route == "recover",
-                        onClick = { navigateTab("recover") },
-                        icon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = "Recovery") },
-                        label = { Text("Recovery", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+                NavigationBarItem(
+                    selected = route == "recover",
+                    onClick = { navigateTab("recover") },
+                    icon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) },
+                    label = { Text("Recovery", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
+                )
 
-                    NavigationBarItem(
-                        selected = route == "profile",
-                        onClick = { navigateTab("profile") },
-                        icon = { Icon(Icons.Rounded.Person, contentDescription = "Profile") },
-                        label = { Text("Profile", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+                NavigationBarItem(
+                    selected = route == "profile",
+                    onClick = { navigateTab("profile") },
+                    icon = { Icon(Icons.Rounded.Person, contentDescription = null) },
+                    label = { Text("Profile", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
-                }
+                )
             }
         }
     ) { padding ->
         Box(
             modifier = Modifier
                 .padding(padding)
+                .consumeWindowInsets(padding)
                 .fillMaxSize()
         ) {
             when {
@@ -247,7 +220,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                             HomeScreen(
                                 snapshot = state.snapshot,
                                 busy = busy,
-                                onAdd = { nav.navigate("task/0") },
+                                onAdd = { nav.navigate("task/0") { launchSingleTop = true } },
                                 onEdit = { nav.navigate("task/$it") },
                                 onRecover = { navigateTab("recover") },
                                 onCalendar = { navigateTab("calendar") },

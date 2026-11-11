@@ -25,8 +25,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
-import java.time.LocalTime
 
 @Composable
 fun HomeScreen(
@@ -45,12 +43,17 @@ fun HomeScreen(
     var tab by rememberSaveable { mutableIntStateOf(0) } // 0: Today's Plan, 1: All Topics
     var progressSession by remember { mutableStateOf<StudySession?>(null) }
 
-    val today = LocalDate.now()
-    val todayEpoch = today.toEpochDay()
+    val clock by rememberStudyClock()
+    val todayEpoch = clock.toLocalDate().toEpochDay()
     val profile = snapshot.profile
 
     // Real stats
-    val todaySessions = snapshot.sessions.filter { it.day == todayEpoch }
+    val now = clock.hour * 60 + clock.minute
+    val todaySessions = snapshot.sessions.filter { it.day == todayEpoch }.sortedBy { it.startMinute }
+    val nextSession = todaySessions.firstOrNull {
+        it.status == StudySession.PENDING && it.hasExactTimes && it.endMinute > now
+    }
+    val nextTopic = nextSession?.let { session -> snapshot.tasks.find { it.id == session.taskId } }
     val todayWorked = todaySessions.sumOf { it.completedMinutes }
     val todayPlanned = todaySessions.filter { it.status == StudySession.PENDING }.sumOf { it.allocatedMinutes }
     val todayCapacity = snapshot.dayCapacity(todayEpoch)
@@ -61,10 +64,10 @@ fun HomeScreen(
 
     // Nearest exam calculation
     val nearestExamTask = snapshot.tasks
-        .filter { it.examDay >= todayEpoch && snapshot.remaining(it) > 0 }
-        .minByOrNull { it.examDay }
+        .filter { it.examDay >= todayEpoch }
+        .minWithOrNull(compareBy<StudyTask> { it.examDay }.thenByDescending { it.priority }.thenBy { it.id })
 
-    val greetingTime = when (LocalTime.now().hour) {
+    val greetingTime = when (clock.hour) {
         in 0..11 -> "Good Morning"
         in 12..17 -> "Good Afternoon"
         else -> "Good Evening"
@@ -129,7 +132,56 @@ fun HomeScreen(
             }
         }
 
-        // 3 Real Stats Tiles
+        if (nextSession != null && nextTopic != null) {
+            item {
+                NoteCard(
+                    title = if (nextSession.startMinute <= now) "Study session now" else "Next session today",
+                    text = "${nextSession.timeRangeString} · ${nextTopic.subject} · ${nextTopic.topic}",
+                    icon = Icons.Rounded.Schedule
+                )
+            }
+        }
+
+        // Nearest Exam Spotlight Banner (if an exam is upcoming)
+        nearestExamTask?.let { task ->
+            item {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = cs.surface,
+                    modifier = Modifier.fillMaxWidth().border(1.dp, cs.outlineVariant, RoundedCornerShape(16.dp))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(shape = CircleShape, color = cs.errorContainer, modifier = Modifier.size(32.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Rounded.Event, contentDescription = null, tint = cs.onErrorContainer, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                "Nearest Exam: ${task.subject} · ${task.topic}",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = cs.onSurface
+                            )
+                            Text(
+                                "${daysRemainingLabel(task.examDay, todayEpoch)} (${dateLabel(task.examDay)}) · ${snapshot.remaining(task)} min left",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = cs.onSurfaceVariant
+                            )
+                        }
+                        TextButton(onClick = { onEdit(task.id) }) {
+                            Text("View", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Study statistics
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -209,11 +261,11 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("◉ Today's Goal", style = MaterialTheme.typography.labelSmall, color = accents.onBanner.copy(alpha = 0.9f))
+                            Text("Today's goal", style = MaterialTheme.typography.labelSmall, color = accents.onBanner.copy(alpha = 0.9f))
                             IconButton(
                                 onClick = onRecover,
                                 modifier = Modifier
-                                    .size(30.dp)
+                                    .size(48.dp)
                                     .clip(CircleShape)
                                     .background(cs.surface)
                             ) {
@@ -222,21 +274,16 @@ fun HomeScreen(
                         }
 
                         Text(
-                            text = if (todayWorked >= goal && goal > 0) "Goal Reached! Excellent work 🎉"
-                            else if (todayWorked > 0) "$todayWorked min logged today ($goalPercent%)"
-                            else "Keep Going!",
+                            text = "$todayWorked / $goal min completed today",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = accents.onBanner
                         )
 
                         Text(
-                            text = if (todayCapacity > 0)
-                                "$todayPlanned min planned · $todayCapacity min available today."
-                            else
-                                "No free time set today. Open Calendar to set study windows.",
+                            text = "$todayPlanned min planned today · $outstanding min remaining across topics",
                             style = MaterialTheme.typography.bodySmall,
-                            color = accents.onBanner.copy(alpha = 0.9f)
+                            color = accents.onBanner
                         )
 
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -255,45 +302,6 @@ fun HomeScreen(
                                 color = accents.onBanner,
                                 fontWeight = FontWeight.Bold
                             )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Nearest Exam Spotlight Banner (if an exam is upcoming)
-        nearestExamTask?.let { task ->
-            item {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = cs.surface,
-                    modifier = Modifier.fillMaxWidth().border(1.dp, cs.outlineVariant, RoundedCornerShape(16.dp))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(shape = CircleShape, color = cs.errorContainer, modifier = Modifier.size(32.dp)) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.Event, contentDescription = null, tint = cs.onErrorContainer, modifier = Modifier.size(16.dp))
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                "Nearest Exam: ${task.subject} · ${task.topic}",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = cs.onSurface
-                            )
-                            Text(
-                                "${daysRemainingLabel(task.examDay, todayEpoch)} (${dateLabel(task.examDay)}) · ${snapshot.remaining(task)} min left",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = cs.onSurfaceVariant
-                            )
-                        }
-                        TextButton(onClick = { onEdit(task.id) }) {
-                            Text("View", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -347,7 +355,7 @@ fun HomeScreen(
                     TextButton(onClick = onCalendar) {
                         Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Open Calendar ›", style = MaterialTheme.typography.labelSmall)
+                        Text("Calendar", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -370,22 +378,20 @@ fun HomeScreen(
                                 color = cs.onSurface
                             )
                             Text(
-                                text = if (todayCapacity > 0)
-                                    "You have $todayCapacity min available today. Open Recover Plan to generate and apply study sessions for your topics."
-                                else
-                                    "Configure your free-time windows in Calendar so recovery can schedule your study topics.",
+                                text = when {
+                                    snapshot.tasks.isEmpty() -> "Add your first study topic to start planning."
+                                    openTasks == 0 -> "Your current topics are complete. Add another topic when you’re ready."
+                                    todayCapacity == 0 -> "Add free time today or on another date before your exam."
+                                    else -> "Create a plan to fit your remaining topics into your free time."
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = cs.onSurfaceVariant
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
-                                if (todayCapacity == 0) {
-                                    Button(onClick = onCalendar, shape = RoundedCornerShape(12.dp)) {
-                                        Text("Set Free Windows")
-                                    }
-                                } else if (openTasks > 0) {
-                                    Button(onClick = onRecover, shape = RoundedCornerShape(12.dp)) {
-                                        Text("Preview Recovery Plan")
-                                    }
+                                when {
+                                    openTasks == 0 -> Button(onClick = onAdd) { Text("Add topic") }
+                                    todayCapacity == 0 -> Button(onClick = onCalendar) { Text("Add free time") }
+                                    else -> Button(onClick = onRecover) { Text("Create plan") }
                                 }
                             }
                         }
@@ -399,7 +405,7 @@ fun HomeScreen(
                             task = task,
                             session = session,
                             busy = busy,
-                            canRecord = session.startMinute < 0 || session.startMinute <= java.time.LocalTime.now().let { it.hour * 60 + it.minute },
+                            canRecord = !session.hasExactTimes || session.startMinute <= now,
                             onEdit = { onEdit(task.id) },
                             onProgress = { progressSession = session }
                         )
