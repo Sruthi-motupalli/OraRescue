@@ -35,7 +35,7 @@ fun CalendarScreen(
     onClearDayWindows: (Long) -> Unit,
     onCopyWindows: (Long, List<Long>) -> Unit,
     onProgress: (Long, Int) -> Unit,
-    onEditTopic: (Long) -> Unit,
+    onOpenTopic: (Long) -> Unit,
     onNavigateToRecovery: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
@@ -158,7 +158,7 @@ fun CalendarScreen(
             )
         }
         items(sessions, key = { "session-${it.id}" }) { session -> snapshot.tasks.find { it.id == session.taskId }?.let { task ->
-            SessionCard(task, session, busy, selected <= today && (!session.hasExactTimes || selected < today || session.startMinute <= now), { onEditTopic(task.id) }, { recording = session })
+            SessionCard(task, session, busy, selected <= today && (!session.hasExactTimes || selected < today || session.startMinute <= now), { onOpenTopic(task.id) }, { recording = session })
         } }
     }
     if (editor) WindowEditor(selected, editing, windows, busy, onDismiss = { editor = false }, onSave = { a, b ->

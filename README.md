@@ -28,7 +28,7 @@ To update an existing install and retain its data, build with the same signing k
 
 - Home: next session today, nearest exam, completed and planned time, outstanding work, daily goal, topic search and filters.
 - Calendar: select a date, add/edit multiple exact time windows, copy to dates, or set a day off. Overlaps are rejected.
-- Add Topic: subject, topic, future exam date, estimated minutes and priority, with edit/delete controls.
+- Study topics: Add Topic captures subject, topic, future exam date, estimated minutes and priority. On Android, tap a topic card to see its details, then choose Edit topic for edit/delete controls.
 - Recovery: preview exact study times before exams, see which topics could not fit, and go straight to Calendar to edit free time. Split work across windows or require one continuous window. Save or discard from the preview.
 - Profile: local name, avatar, daily goal and splitting preference. Light, Dark and System appearance apply immediately and are saved independently on Android and in the browser.
 

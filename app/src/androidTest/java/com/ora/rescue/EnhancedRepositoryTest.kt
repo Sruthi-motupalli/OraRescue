@@ -5,6 +5,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.time.LocalDate
+import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Rule
@@ -32,6 +33,42 @@ class EnhancedRepositoryTest {
             }
             query("SELECT minutes FROM availability").use { assertTrue(it.moveToFirst()); assertEquals(120, it.getInt(0)) }
             close()
+        }
+    }
+
+    @Test fun savedStudyDataSurvivesClosingAndReopeningRoom() = runBlocking {
+        val context = instrumentation.targetContext
+        val databaseName = "ora-reopen-${UUID.randomUUID()}.db"
+        fun openDatabase() = Room.databaseBuilder(context, StudyDatabase::class.java, databaseName).build()
+
+        try {
+            val firstDatabase = openDatabase()
+            val saved = try {
+                val repository = StudyRepository(firstDatabase)
+                repository.saveTask(
+                    StudyTask(subject = "OS", topic = "Scheduling", examDay = day + 3, totalMinutes = 90, priority = 3),
+                    date
+                )
+                repository.addTimeWindow(day, 900, 960, date)
+                repository.updateProfile("Test student", 90, preferredSplit = false, avatarIndex = 1)
+                val plan = Planner.build(repository.snapshot(), date, split = true, currentMinuteOfDay = 900)
+                repository.accept(plan, date, currentMinute = 900)
+                val session = repository.snapshot().sessions.single()
+                repository.recordProgress(session.id, 30, date, currentMinute = 930)
+                repository.snapshot()
+            } finally {
+                firstDatabase.close()
+            }
+            assertEquals(30, saved.completed(saved.tasks.single().id))
+
+            val reopenedDatabase = openDatabase()
+            try {
+                assertEquals(saved, StudyRepository(reopenedDatabase).snapshot())
+            } finally {
+                reopenedDatabase.close()
+            }
+        } finally {
+            context.deleteDatabase(databaseName)
         }
     }
 

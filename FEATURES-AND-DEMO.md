@@ -1,6 +1,6 @@
 # Features and demo
 
-Ora Rescue has five connected destinations: Home, Calendar, Add Topic, Recovery and Profile. Light uses icy lavender and violet accents. Dark uses navy and layered lavender surfaces. Android uses licensed Inter. The preview prefers the Apple system font where available and falls back to bundled Inter.
+Ora Rescue has five primary destinations: Home, Calendar, Add Topic, Recovery and Profile. Native topic cards open Topic Details, with a separate action to edit. Light uses icy lavender and violet accents. Dark uses navy and layered lavender surfaces. Android uses licensed Inter. The preview prefers the Apple system font where available and falls back to bundled Inter.
 
 | Feature | Show in the demonstration |
 | --- | --- |
@@ -9,6 +9,7 @@ Ora Rescue has five connected destinations: Home, Calendar, Add Topic, Recovery 
 | Recovery | Create a plan with splitting enabled; compare with one continuous window per topic. Explain the shortfall, then choose Edit free time. |
 | Safe acceptance | Discard the preview, recreate it and accept. Completed history is retained; stale plans are rejected. |
 | Progress | Record a completed, partial or missed session after its start. Planned minutes do not count as completed work. |
+| Topic details (Android) | Tap a course topic to see its exam date, priority, estimate and progress. Choose Edit topic to change it. |
 | Dashboard | Next session today, nearest exam, topic counts, daily goal, planned and completed minutes, remaining work, search and filters. |
 | Profile | Change local name/goal/preferences and reopen Home to show saved results. |
 | Appearance | Switch Light, Dark and System. Confirm the preference after reopening. |
@@ -33,7 +34,19 @@ The group’s *Educational App Ecosystem Review and Ora Rescue Proposal* describ
 | Progress tracking | Record zero, partial or full progress once the session starts. Logged minutes contribute to the daily goal. |
 | Recovery preview | Review exact allocations and shortfalls, adjust availability, then save or discard. |
 
-The Assignment 1 brief describes the proposal as the blueprint for Assignment 2. Verify submission requirements against the lecturer’s Assignment 2 brief. Capture real Android runtime evidence and document each member’s actual work and reflection.
+## Assignment 2 app requirements
+
+| Requirement | Evidence in Ora Rescue |
+| --- | --- |
+| 1. Layout and UI | Compose screens use Column, Row, Box, Material 3 cards and Modifier. Shared colors and Inter typography support light and dark appearance. Home brings the next session and nearest exam forward for the proposal’s college and university students managing several subjects and changing schedules. |
+| 2. State management | Local form and selection state use `remember`, `rememberSaveable` and `mutableStateOf`. `StudyViewModel` exposes `StateFlow` from Room-backed snapshots and publishes feedback events. |
+| 3. Scrollable educational content | Home → All Topics uses a `LazyColumn` of student-entered course topics. Cards show text, a book icon, a priority badge and a progress indicator. Tapping a card opens Topic Details. The proposal defines study topics as the educational content for this planner. |
+| 4. Navigation | `MainActivity.kt` wires the five primary destinations and Topic Details using `NavController` and `NavHost`. Topic Details and Add/Edit receive a typed topic ID and read the current shared ViewModel snapshot. |
+| 5. Input and validation | Text fields capture subjects, topics and minutes. Priority radio buttons, a date picker and other controls capture planning preferences. Blank topics, invalid dates or estimates, overlapping windows and invalid progress are rejected. Snackbars report saves, deletes and other outcomes. |
+| 6. Room persistence | `StudyTask` is the educational entity, `StudyDao` supplies CRUD, and `StudyDatabase` stores topics, availability, sessions and profile data. A disk-backed database reopen test checks those records. See `VERIFICATION.md` for execution status and the app relaunch checklist. |
+| 7. Educational alignment | Students add exam topics, plan within real free time, record progress and preview recovery for unfinished work. This addresses the proposal’s gap of rebuilding a study plan after missed sessions across several subjects. |
+
+Capture Android runtime evidence for the demo and document each member’s actual work and reflection.
 
 ## AI assistance and group ownership
 

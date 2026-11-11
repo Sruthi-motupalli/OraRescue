@@ -11,7 +11,7 @@ Open `preview/index.html` to explore the interface on your laptop. Install the s
 5. Discard once to show that a preview does not change the saved plan. Recreate and save it.
 6. Record progress only after a session starts. Zero means missed; partial work leaves the remainder for recovery. Future sessions show Upcoming.
 7. In Profile, change the daily goal, save, reopen Home and point out the next session, nearest exam, goal indicator and separate time totals. Reload/reopen to demonstrate storage.
-8. Use topic search and filters, then show edit and delete confirmation.
+8. Use topic search and filters. Tap a topic to show its read-only details, then choose Edit topic and demonstrate the delete confirmation.
 
 ## Main files
 

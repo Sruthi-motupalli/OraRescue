@@ -78,6 +78,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
         }
     }
 
+    val isTopicDetail = route == "topic/{id}"
     val isTopicForm = route == "task/{id}"
     val isAddingTopic = isTopicForm && backStack?.arguments?.getLong("id") == 0L
     val cs = MaterialTheme.colorScheme
@@ -88,15 +89,18 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
             TopAppBar(
                 title = {
                     Text(
-                        text = if (isTopicForm) {
-                            if (isAddingTopic) "Add topic" else "Edit topic"
-                        } else "ora rescue",
+                        text = when {
+                            isAddingTopic -> "Add topic"
+                            isTopicForm -> "Edit topic"
+                            isTopicDetail -> "Topic details"
+                            else -> "ora rescue"
+                        },
                         fontWeight = FontWeight.Bold,
                         color = cs.primary
                     )
                 },
                 navigationIcon = {
-                    if (isTopicForm) {
+                    if (isTopicForm || isTopicDetail) {
                         IconButton(
                             onClick = { nav.popBackStack() },
                             enabled = !busy,
@@ -221,7 +225,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 snapshot = state.snapshot,
                                 busy = busy,
                                 onAdd = { nav.navigate("task/0") { launchSingleTop = true } },
-                                onEdit = { nav.navigate("task/$it") },
+                                onOpenTopic = { nav.navigate("topic/$it") { launchSingleTop = true } },
                                 onRecover = { navigateTab("recover") },
                                 onCalendar = { navigateTab("calendar") },
                                 onProgress = vm::progress
@@ -237,8 +241,20 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 onClearDayWindows = vm::clearTimeWindows,
                                 onCopyWindows = vm::copyTimeWindows,
                                 onProgress = vm::progress,
-                                onEditTopic = { nav.navigate("task/$it") },
+                                onOpenTopic = { nav.navigate("topic/$it") { launchSingleTop = true } },
                                 onNavigateToRecovery = { navigateTab("recover") }
+                            )
+                        }
+                        composable(
+                            route = "topic/{id}",
+                            arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        ) { entry ->
+                            val id = entry.arguments?.getLong("id") ?: 0L
+                            TopicDetailScreen(
+                                id = id,
+                                snapshot = state.snapshot,
+                                onEdit = { nav.navigate("task/$id") { launchSingleTop = true } },
+                                onBack = { nav.popBackStack() }
                             )
                         }
                         composable(

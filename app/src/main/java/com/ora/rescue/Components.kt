@@ -483,7 +483,7 @@ fun SessionCard(
     session: StudySession,
     busy: Boolean,
     canRecord: Boolean,
-    onEdit: () -> Unit,
+    onOpenTopic: () -> Unit,
     onProgress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -516,7 +516,7 @@ fun SessionCard(
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.titleMedium,
                 color = cs.onBackground,
-                modifier = Modifier.clickable(onClick = onEdit)
+                modifier = Modifier.clickable(onClick = onOpenTopic)
             )
 
             FlowRow(
@@ -569,11 +569,11 @@ fun SessionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(
-                    onClick = onEdit,
+                    onClick = onOpenTopic,
                     enabled = !busy,
                     modifier = Modifier.defaultMinSize(minHeight = 44.dp)
                 ) {
-                    Text("View Topic")
+                    Text("View topic")
                 }
                 Spacer(Modifier.width(8.dp))
                 if (session.status == StudySession.PENDING) {
