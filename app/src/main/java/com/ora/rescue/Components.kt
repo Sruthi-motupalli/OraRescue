@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -63,9 +62,9 @@ fun Eyebrow(text: String, modifier: Modifier = Modifier) {
 fun PriorityBadge(priority: Int, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
     val (color, container) = when (priority) {
-        3 -> cs.primary to cs.primaryContainer
-        2 -> Color(0xFF8070B0) to cs.secondaryContainer
-        else -> cs.tertiary to cs.tertiaryContainer
+        3 -> cs.onPrimaryContainer to cs.primaryContainer
+        2 -> cs.onSecondaryContainer to cs.secondaryContainer
+        else -> cs.onTertiaryContainer to cs.tertiaryContainer
     }
     Surface(
         color = container,
@@ -186,6 +185,7 @@ fun DeskSummaryBanner(
     outstanding: Int,
     modifier: Modifier = Modifier
 ) {
+    val accents = LocalOraAccents.current
     val progress = if (capacity > 0) ((planned + worked).toFloat() / capacity).coerceIn(0f, 1f) else 0f
     val percentText = if (capacity > 0) "${((planned + worked) * 100) / capacity}% booked" else "No capacity set"
 
@@ -197,9 +197,7 @@ fun DeskSummaryBanner(
         Column(
             modifier = Modifier
                 .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF668BFF), Color(0xFFA47CF4))
-                    )
+                    accents.banner
                 )
                 .fillMaxWidth()
                 .padding(20.dp),
@@ -211,25 +209,25 @@ fun DeskSummaryBanner(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Spa, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Spa, contentDescription = null, tint = accents.onBanner, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "Today’s Goal · Keep Going!",
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
+                        color = accents.onBanner
                     )
                 }
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color.White.copy(alpha = 0.2f)
+                    color = accents.onBanner.copy(alpha = 0.2f)
                 ) {
                     Text(
                         text = percentText,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium,
-                        color = Color.White
+                        color = accents.onBanner
                     )
                 }
             }
@@ -239,7 +237,7 @@ fun DeskSummaryBanner(
                 style = MaterialTheme.typography.headlineMedium,
                 fontFamily = OraFontFamily,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = accents.onBanner
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -248,8 +246,8 @@ fun DeskSummaryBanner(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp),
-                    color = Color.White,
-                    trackColor = Color.White.copy(alpha = 0.7f)
+                    color = accents.onBanner,
+                    trackColor = accents.onBanner.copy(alpha = 0.7f)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -258,13 +256,13 @@ fun DeskSummaryBanner(
                     Text(
                         "$worked min completed",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                        color = accents.onBanner,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
                         "$capacity min daily capacity",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = accents.onBanner.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -279,13 +277,13 @@ fun DeskSummaryBanner(
                 Text(
                     "$openTasks open topics to study",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White
+                    color = accents.onBanner
                 )
                 Text(
                     "$outstanding min left overall",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    color = accents.onBanner
                 )
             }
         }
@@ -526,7 +524,7 @@ fun SessionCard(
                         Text(
                             "${session.completedMinutes} min completed",
                             Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = cs.tertiary,
+                            color = cs.onTertiaryContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -535,7 +533,7 @@ fun SessionCard(
                         Text(
                             "Missed · ready to recover",
                             Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = cs.error,
+                            color = cs.onErrorContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -544,7 +542,7 @@ fun SessionCard(
                         Text(
                             "Pending",
                             Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            color = cs.primary,
+                            color = cs.onPrimaryContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium
                         )

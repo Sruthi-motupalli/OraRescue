@@ -22,7 +22,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +41,7 @@ fun ProfileScreen(
     onNavigateToCalendar: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
+    val accents = LocalOraAccents.current
     val profile = snapshot.profile
     val today = LocalDate.now().toEpochDay()
     val todayDone = snapshot.sessions.filter { it.day == today }.sumOf { it.completedMinutes }
@@ -97,9 +97,7 @@ fun ProfileScreen(
                             .size(96.dp)
                             .clip(CircleShape)
                             .background(
-                                Brush.radialGradient(
-                                    listOf(Color(0xFFB5CEFF), Color(0xFFBCA5FF), Color(0xFF907AFF))
-                                )
+                                accents.avatar
                             )
                             .border(3.dp, cs.surface, CircleShape)
                             .clickable { showAvatarDialog = true },
@@ -146,7 +144,7 @@ fun ProfileScreen(
             ) {
                 StatTile(
                     symbol = "✓",
-                    symbolColor = Color(0xFF6B58E8),
+                    symbolColor = cs.onTertiaryContainer,
                     symbolBg = cs.primaryContainer,
                     value = "$doneTopics",
                     label = "Topics Done",
@@ -154,7 +152,7 @@ fun ProfileScreen(
                 )
                 StatTile(
                     symbol = "◷",
-                    symbolColor = Color(0xFF4C7BFE),
+                    symbolColor = cs.onSecondaryContainer,
                     symbolBg = cs.secondaryContainer,
                     value = "${totalDoneMinutes / 60} h ${totalDoneMinutes % 60} m",
                     label = "Focus Time",
@@ -181,9 +179,7 @@ fun ProfileScreen(
                 Box(
                     modifier = Modifier
                         .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF668BFF), Color(0xFF7C6AFF), Color(0xFFA47CF4))
-                            )
+                            accents.banner
                         )
                         .padding(18.dp)
                 ) {
@@ -194,12 +190,12 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Icon(Icons.Rounded.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                Text("Your Study Goal", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
+                                Icon(Icons.Rounded.Star, contentDescription = null, tint = accents.onBanner, modifier = Modifier.size(16.dp))
+                                Text("Your Study Goal", style = MaterialTheme.typography.labelMedium, color = accents.onBanner.copy(alpha = 0.9f))
                             }
                             TextButton(
                                 onClick = { showEditGoalDialog = true },
-                                colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+                                colors = ButtonDefaults.textButtonColors(contentColor = accents.onBanner)
                             ) {
                                 Text("Adjust Target ›", style = MaterialTheme.typography.labelSmall)
                             }
@@ -209,7 +205,7 @@ fun ProfileScreen(
                             text = "${profile.studyGoalMinutes} min daily target",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = accents.onBanner
                         )
 
                         Text(
@@ -220,7 +216,7 @@ fun ProfileScreen(
                             else
                                 "Small steps. Stronger habits.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.9f)
+                            color = accents.onBanner.copy(alpha = 0.9f)
                         )
 
                         LinearProgressIndicator(
@@ -229,8 +225,8 @@ fun ProfileScreen(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
-                            color = Color.White,
-                            trackColor = Color.White.copy(alpha = 0.3f)
+                            color = accents.onBanner,
+                            trackColor = accents.onBanner.copy(alpha = 0.3f)
                         )
                     }
                 }

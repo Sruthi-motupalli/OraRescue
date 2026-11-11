@@ -4,6 +4,7 @@ package com.ora.rescue
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,13 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -33,10 +34,18 @@ import androidx.navigation.navArgument
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             val vm: StudyViewModel = viewModel()
             val themePreference by vm.themePreference.collectAsStateWithLifecycle()
             OraRescueTheme(themePreference = themePreference) {
+                val dark = LocalOraAccents.current.dark
+                SideEffect {
+                    WindowCompat.getInsetsController(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = !dark
+                        isAppearanceLightNavigationBars = !dark
+                    }
+                }
                 OraApp(vm)
             }
         }
@@ -74,6 +83,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
 
     val isTopLevelDestination = route in listOf("home", "calendar", "recover", "profile")
     val cs = MaterialTheme.colorScheme
+    val accents = LocalOraAccents.current
 
     Scaffold(
         containerColor = cs.background,
@@ -163,15 +173,13 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(
-                                Brush.linearGradient(
-                                    listOf(Color(0xFF9879FF), Color(0xFF7365FF))
-                                )
+                                accents.banner
                             )
                     ) {
                         Icon(
                             Icons.Rounded.Add,
                             contentDescription = "Add study topic",
-                            tint = Color.White,
+                            tint = accents.onBanner,
                             modifier = Modifier.size(26.dp)
                         )
                     }

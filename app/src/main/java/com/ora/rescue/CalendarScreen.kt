@@ -1,7 +1,6 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.ora.rescue
 
-import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,9 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +39,8 @@ fun CalendarScreen(
     onEditTopic: (Long) -> Unit,
     onNavigateToRecovery: () -> Unit
 ) {
+    val cs = MaterialTheme.colorScheme
+    val accents = LocalOraAccents.current
     val today = LocalDate.now().toEpochDay()
     var selected by rememberSaveable { mutableLongStateOf(today) }
     // Store an ISO string: YearMonth itself cannot be saved in an Android Bundle.
@@ -61,16 +60,16 @@ fun CalendarScreen(
         item { Column {
             Eyebrow("YOUR STUDY SCHEDULE")
             Text("Calendar", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Choose when you have room to recover.", color = OraPlumMuted)
+            Text("Choose when you have room to recover.", color = cs.onSurfaceVariant)
         } }
-        item { Surface(shape = RoundedCornerShape(24.dp), color = Color.White.copy(alpha = .88f)) {
+        item { Surface(shape = RoundedCornerShape(24.dp), color = cs.surface) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     IconButton(onClick = { monthText = month.minusMonths(1).toString() }) { Icon(Icons.Rounded.ChevronLeft, "Previous month") }
                     Text(month.format(DateTimeFormatter.ofPattern("MMMM yyyy")), fontWeight = FontWeight.Bold)
                     IconButton(onClick = { monthText = month.plusMonths(1).toString() }) { Icon(Icons.Rounded.ChevronRight, "Next month") }
                 }
-                Row { listOf("M","T","W","T","F","S","S").forEach { label -> Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { Text(label, color = OraPlumMuted, style = MaterialTheme.typography.labelSmall) } } }
+                Row { listOf("M","T","W","T","F","S","S").forEach { label -> Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { Text(label, color = cs.onSurfaceVariant, style = MaterialTheme.typography.labelSmall) } } }
                 val offset = month.atDay(1).dayOfWeek.value - 1
                 repeat((offset + month.lengthOfMonth() + 6) / 7) { week -> Row {
                     repeat(7) { col ->
@@ -82,27 +81,27 @@ fun CalendarScreen(
                             val exam = snapshot.tasks.any { it.examDay == d }
                             val planned = snapshot.sessions.any { it.day == d }
                             Column(Modifier.weight(1f).height(48.dp)
-                                .background(if (d == selected) OraRose else if (d == today) OraRoseLight else Color.Transparent, CircleShape)
+                                .background(if (d == selected) cs.primary else if (d == today) cs.primaryContainer else Color.Transparent, CircleShape)
                                 .semantics { contentDescription = "${dateLabel(d)}${if (free) ", free time" else ""}${if (exam) ", exam" else ""}${if (planned) ", study sessions" else ""}" }
                                 .clickable { selected = d }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                Text("$num", color = if (d == selected) Color.White else OraPlumInk, style = MaterialTheme.typography.bodySmall)
+                                Text("$num", color = if (d == selected) cs.onPrimary else cs.onSurface, style = MaterialTheme.typography.bodySmall)
                                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    if (free) Box(Modifier.size(4.dp).background(if (d == selected) Color.White else Color(0xFF6B8AFF), CircleShape))
-                                    if (planned) Box(Modifier.size(4.dp).background(if (d == selected) Color.White else OraRose, CircleShape))
-                                    if (exam) Box(Modifier.size(4.dp).background(Color(0xFFE25C76), CircleShape))
+                                    if (free) Box(Modifier.size(4.dp).background(if (d == selected) cs.onPrimary else cs.tertiary, CircleShape))
+                                    if (planned) Box(Modifier.size(4.dp).background(if (d == selected) cs.onPrimary else cs.primary, CircleShape))
+                                    if (exam) Box(Modifier.size(4.dp).background(if (d == selected) cs.onPrimary else accents.warning, CircleShape))
                                 }
                             }
                         }
                     }
                 } }
-                Text("● Free time   ● Sessions   ● Exam dates", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                Text("● Free time   ● Sessions   ● Exam dates", color = cs.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                 TextButton(onClick = { selected = today; monthText = YearMonth.now().toString() }, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Jump to Today") }
             }
         } }
         item { Surface(shape = RoundedCornerShape(22.dp), color = Color.Transparent) {
-            Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF668BFF), Color(0xFF9E78FA)))).padding(20.dp)) {
-                Text(dateLabel(selected), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text("${snapshot.dayCapacity(selected)} min configured · ${windows.size} free windows", color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodySmall)
+            Column(Modifier.fillMaxWidth().background(accents.banner).padding(20.dp)) {
+                Text(dateLabel(selected), color = accents.onBanner, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text("${snapshot.dayCapacity(selected)} min configured · ${windows.size} free windows", color = accents.onBanner, style = MaterialTheme.typography.bodySmall)
             }
         } }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -111,17 +110,17 @@ fun CalendarScreen(
         } }
         if (windows.isEmpty()) item { NoteCard("${if (past) "Archived date" else "Make room for your studies"}", if (snapshot.dayCapacity(selected) > 0) "${snapshot.dayCapacity(selected)} legacy minutes have no clock times. Add windows to replace that total with exact hours." else "No free windows on this date. Add one, or keep this as a day off.") }
         items(windows, key = { "window-${it.id}" }) { w ->
-            Surface(shape = RoundedCornerShape(18.dp), color = Color.White) {
+            Surface(shape = RoundedCornerShape(18.dp), color = cs.surface) {
                 Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Schedule, null, tint = OraRose)
+                    Icon(Icons.Rounded.Schedule, null, tint = cs.primary)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(w.timeRangeString, fontWeight = FontWeight.SemiBold)
-                        Text(if (selected == today && w.endMinute <= now) "Elapsed · excluded from recovery" else "${w.durationMinutes} min available", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                        Text(if (selected == today && w.endMinute <= now) "Elapsed · excluded from recovery" else "${w.durationMinutes} min available", color = cs.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                     }
                     if (!past) {
-                        IconButton(onClick = { editing = w; editor = true }, enabled = !busy) { Icon(Icons.Rounded.Edit, "Edit ${w.timeRangeString}", tint = OraRose) }
-                        IconButton(onClick = { onDeleteTimeWindow(w.id) }, enabled = !busy) { Icon(Icons.Rounded.Close, "Remove ${w.timeRangeString}", tint = OraPlumMuted) }
+                        IconButton(onClick = { editing = w; editor = true }, enabled = !busy) { Icon(Icons.Rounded.Edit, "Edit ${w.timeRangeString}", tint = cs.primary) }
+                        IconButton(onClick = { onDeleteTimeWindow(w.id) }, enabled = !busy) { Icon(Icons.Rounded.Close, "Remove ${w.timeRangeString}", tint = cs.onSurfaceVariant) }
                     }
                 }
             }
@@ -139,9 +138,9 @@ fun CalendarScreen(
             Button(onClick = onNavigateToRecovery, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Preview my recovery plan") }
         } }
         val exams = snapshot.tasks.filter { it.examDay == selected }
-        if (exams.isNotEmpty()) item { NoteCard("Exam deadlines", exams.joinToString("\n") { "${it.subject} · ${it.topic}" }, containerColor = OraAmberLight) }
+        if (exams.isNotEmpty()) item { NoteCard("Exam deadlines", exams.joinToString("\n") { "${it.subject} · ${it.topic}" }, containerColor = accents.warningContainer) }
         item { Text("Day’s agenda", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-        if (sessions.isEmpty()) item { Text("No saved sessions for this date. Set your free time and accept a recovery preview to fill your agenda.", color = OraPlumMuted) }
+        if (sessions.isEmpty()) item { Text("No saved sessions for this date. Set your free time and accept a recovery preview to fill your agenda.", color = cs.onSurfaceVariant) }
         items(sessions, key = { "session-${it.id}" }) { session -> snapshot.tasks.find { it.id == session.taskId }?.let { task ->
             SessionCard(task, session, busy, selected <= today && (!session.hasExactTimes || selected < today || session.startMinute <= now), { onEditTopic(task.id) }, { recording = session })
         } }
@@ -166,20 +165,62 @@ fun CalendarScreen(
 
 @Composable
 private fun WindowEditor(day: Long, editing: TimeWindow?, windows: List<TimeWindow>, busy: Boolean, onDismiss: () -> Unit, onSave: (Int, Int) -> Unit) {
-    val context = LocalContext.current
-    var start by remember { mutableIntStateOf(editing?.startMinute ?: 960) }
-    var end by remember { mutableIntStateOf(editing?.endMinute ?: 1020) }
-    var error by remember { mutableStateOf<String?>(null) }
-    fun choose(value: Int, set: (Int) -> Unit) { TimePickerDialog(context, { _, hour, minute -> set(hour * 60 + minute) }, (value / 60) % 24, value % 60, true).show() }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(if (editing == null) "Add free-time window" else "Edit free-time window") }, text = { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("When are you free on ${dateLabel(day)}?", color = OraPlumMuted)
-        OutlinedButton(onClick = { choose(start) { start = it } }, modifier = Modifier.fillMaxWidth()) { Text("Start · ${TimeWindow.formatMinuteOfDay(start)}") }
-        OutlinedButton(onClick = { choose(end) { end = it } }, modifier = Modifier.fillMaxWidth()) { Text("End · ${TimeWindow.formatMinuteOfDay(end)}") }
-        TextButton(onClick = { end = 1440 }) { Text("End at midnight (24:00)") }
-        Text("${(end - start).coerceAtLeast(0)} minutes · same-day window", style = MaterialTheme.typography.bodySmall)
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-    } }, confirmButton = { Button(onClick = {
-        error = TimeWindowValidator.validateWindow(day, start, end, windows, ignoreId = editing?.id ?: 0)
-        if (error == null) onSave(start, end)
-    }, enabled = !busy) { Text("Save window") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+    val cs = MaterialTheme.colorScheme
+    var start by rememberSaveable { mutableIntStateOf(editing?.startMinute ?: 960) }
+    var end by rememberSaveable { mutableIntStateOf(editing?.endMinute ?: 1020) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    var pickingStart by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    if (pickingStart != null) {
+        val isStart = pickingStart == true
+        val value = if (isStart) start else end
+        val picker = rememberTimePickerState(
+            initialHour = (value / 60) % 24,
+            initialMinute = value % 60,
+            is24Hour = true
+        )
+        AlertDialog(
+            onDismissRequest = { pickingStart = null },
+            title = { Text(if (isStart) "Start time" else "End time") },
+            text = { TimeInput(state = picker) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val minute = picker.hour * 60 + picker.minute
+                    if (isStart) start = minute else end = minute
+                    error = null
+                    pickingStart = null
+                }) { Text("Set time") }
+            },
+            dismissButton = { TextButton(onClick = { pickingStart = null }) { Text("Cancel") } }
+        )
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (editing == null) "Add free time" else "Edit free time") },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(dateLabel(day), color = cs.onSurfaceVariant)
+                OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Start · ${TimeWindow.formatMinuteOfDay(start)}")
+                }
+                OutlinedButton(onClick = { pickingStart = false }, modifier = Modifier.fillMaxWidth()) {
+                    Text("End · ${TimeWindow.formatMinuteOfDay(end)}")
+                }
+                TextButton(onClick = { end = 1440; error = null }) { Text("End at midnight (24:00)") }
+                Text("${(end - start).coerceAtLeast(0)} min", style = MaterialTheme.typography.bodySmall)
+                error?.let { Text(it, color = cs.error, style = MaterialTheme.typography.bodySmall) }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                error = TimeWindowValidator.validateWindow(day, start, end, windows, ignoreId = editing?.id ?: 0)
+                if (error == null) onSave(start, end)
+            }, enabled = !busy) { Text("Save window") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }

@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
@@ -29,6 +28,8 @@ fun RecoveryScreen(
     onAccept: () -> Unit,
     onAvailability: () -> Unit
 ) {
+    val cs = MaterialTheme.colorScheme
+    val accents = LocalOraAccents.current
     var split by rememberSaveable(snapshot.profile.preferredSplit) { mutableStateOf(snapshot.profile.preferredSplit) }
     val today = LocalDate.now().toEpochDay()
     val isCurrent = preview?.revision == snapshot.revision &&
@@ -50,12 +51,12 @@ fun RecoveryScreen(
                     fontFamily = OraFontFamily,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = OraPlumInk
+                    color = cs.onSurface
                 )
                 Text(
                     text = "Let’s make room to catch up.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = OraPlumMuted
+                    color = cs.onSurfaceVariant
                 )
             }
         }
@@ -63,7 +64,7 @@ fun RecoveryScreen(
         item {
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = OraRoseLight.copy(alpha = 0.6f),
+                color = cs.primaryContainer.copy(alpha = 0.6f),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -75,7 +76,7 @@ fun RecoveryScreen(
                             text = "Split longer topics",
                             fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleSmall,
-                            color = OraPlumInk
+                            color = cs.onSurface
                         )
                         Text(
                             text = if (split)
@@ -83,7 +84,7 @@ fun RecoveryScreen(
                             else
                                 "Require each topic to fit in ONE continuous free window.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = OraPlumMuted
+                            color = cs.onSurfaceVariant
                         )
                     }
                     Switch(
@@ -92,11 +93,7 @@ fun RecoveryScreen(
                             split = it
                             onCancel()
                         },
-                        enabled = !busy,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = OraRose
-                        )
+                        enabled = !busy
                     )
                 }
             }
@@ -144,8 +141,8 @@ fun RecoveryScreen(
                     title = "Nothing waiting",
                     text = "All your study topics are completed, or you haven't added one yet. Visit your study desk to add a topic.",
                     icon = Icons.Rounded.Celebration,
-                    containerColor = OraSageLight.copy(alpha = 0.7f),
-                    titleColor = OraSage
+                    containerColor = cs.tertiaryContainer.copy(alpha = 0.7f),
+                    titleColor = cs.onTertiaryContainer
                 )
             }
         }
@@ -156,7 +153,7 @@ fun RecoveryScreen(
                     title = "A preview you control",
                     text = "Review proposed study sessions, exact time slots, and any capacity shortfall before accepting. Your existing saved plan stays untouched until you accept.",
                     icon = Icons.Rounded.Info,
-                    containerColor = OraCreamVariant
+                    containerColor = cs.surfaceVariant
                 )
             }
         }
@@ -168,7 +165,7 @@ fun RecoveryScreen(
             item {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = if (totalShortfall > 0) OraAmberLight else OraSageLight,
+                    color = if (totalShortfall > 0) accents.warningContainer else cs.tertiaryContainer,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -179,7 +176,7 @@ fun RecoveryScreen(
                             Icon(
                                 if (totalShortfall > 0) Icons.Rounded.WarningAmber else Icons.Rounded.CheckCircle,
                                 contentDescription = null,
-                                tint = if (totalShortfall > 0) OraAmber else OraSage,
+                                tint = if (totalShortfall > 0) accents.warning else cs.onTertiaryContainer,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(Modifier.width(8.dp))
@@ -187,7 +184,7 @@ fun RecoveryScreen(
                                 text = "$totalPlaced min scheduled",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = if (totalShortfall > 0) OraAmber else OraSage
+                                color = if (totalShortfall > 0) accents.warning else cs.onTertiaryContainer
                             )
                         }
                         Text(
@@ -196,12 +193,12 @@ fun RecoveryScreen(
                             else
                                 "All outstanding study work successfully scheduled into your free-time windows before upcoming exams!",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = OraPlumInk
+                            color = cs.onSurface
                         )
                         Text(
                             text = "Daily capacity accounts for work already completed today. Completed work history is fully preserved.",
                             style = MaterialTheme.typography.labelSmall,
-                            color = OraPlumMuted
+                            color = cs.onSurfaceVariant
                         )
                     }
                 }
@@ -214,7 +211,7 @@ fun RecoveryScreen(
                         "Work that cannot fit (${plan.unplaced.size})",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleSmall,
-                        color = OraAmber
+                        color = accents.warning
                     )
                 }
 
@@ -223,9 +220,9 @@ fun RecoveryScreen(
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.outlinedCardColors(containerColor = Color.White),
+                        colors = CardDefaults.outlinedCardColors(containerColor = cs.surface),
                         border = CardDefaults.outlinedCardBorder(enabled = true).let {
-                            androidx.compose.foundation.BorderStroke(1.dp, OraAmber.copy(alpha = 0.5f))
+                            androidx.compose.foundation.BorderStroke(1.dp, accents.warning.copy(alpha = 0.5f))
                         }
                     ) {
                         Column(
@@ -240,17 +237,17 @@ fun RecoveryScreen(
                                     text = "${task?.subject ?: "Subject"} · ${task?.topic ?: "Topic"}",
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = OraPlumInk,
+                                    color = cs.onSurface,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Surface(
-                                    color = OraAmberLight,
+                                    color = accents.warningContainer,
                                     shape = RoundedCornerShape(6.dp)
                                 ) {
                                     Text(
                                         "${work.minutes} min unallocated",
                                         Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        color = OraAmber,
+                                        color = accents.warning,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -259,13 +256,13 @@ fun RecoveryScreen(
                             Text(
                                 text = work.reason,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = OraPlumMuted
+                                color = cs.onSurfaceVariant
                             )
                             if (!split && work.reason.contains("whole remaining task")) {
                                 Text(
                                     "Tip: Enable 'Split longer topics' above to allow this topic to divide across multiple free windows.",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = OraRose,
+                                    color = cs.primary,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -282,7 +279,7 @@ fun RecoveryScreen(
                         "Your Revised Schedule",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleSmall,
-                        color = OraPlumInk,
+                        color = cs.onSurface,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -296,7 +293,7 @@ fun RecoveryScreen(
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+                        colors = CardDefaults.outlinedCardColors(containerColor = cs.surface)
                     ) {
                         Column(
                             modifier = Modifier.padding(18.dp),
@@ -311,7 +308,7 @@ fun RecoveryScreen(
                                     Icon(
                                         Icons.Rounded.CalendarToday,
                                         contentDescription = null,
-                                        tint = OraRose,
+                                        tint = cs.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(Modifier.width(8.dp))
@@ -319,19 +316,19 @@ fun RecoveryScreen(
                                         text = dateLabel(day),
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = OraPlumInk
+                                        color = cs.onSurface
                                     )
                                 }
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = OraRoseLight
+                                    color = cs.primaryContainer
                                 ) {
                                     Text(
                                         text = "$proposedMins min",
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = OraRose
+                                        color = cs.onPrimaryContainer
                                     )
                                 }
                             }
@@ -339,7 +336,7 @@ fun RecoveryScreen(
                             Text(
                                 text = "$proposedMins min proposed + $done min completed / $available min daily capacity",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = OraPlumMuted
+                                color = cs.onSurfaceVariant
                             )
 
                             LinearProgressIndicator(
@@ -347,13 +344,13 @@ fun RecoveryScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp),
-                                color = OraRose,
-                                trackColor = OraCreamVariant
+                                color = cs.primary,
+                                trackColor = cs.surfaceVariant
                             )
 
                             sessions.forEach { session ->
                                 val task = snapshot.tasks.find { it.id == session.taskId }
-                                HorizontalDivider(color = OraBorderLight)
+                                HorizontalDivider(color = cs.outlineVariant)
 
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Row(
@@ -364,7 +361,7 @@ fun RecoveryScreen(
                                             text = "${task?.subject} · ${task?.topic}",
                                             fontWeight = FontWeight.SemiBold,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = OraPlumInk,
+                                            color = cs.onSurface,
                                             modifier = Modifier.weight(1f)
                                         )
                                         task?.priority?.let { PriorityBadge(it) }
@@ -380,7 +377,7 @@ fun RecoveryScreen(
                                             else
                                                 "${session.minutes} min · exam ${task?.examDay?.let(::dateLabel)}",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = OraPlumMuted
+                                            color = cs.onSurfaceVariant
                                         )
 
                                         val oldDates = snapshot.sessions
@@ -392,7 +389,7 @@ fun RecoveryScreen(
                                             text = if (oldDates.isEmpty()) "Previously unscheduled → ${dateLabel(day)}"
                                             else "${oldDates.joinToString()} → ${dateLabel(day)}",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = OraRose,
+                                            color = cs.primary,
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
@@ -435,7 +432,7 @@ fun RecoveryScreen(
                     Text(
                         text = "Accepting saves your new schedule. If your topics, availability, or the date change, generate a fresh preview before accepting.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = OraPlumMuted,
+                        color = cs.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }

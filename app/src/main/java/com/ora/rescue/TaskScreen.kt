@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -31,6 +30,7 @@ fun TaskScreen(
     onDelete: (Long) -> Unit,
     onBack: () -> Unit
 ) {
+    val cs = MaterialTheme.colorScheme
     val existing = snapshot.tasks.find { it.id == id }
     if (id != 0L && existing == null) {
         Column(
@@ -81,12 +81,12 @@ fun TaskScreen(
                     style = MaterialTheme.typography.headlineMedium,
                     fontFamily = OraFontFamily,
                     fontWeight = FontWeight.Bold,
-                    color = OraPlumInk
+                    color = cs.onSurface
                 )
                 Text(
                     text = "Estimate the work honestly. You can adjust it as you learn.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = OraPlumMuted
+                    color = cs.onSurfaceVariant
                 )
             }
         }
@@ -98,7 +98,7 @@ fun TaskScreen(
                 label = { Text("Subject") },
                 placeholder = { Text("e.g. Operating Systems, Calculus, Marketing") },
                 leadingIcon = {
-                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = OraRose)
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = cs.primary)
                 },
                 singleLine = true,
                 isError = submitted && !validSubject,
@@ -121,7 +121,7 @@ fun TaskScreen(
                 label = { Text("Topic name") },
                 placeholder = { Text("e.g. CPU Scheduling & Deadlock Prevention") },
                 leadingIcon = {
-                    Icon(Icons.Rounded.EditNote, contentDescription = null, tint = OraRose)
+                    Icon(Icons.Rounded.EditNote, contentDescription = null, tint = cs.primary)
                 },
                 minLines = 2,
                 isError = submitted && !validTopic,
@@ -143,7 +143,7 @@ fun TaskScreen(
                     "Exam deadline",
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = OraPlumInk
+                    color = cs.onSurface
                 )
                 OutlinedButton(
                     onClick = { showDatePicker = true },
@@ -170,7 +170,7 @@ fun TaskScreen(
                     Text(
                         "Ora only schedules recovery sessions before this date.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = OraPlumMuted,
+                        color = cs.onSurfaceVariant,
                         modifier = Modifier.padding(start = 12.dp)
                     )
                 }
@@ -184,7 +184,7 @@ fun TaskScreen(
                     onValueChange = { if (it.length <= 6) minutes = it },
                     label = { Text("Total estimated study minutes") },
                     leadingIcon = {
-                        Icon(Icons.Rounded.Timer, contentDescription = null, tint = OraRose)
+                        Icon(Icons.Rounded.Timer, contentDescription = null, tint = cs.primary)
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
@@ -228,8 +228,8 @@ fun TaskScreen(
                     title = "Your effort stays with you",
                     text = "$completed minutes are already completed for this topic. Total study time cannot be reduced below the work already done.",
                     icon = Icons.Rounded.Verified,
-                    containerColor = OraSageLight.copy(alpha = 0.8f),
-                    titleColor = OraSage
+                    containerColor = cs.tertiaryContainer.copy(alpha = 0.8f),
+                    titleColor = cs.onTertiaryContainer
                 )
             }
         }
@@ -240,12 +240,12 @@ fun TaskScreen(
                     "Priority level",
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = OraPlumInk
+                    color = cs.onSurface
                 )
                 Text(
                     "Higher priority topics are scheduled first when available study time is limited.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = OraPlumMuted
+                    color = cs.onSurfaceVariant
                 )
 
                 Row(
@@ -259,10 +259,10 @@ fun TaskScreen(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.outlinedCardColors(
-                                containerColor = if (isSelected) OraRoseLight else Color.White
+                                containerColor = if (isSelected) cs.primaryContainer else cs.surface
                             ),
                             border = CardDefaults.outlinedCardBorder(enabled = true).let { border ->
-                                if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, OraRose) else border
+                                if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, cs.primary) else border
                             }
                         ) {
                             Column(
@@ -275,13 +275,13 @@ fun TaskScreen(
                                 RadioButton(
                                     selected = isSelected,
                                     onClick = { priority = level },
-                                    colors = RadioButtonDefaults.colors(selectedColor = OraRose)
+                                    colors = RadioButtonDefaults.colors(selectedColor = cs.primary)
                                 )
                                 Text(
                                     text = priorityLabel(level),
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = if (isSelected) OraRose else OraPlumInk
+                                    color = if (isSelected) cs.onPrimaryContainer else cs.onSurface
                                 )
                             }
                         }
@@ -323,7 +323,7 @@ fun TaskScreen(
                 Text(
                     "Saving a topic clears future pending allocations. Preview your recovery plan afterwards to update your schedule.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = OraPlumMuted,
+                    color = cs.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }

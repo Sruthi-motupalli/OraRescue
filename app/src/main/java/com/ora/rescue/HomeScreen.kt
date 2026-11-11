@@ -22,7 +22,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +38,8 @@ fun HomeScreen(
     onCalendar: () -> Unit,
     onProgress: (Long, Int) -> Unit
 ) {
+    val cs = MaterialTheme.colorScheme
+    val accents = LocalOraAccents.current
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilter by rememberSaveable { mutableStateOf("All") } // "All", "In Progress", "Completed", or a subject name
     var tab by rememberSaveable { mutableIntStateOf(0) } // 0: Today's Plan, 1: All Topics
@@ -102,12 +103,12 @@ fun HomeScreen(
                         fontFamily = OraFontFamily,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = OraPlumInk
+                        color = cs.onSurface
                     )
                     Text(
                         text = "Make today productive and achieve your goals.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = OraPlumMuted
+                        color = cs.onSurfaceVariant
                     )
                 }
 
@@ -116,9 +117,7 @@ fun HomeScreen(
                         .size(48.dp)
                         .clip(CircleShape)
                         .background(
-                            Brush.radialGradient(
-                                listOf(Color(0xFFB5CEFF), Color(0xFF907AFF))
-                            )
+                            accents.avatar
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -138,49 +137,49 @@ fun HomeScreen(
             ) {
                 Surface(
                     modifier = Modifier.weight(1f),
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = cs.surface,
                     shape = RoundedCornerShape(18.dp)
                 ) {
                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Surface(shape = CircleShape, color = Color(0xFFECE7FF), modifier = Modifier.size(28.dp)) {
+                        Surface(shape = CircleShape, color = cs.tertiaryContainer, modifier = Modifier.size(28.dp)) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("✓", color = Color(0xFF6B58E8), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                Text("✓", color = cs.onTertiaryContainer, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                             }
                         }
-                        Text("$doneTopics", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OraPlumInk)
-                        Text("Topics Done", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                        Text("$doneTopics", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = cs.onSurface)
+                        Text("Topics Done", color = cs.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                     }
                 }
 
                 Surface(
                     modifier = Modifier.weight(1f),
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = cs.surface,
                     shape = RoundedCornerShape(18.dp)
                 ) {
                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Surface(shape = CircleShape, color = Color(0xFFE5EEFF), modifier = Modifier.size(28.dp)) {
+                        Surface(shape = CircleShape, color = cs.secondaryContainer, modifier = Modifier.size(28.dp)) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("◷", color = Color(0xFF4C7BFE), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                Text("◷", color = cs.onSecondaryContainer, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                             }
                         }
-                        Text("${totalDoneMinutes / 60} h ${totalDoneMinutes % 60} m", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OraPlumInk)
-                        Text("Focus Time", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                        Text("${totalDoneMinutes / 60} h ${totalDoneMinutes % 60} m", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = cs.onSurface)
+                        Text("Focus Time", color = cs.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                     }
                 }
 
                 Surface(
                     modifier = Modifier.weight(1f),
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = cs.surface,
                     shape = RoundedCornerShape(18.dp)
                 ) {
                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Surface(shape = CircleShape, color = Color(0xFFFFE8ED), modifier = Modifier.size(28.dp)) {
+                        Surface(shape = CircleShape, color = cs.primaryContainer, modifier = Modifier.size(28.dp)) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("ϟ", color = Color(0xFFE2617C), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                Text("ϟ", color = cs.onPrimaryContainer, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                             }
                         }
-                        Text("$openTasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OraPlumInk)
-                        Text("Open Topics", color = OraPlumMuted, style = MaterialTheme.typography.labelSmall)
+                        Text("$openTasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = cs.onSurface)
+                        Text("Open Topics", color = cs.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -200,9 +199,7 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF668BFF), Color(0xFF7C6AFF), Color(0xFFA47CF4))
-                            )
+                            accents.banner
                         )
                         .padding(18.dp)
                 ) {
@@ -212,15 +209,15 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("◉ Today's Goal", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.9f))
+                            Text("◉ Today's Goal", style = MaterialTheme.typography.labelSmall, color = accents.onBanner.copy(alpha = 0.9f))
                             IconButton(
                                 onClick = onRecover,
                                 modifier = Modifier
                                     .size(30.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White)
+                                    .background(cs.surface)
                             ) {
-                                Icon(Icons.Rounded.AutoAwesome, contentDescription = "Open Recovery", tint = OraRose, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Rounded.AutoAwesome, contentDescription = "Open Recovery", tint = cs.primary, modifier = Modifier.size(16.dp))
                             }
                         }
 
@@ -230,7 +227,7 @@ fun HomeScreen(
                             else "Keep Going!",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = accents.onBanner
                         )
 
                         Text(
@@ -239,7 +236,7 @@ fun HomeScreen(
                             else
                                 "No free time set today. Open Calendar to set study windows.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.9f)
+                            color = accents.onBanner.copy(alpha = 0.9f)
                         )
 
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -249,13 +246,13 @@ fun HomeScreen(
                                     .weight(1f)
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp)),
-                                color = Color.White,
-                                trackColor = Color.White.copy(alpha = 0.3f)
+                                color = accents.onBanner,
+                                trackColor = accents.onBanner.copy(alpha = 0.3f)
                             )
                             Text(
                                 "$goalPercent%",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                                color = accents.onBanner,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -269,17 +266,17 @@ fun HomeScreen(
             item {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.White.copy(alpha = 0.85f),
-                    modifier = Modifier.fillMaxWidth().border(1.dp, OraBorderLight, RoundedCornerShape(16.dp))
+                    color = cs.surface,
+                    modifier = Modifier.fillMaxWidth().border(1.dp, cs.outlineVariant, RoundedCornerShape(16.dp))
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Surface(shape = CircleShape, color = Color(0xFFFFECEF), modifier = Modifier.size(32.dp)) {
+                        Surface(shape = CircleShape, color = cs.errorContainer, modifier = Modifier.size(32.dp)) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.Event, contentDescription = null, tint = Color(0xFFD83B5E), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Rounded.Event, contentDescription = null, tint = cs.onErrorContainer, modifier = Modifier.size(16.dp))
                             }
                         }
                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -287,12 +284,12 @@ fun HomeScreen(
                                 "Nearest Exam: ${task.subject} · ${task.topic}",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = OraPlumInk
+                                color = cs.onSurface
                             )
                             Text(
                                 "${daysRemainingLabel(task.examDay, todayEpoch)} (${dateLabel(task.examDay)}) · ${snapshot.remaining(task)} min left",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = OraPlumMuted
+                                color = cs.onSurfaceVariant
                             )
                         }
                         TextButton(onClick = { onEdit(task.id) }) {
@@ -308,7 +305,7 @@ fun HomeScreen(
             TabRow(
                 selectedTabIndex = tab,
                 containerColor = Color.Transparent,
-                divider = { HorizontalDivider(color = OraBorderLight) }
+                divider = { HorizontalDivider(color = cs.outlineVariant) }
             ) {
                 Tab(
                     selected = tab == 0,
@@ -345,7 +342,7 @@ fun HomeScreen(
                         text = "Today's Study Sessions",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = OraPlumInk
+                        color = cs.onSurface
                     )
                     TextButton(onClick = onCalendar) {
                         Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(14.dp))
@@ -360,7 +357,7 @@ fun HomeScreen(
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.outlinedCardColors(containerColor = Color.White.copy(alpha = 0.85f))
+                        colors = CardDefaults.outlinedCardColors(containerColor = cs.surface)
                     ) {
                         Column(
                             modifier = Modifier.padding(18.dp),
@@ -370,7 +367,7 @@ fun HomeScreen(
                                 text = "No sessions scheduled for today",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = OraPlumInk
+                                color = cs.onSurface
                             )
                             Text(
                                 text = if (todayCapacity > 0)
@@ -378,7 +375,7 @@ fun HomeScreen(
                                 else
                                     "Configure your free-time windows in Calendar so recovery can schedule your study topics.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = OraPlumMuted
+                                color = cs.onSurfaceVariant
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
                                 if (todayCapacity == 0) {
@@ -419,7 +416,7 @@ fun HomeScreen(
                         onValueChange = { searchQuery = it },
                         placeholder = { Text("Search by topic or subject...") },
                         leadingIcon = {
-                            Icon(Icons.Rounded.Search, contentDescription = null, tint = OraRose)
+                            Icon(Icons.Rounded.Search, contentDescription = null, tint = cs.primary)
                         },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
@@ -458,7 +455,7 @@ fun HomeScreen(
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.outlinedCardColors(containerColor = Color.White.copy(alpha = 0.85f))
+                        colors = CardDefaults.outlinedCardColors(containerColor = cs.surface)
                     ) {
                         Column(
                             modifier = Modifier.padding(20.dp),
@@ -469,13 +466,13 @@ fun HomeScreen(
                                 text = if (searchQuery.isNotBlank() || selectedFilter != "All") "No matching study topics found" else "No study topics added yet",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = OraPlumInk
+                                color = cs.onSurface
                             )
                             Text(
                                 text = if (searchQuery.isNotBlank()) "Try a different search term or reset the filter."
                                 else "Add your first study topic to start planning your exam preparation.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = OraPlumMuted
+                                color = cs.onSurfaceVariant
                             )
                             if (searchQuery.isBlank() && selectedFilter == "All") {
                                 Button(onClick = onAdd, shape = RoundedCornerShape(12.dp)) {

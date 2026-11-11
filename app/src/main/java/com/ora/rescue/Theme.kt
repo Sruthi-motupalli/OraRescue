@@ -8,6 +8,9 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -19,105 +22,100 @@ import androidx.compose.ui.unit.sp
 /** User-selectable appearance preference stored in SharedPreferences. */
 enum class ThemePreference { LIGHT, DARK, SYSTEM }
 
-// ─── Light Palette ────────────────────────────────────────────────────────────
-val OraRose            = Color(0xFF7763FF)   // Primary brand indigo/violet
-val OraRoseDark        = Color(0xFF40316D)   // Deep plum for strong emphasis
-val OraRoseLight       = Color(0xFFEAE5FF)   // Soft lavender container
-val OraPlumInk         = Color(0xFF22233F)   // High-contrast primary text
-val OraPlumMuted       = Color(0xFF7A7591)   // Secondary text
-val OraCreamPaper      = Color(0xFFF2F0FF)   // Icy lavender background
-val OraCreamSurface    = Color(0xFFFFFFFF)   // Crisp card surface
-val OraCreamVariant    = Color(0xFFEDE9FD)   // Soft tinted surface
-val OraSage            = Color(0xFF6154BD)   // Completion / steady progress
-val OraSageLight       = Color(0xFFE8E4FF)   // Light sage container
-val OraBorder          = Color(0xFFD0CAEC)   // Soft outline border
-val OraBorderLight     = Color(0xFFE4DFF5)   // Subtle divider
-val OraAmber           = Color(0xFF8D5716)   // Amber for unallocated work
-val OraAmberLight      = Color(0xFFFDF1E2)   // Light amber background
-
-// ─── Dark Palette ─────────────────────────────────────────────────────────────
-val OraDarkBackground       = Color(0xFF0F0E1D)   // Deep navy/charcoal
-val OraDarkSurface          = Color(0xFF18172E)   // Slightly lighter surface layer
-val OraDarkSurfaceVariant   = Color(0xFF211F3A)   // Card/elevated surface
-val OraDarkPrimary          = Color(0xFF9D8FFF)   // Brighter violet for dark bg
-val OraDarkOnPrimary        = Color(0xFF1A1234)
-val OraDarkPrimaryContainer = Color(0xFF302770)
-val OraDarkOnPrimaryContainer = Color(0xFFC5B8FF)
-val OraDarkOnBackground     = Color(0xFFE8E6F4)   // Near-white primary text
-val OraDarkOnSurface        = Color(0xFFE8E6F4)
-val OraDarkOnSurfaceVariant = Color(0xFFB0ACCC)   // Readable muted label
-val OraDarkOutline          = Color(0xFF4A4570)
-val OraDarkOutlineVariant   = Color(0xFF302D55)
-val OraDarkSecondary        = Color(0xFF8E7FD4)
-val OraDarkSageGreen        = Color(0xFF7DC48A)   // Softer success green for dark
-val OraDarkSageContainer    = Color(0xFF152D1E)
-val OraDarkAmber            = Color(0xFFFFB86C)   // Amber for dark mode
-val OraDarkAmberContainer   = Color(0xFF2A1800)
-val OraDarkError            = Color(0xFFFF6B7A)
-
-/**
- * Inter is bundled under the OFL license (preview/OFL.txt).
- * The browser font stack is: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, 'Segoe UI', sans-serif
- * — which uses Apple's SF system font where available; Inter is the licensed fallback for Windows/Android.
- * SF Pro font files are NOT redistributed here.
- */
 val OraFontFamily = FontFamily(Font(R.font.inter))
 
-// ─── Color Schemes ────────────────────────────────────────────────────────────
-
-private val OraLightColorScheme = lightColorScheme(
-    primary = OraRose,
+private val LightColors = lightColorScheme(
+    primary = Color(0xFF5546C6),
     onPrimary = Color.White,
-    primaryContainer = OraRoseLight,
-    onPrimaryContainer = OraRoseDark,
-    secondary = Color(0xFF7060A8),
+    primaryContainer = Color(0xFFEAE5FF),
+    onPrimaryContainer = Color(0xFF382A85),
+    secondary = Color(0xFF3D56A3),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE6DEFF),
-    onSecondaryContainer = Color(0xFF30264D),
-    tertiary = OraSage,
+    secondaryContainer = Color(0xFFE3EBFF),
+    onSecondaryContainer = Color(0xFF253D81),
+    tertiary = Color(0xFF226747),
     onTertiary = Color.White,
-    tertiaryContainer = OraSageLight,
-    onTertiaryContainer = Color(0xFF2E2453),
-    background = OraCreamPaper,
-    onBackground = OraPlumInk,
-    surface = OraCreamPaper,
-    onSurface = OraPlumInk,
-    surfaceVariant = OraCreamVariant,
-    onSurfaceVariant = OraPlumMuted,
-    outline = OraBorder,
-    outlineVariant = OraBorderLight,
-    error = Color(0xFFBA1A1A),
+    tertiaryContainer = Color(0xFFE3F5EA),
+    onTertiaryContainer = Color(0xFF164E35),
+    background = Color(0xFFF2F0FF),
+    onBackground = Color(0xFF22233F),
+    surface = Color(0xFFFCFAFF),
+    onSurface = Color(0xFF22233F),
+    surfaceVariant = Color(0xFFEDE9FA),
+    onSurfaceVariant = Color(0xFF5F5775),
+    surfaceContainer = Color(0xFFF0EBFF),
+    surfaceContainerHigh = Color(0xFFEAE4FA),
+    outline = Color(0xFF817895),
+    outlineVariant = Color(0xFFD8D0EB),
+    inverseSurface = Color(0xFF2F2B43),
+    inverseOnSurface = Color(0xFFF4EFFD),
+    inversePrimary = Color(0xFFC9BFFF),
+    error = Color(0xFFAA2847),
     onError = Color.White,
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002)
+    errorContainer = Color(0xFFFFE5EC),
+    onErrorContainer = Color(0xFF831F39)
 )
 
-private val OraDarkColorScheme = darkColorScheme(
-    primary = OraDarkPrimary,
-    onPrimary = OraDarkOnPrimary,
-    primaryContainer = OraDarkPrimaryContainer,
-    onPrimaryContainer = OraDarkOnPrimaryContainer,
-    secondary = OraDarkSecondary,
-    onSecondary = Color(0xFF1A1234),
-    secondaryContainer = Color(0xFF2D2650),
-    onSecondaryContainer = Color(0xFFCFC3FF),
-    tertiary = OraDarkSageGreen,
-    onTertiary = Color(0xFF0A1F12),
-    tertiaryContainer = OraDarkSageContainer,
-    onTertiaryContainer = Color(0xFFB0E8BE),
-    background = OraDarkBackground,
-    onBackground = OraDarkOnBackground,
-    surface = OraDarkSurface,
-    onSurface = OraDarkOnSurface,
-    surfaceVariant = OraDarkSurfaceVariant,
-    onSurfaceVariant = OraDarkOnSurfaceVariant,
-    outline = OraDarkOutline,
-    outlineVariant = OraDarkOutlineVariant,
-    error = OraDarkError,
-    onError = Color(0xFF2D000A),
-    errorContainer = Color(0xFF5C1120),
-    onErrorContainer = Color(0xFFFFB3BC)
+private val DarkColors = darkColorScheme(
+    primary = Color(0xFFC4B7FF),
+    onPrimary = Color(0xFF211650),
+    primaryContainer = Color(0xFF38306B),
+    onPrimaryContainer = Color(0xFFE6DDFF),
+    secondary = Color(0xFFB1C5FF),
+    onSecondary = Color(0xFF13285A),
+    secondaryContainer = Color(0xFF28365C),
+    onSecondaryContainer = Color(0xFFDCE5FF),
+    tertiary = Color(0xFF9EDDBB),
+    onTertiary = Color(0xFF0C3323),
+    tertiaryContainer = Color(0xFF203C32),
+    onTertiaryContainer = Color(0xFFB9F0CF),
+    background = Color(0xFF10101F),
+    onBackground = Color(0xFFF0EDF9),
+    surface = Color(0xFF1B1930),
+    onSurface = Color(0xFFF0EDF9),
+    surfaceVariant = Color(0xFF26223E),
+    onSurfaceVariant = Color(0xFFC8BFDA),
+    surfaceContainer = Color(0xFF211D37),
+    surfaceContainerHigh = Color(0xFF2B2644),
+    outline = Color(0xFF9A90AD),
+    outlineVariant = Color(0xFF49415E),
+    inverseSurface = Color(0xFFEBE5F8),
+    inverseOnSurface = Color(0xFF2A253D),
+    inversePrimary = Color(0xFF5144BA),
+    error = Color(0xFFFFADC1),
+    onError = Color(0xFF570C29),
+    errorContainer = Color(0xFF542539),
+    onErrorContainer = Color(0xFFFFD9E3)
 )
+
+internal data class OraAccentColors(
+    val banner: Brush,
+    val onBanner: Color,
+    val avatar: Brush,
+    val warning: Color,
+    val warningContainer: Color,
+    val dark: Boolean
+)
+
+private val LightAccents = OraAccentColors(
+    banner = Brush.linearGradient(listOf(Color(0xFF4157BD), Color(0xFF6C43BA))),
+    onBanner = Color.White,
+    avatar = Brush.linearGradient(listOf(Color(0xFFC8DCFF), Color(0xFFC8B0FF))),
+    warning = Color(0xFF874D14),
+    warningContainer = Color(0xFFFFEFDC),
+    dark = false
+)
+
+private val DarkAccents = OraAccentColors(
+    banner = Brush.linearGradient(listOf(Color(0xFF292E62), Color(0xFF492F70))),
+    onBanner = Color(0xFFF3EDFF),
+    avatar = Brush.linearGradient(listOf(Color(0xFF304675), Color(0xFF563A7D))),
+    warning = Color(0xFFFFC484),
+    warningContainer = Color(0xFF442D21),
+    dark = true
+)
+
+internal val LocalOraAccents = staticCompositionLocalOf { LightAccents }
 
 // ─── Shapes ───────────────────────────────────────────────────────────────────
 
@@ -162,6 +160,8 @@ private fun buildOraTypography(): Typography {
     )
 }
 
+private val OraTypography = buildOraTypography()
+
 // ─── Theme Composable ─────────────────────────────────────────────────────────
 
 @Composable
@@ -174,10 +174,12 @@ fun OraRescueTheme(
         ThemePreference.LIGHT  -> false
         ThemePreference.SYSTEM -> isSystemInDarkTheme()
     }
-    MaterialTheme(
-        typography = buildOraTypography(),
-        colorScheme = if (useDark) OraDarkColorScheme else OraLightColorScheme,
-        shapes = OraShapes,
-        content = content
-    )
+    CompositionLocalProvider(LocalOraAccents provides if (useDark) DarkAccents else LightAccents) {
+        MaterialTheme(
+            typography = OraTypography,
+            colorScheme = if (useDark) DarkColors else LightColors,
+            shapes = OraShapes,
+            content = content
+        )
+    }
 }
