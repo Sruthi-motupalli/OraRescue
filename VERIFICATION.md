@@ -1,19 +1,20 @@
 # Verification — 11 November 2026
 
+Current feature-branch source, based on `32007a5`. Build environment used JDK 21, the checked-in Gradle 8.12 wrapper and Android SDK 35.
+
 ## Passed
 
-- Android JVM unit tests: **32**, zero failures/errors (21 PlannerTest, 7 ExactWindowTest, 4 StudySnapshotTest). Reports in `app/build/test-results/testDebugUnitTest` on the development machine; generated build folders are excluded from the ZIP.
-- `:app:assembleDebug` built the Enhanced APK after the typography update.
-- `:app:assembleDebugAndroidTest` compiled and packaged the device tests, including migration and repository checks.
-- Browser planning checks: **7 groups** in `preview/planner.test.cjs` cover splitting, continuous windows, completed interval reservation, elapsed time, exam cutoff, chronological output and progress gating.
-- SQLite structural migration check: applying the v1→v2 SQL produced matching structures for all six tables and preserved completed minutes with legacy exact-time defaults of -1. This does not replace a Room runtime migration test.
-- Browser UI checked: date selection, window saving, overlap rejection, recovery generation/acceptance, search, profile goal save/reload, and blocked future-session progress. Laptop preview frame now keeps bottom navigation visible while content scrolls.
-- Source ZIP integrity, required files and byte-for-byte archive contents checked during packaging. No build/cache folders or machine-specific SDK configuration included.
+| Check | Result |
+| --- | --- |
+| `./gradlew :app:testDebugUnitTest` | 32 JVM tests passed (21 PlannerTest, 7 ExactWindowTest, 4 StudySnapshotTest). |
+| `./gradlew :app:assembleDebug` | Debug APK built. |
+| `./gradlew :app:assembleDebugAndroidTest` | Android instrumentation tests compiled and packaged, including Room migration and repository tests. |
+| `node preview/planner.test.cjs` | Seven existing planner rule groups passed. The new date-rollover regression also passed. |
+| `node preview/appearance.test.cjs` | Immediate appearance changes, reload persistence, System updates, invalid-preference fallback and separation from saved study data passed. |
+| Chromium UI walkthrough | All five destinations at 320×520 in Light and Dark. Checked topic form and validation, search and filters, free-time overlap errors, copy validation, confirmation and About dialogs, recovery shortfall, save/discard, progress gating and recording, and profile/theme persistence after reload. Also checked live System switching and bottom navigation at 1024×768. |
 
-## Not run / limitations
+Generated build outputs and test reports are excluded from the source archive. The browser walkthrough uses independent browser data. Room entities and the v1→v2 migration are unchanged from the base commit.
 
-No Android device/emulator runtime or instrumentation execution was performed. Device persistence, real Android screenshots, small-device/large-font behavior and a complete accessibility audit still need device testing. A final lint run was not performed for this revision; earlier lint results do not verify these changes. Browser UI checks use browser-only data, not Room. Generated design mockups are not runtime screenshots. No claim of full test coverage is made.
+## Still to verify
 
-## GitHub source update — 11 November 2026
-
-Re-ran all 32 JVM tests after the initial theme changes: zero failures. Browser rule checks: seven groups passed. Android Kotlin compilation passed. Debug APK packaging succeeded after preserving the locked prior output and rebuilding. The initial theme preferences/palettes are saved in this source snapshot, but dark-mode conversion and browser theme controls remain unfinished. No device runtime or new lint verification was performed.
+No phone or emulator was connected, so Android runtime appearance, process restart, Room migration and instrumentation execution remain unverified. Test the native app in Light, Dark and System on a small screen and with enlarged fonts, including the keyboard and time/date dialogs. A full accessibility audit, Android lint and cross-browser testing were outside this verification run.
