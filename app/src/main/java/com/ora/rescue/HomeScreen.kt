@@ -42,7 +42,7 @@ fun HomeScreen(
     val accents = LocalOraAccents.current
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilter by rememberSaveable { mutableStateOf("All") } // "All", "In Progress", "Completed", or a subject name
-    var tab by rememberSaveable { mutableIntStateOf(0) } // 0: Today's Plan, 1: All Topics
+    var tab by rememberSaveable { mutableIntStateOf(0) } // 0: My Study Plan, 1: All Topics
     var progressSession by remember { mutableStateOf<StudySession?>(null) }
 
     val clock by rememberStudyClock()
@@ -52,6 +52,9 @@ fun HomeScreen(
     // Real stats
     val now = clock.hour * 60 + clock.minute
     val todaySessions = snapshot.sessions.filter { it.day == todayEpoch }.sortedBy { it.startMinute }
+    val planSessions = snapshot.sessions
+        .filter { it.status == StudySession.PENDING || it.day == todayEpoch }
+        .sortedWith(compareBy<StudySession> { it.status != StudySession.PENDING }.thenBy { it.day }.thenBy { it.startMinute })
     val nextSession = todaySessions.firstOrNull {
         it.status == StudySession.PENDING && it.hasExactTimes && it.endMinute > now
     }
@@ -310,7 +313,7 @@ fun HomeScreen(
             }
         }
 
-        // Section Tabs: Today's Plan vs All Topics
+        // Todoist-style persistent plan queue vs educational topic library.
         item {
             TabRow(
                 selectedTabIndex = tab,
@@ -322,8 +325,8 @@ fun HomeScreen(
                     onClick = { tab = 0 },
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Rounded.Today, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Text("Today's Plan (${todaySessions.size})")
+                            Icon(Icons.Rounded.Checklist, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Text("My Plan (${planSessions.count { it.status == StudySession.PENDING }})")
                         }
                     }
                 )
@@ -341,7 +344,7 @@ fun HomeScreen(
         }
 
         if (tab == 0) {
-            // TAB 0: TODAY'S PLAN
+            // TAB 0: PERSISTENT PLAN QUEUE (overdue, today and upcoming)
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -349,7 +352,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Today's Study Sessions",
+                        text = "My Study Plan",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = cs.onSurface
@@ -362,7 +365,7 @@ fun HomeScreen(
                 }
             }
 
-            if (todaySessions.isEmpty()) {
+            if (planSessions.isEmpty()) {
                 item {
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -374,7 +377,7 @@ fun HomeScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "No sessions scheduled for today",
+                                text = "Your study plan is clear",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = cs.onSurface
@@ -400,14 +403,19 @@ fun HomeScreen(
                     }
                 }
             } else {
-                items(todaySessions, key = { "today-session-${it.id}" }) { session ->
+                items(planSessions, key = { "plan-session-${it.id}" }) { session ->
                     val task = snapshot.tasks.find { it.id == session.taskId }
                     if (task != null) {
                         SessionCard(
                             task = task,
                             session = session,
                             busy = busy,
-                            canRecord = !session.hasExactTimes || session.startMinute <= now,
+                            scheduleLabel = when {
+                                session.day < todayEpoch -> "Overdue · ${dateLabel(session.day)}"
+                                session.day == todayEpoch -> "Today"
+                                else -> dateLabel(session.day)
+                            },
+                            canRecord = session.day < todayEpoch || session.day == todayEpoch && (!session.hasExactTimes || session.startMinute <= now),
                             onOpenTopic = { onOpenTopic(task.id) },
                             onProgress = { progressSession = session }
                         )
