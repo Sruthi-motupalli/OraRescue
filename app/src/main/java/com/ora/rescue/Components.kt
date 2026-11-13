@@ -482,8 +482,9 @@ fun SessionCard(
     task: StudyTask,
     session: StudySession,
     busy: Boolean,
+    scheduleLabel: String? = null,
     canRecord: Boolean,
-    onOpenTopic: () -> Unit,
+    onEdit: () -> Unit,
     onProgress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -516,7 +517,7 @@ fun SessionCard(
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.titleMedium,
                 color = cs.onBackground,
-                modifier = Modifier.clickable(onClick = onOpenTopic)
+                modifier = Modifier.clickable(onClick = onEdit)
             )
 
             FlowRow(
@@ -524,6 +525,14 @@ fun SessionCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                scheduleLabel?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (session.status == StudySession.PENDING) cs.primary else cs.onSurfaceVariant
+                    )
+                }
                 Text(
                     text = if (session.hasExactTimes)
                         "${session.timeRangeString} (${session.allocatedMinutes} min)"
@@ -569,11 +578,11 @@ fun SessionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(
-                    onClick = onOpenTopic,
+                    onClick = onEdit,
                     enabled = !busy,
                     modifier = Modifier.defaultMinSize(minHeight = 44.dp)
                 ) {
-                    Text("View topic")
+                    Text("View Topic")
                 }
                 Spacer(Modifier.width(8.dp))
                 if (session.status == StudySession.PENDING) {
@@ -584,7 +593,7 @@ fun SessionCard(
                     ) {
                         Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Record progress")
+                        Text("Finish session")
                     }
                 }
             }
