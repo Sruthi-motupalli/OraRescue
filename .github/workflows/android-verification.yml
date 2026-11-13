@@ -23,6 +23,7 @@ jobs:
           ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
           node preview/planner.test.cjs
           node preview/appearance.test.cjs
+          node preview/quiz.test.cjs
       - uses: actions/upload-artifact@v4
         with:
           name: ora-rescue-debug-apk

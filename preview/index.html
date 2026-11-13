@@ -19,7 +19,7 @@
   --paper: #f2f0ff;
   --surface: #fcfaff;
   --field: #fcfaff;
-  --card: var(--card);
+  --card: rgba(252,250,255,.94);
   --brand: #5546c6;
   --on-brand: #fff;
   --brand-dark: #382a85;
@@ -259,6 +259,17 @@ button.quiet:hover{color:var(--ink);background:var(--brand-light)}
 button.danger{background:var(--error-bg);color:var(--error);border:1px solid var(--error)}
 button.small{font-size:12px;min-height:34px;padding:0 12px;border-radius:10px}
 button.full{width:100%}
+.link-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;background:var(--brand);color:var(--on-brand);font:600 14px/1 var(--ff);text-decoration:none}
+.link-btn.secondary{background:var(--field);color:var(--brand);border:1px solid var(--control-line)}
+.quiz-option{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--control-line);padding:12px 14px;height:auto;line-height:1.35}
+.quiz-option.selected{background:var(--brand-light);border-color:var(--brand);color:var(--brand-dark)}
+.quiz-option.correct{background:var(--sage-bg);border-color:var(--sage);color:var(--sage);animation:quiz-pop .24s ease-out}
+.quiz-option.wrong{background:var(--error-bg);border-color:var(--error);color:var(--error);animation:quiz-shake .24s linear}
+.quiz-letter{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--surface);flex:0 0 auto}
+.quiz-stars{font-size:38px;letter-spacing:4px;color:var(--brand);text-align:center;animation:quiz-pop .35s ease-out}
+@keyframes quiz-pop{0%{transform:scale(.92)}70%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes quiz-shake{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 
 /* ── Dialogs ── */
 dialog{
@@ -351,7 +362,7 @@ applyAppearance();
   <aside class="sidebar">
     <span class="eyebrow">Ora Rescue · Browser Preview</span>
     <h1>Your study time, reclaimed.</h1>
-    <p>Add exam topics, set your free time and preview a recovery plan.</p>
+    <p>Add exam topics, set free time, import course material and play chapter mastery quizzes.</p>
     <div class="sidebar-note">
       This is a browser simulation. Data lives in <code>localStorage</code>, separate from the Android Room database. Font: Apple SF system font on macOS/iOS; Inter (OFL-licensed, bundled) on other platforms.
     </div>
@@ -492,7 +503,8 @@ function mkSamples() {
       {id:1,taskId:1,day:today(),start:960, end:1080,minutes:120,done:0,recorded:false},
       {id:2,taskId:2,day:today(),start:1170,end:1260,minutes:90, done:0,recorded:false},
     ],
-    profile: {name:'Shruthi',goal:120,split:true,avatar:'👩🏻‍💻'}
+    profile: {name:'Shruthi',goal:120,split:true,avatar:'👩🏻‍💻',quizMuted:false},
+    courses: [], chapters: [], questions: [], attempts: []
   };
 }
 
@@ -514,19 +526,34 @@ function loadPreviewData() {
 try { S = loadPreviewData(); } catch { S = mkSamples(); }
 if (!S.profile) S.profile = {name:'Student',goal:120,split:true,avatar:'👩🏻‍💻'};
 if (!S.windows)  S.windows = [];
+if (!S.courses) S.courses = [];
+if (!S.chapters) S.chapters = [];
+if (!S.questions) S.questions = [];
+if (!S.attempts) S.attempts = [];
+if (S.profile.quizMuted == null) S.profile.quizMuted = false;
 
 function save() { localStorage.setItem(STORE, JSON.stringify(S)); }
 function resetData() { S = mkSamples(); splitMode = S.profile.split; save(); calDay = today(); calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); go('home'); toast('Sample data restored'); }
 
 /* ── Navigation ── */
-let page = 'home', editId = null, calDay = today();
+let page = 'home', editId = null, calDay = today(), quizState = null;
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let searchQ = '', subjectF = '', preview = null, splitMode = S.profile.split;
 
 function go(p, id=null) {
-  page = p; editId = id;
-  if (p !== 'recover') preview = null;
-  render(); $('#screen').scrollTop = 0;
+  const next = id == null ? p : `${p}/${id}`;
+  if (location.hash.slice(1) === next) routeFromHash();
+  else location.hash = next;
+}
+
+function routeFromHash() {
+  const [nextPage='home', rawId] = location.hash.slice(1).split('/');
+  page = ['home','calendar','add','recover','profile','courses','quiz'].includes(nextPage) ? nextPage : 'home';
+  editId = rawId == null ? null : Number(rawId);
+  if (page !== 'recover') preview = null;
+  if (page === 'quiz' && (!quizState || quizState.chapterId !== editId)) startQuiz(editId, false);
+  render();
+  $('#screen').scrollTop = 0;
 }
 
 function render() {
@@ -538,7 +565,8 @@ function render() {
   });
   $('#screen').innerHTML = {
     home: renderHome, calendar: renderCalendar, add: renderAdd,
-    recover: renderRecover, profile: renderProfile
+    recover: renderRecover, profile: renderProfile, courses: renderCourses,
+    quiz: renderQuiz
   }[page]?.() ?? renderHome();
   if (page === 'add') bindAddForm();
 }
@@ -586,6 +614,16 @@ function renderHome() {
         <h2>Hello, ${esc(p.name)}</h2>
       </div>
       <button class="quiet" style="font-size:38px" onclick="go('profile')" aria-label="Open profile">${esc(p.avatar||'👩🏻‍💻')}</button>
+    </div>
+
+    <div class="card brand" style="padding:13px 14px">
+      <div class="row-between">
+        <div>
+          <div class="section-label">📚 Course Library</div>
+          <div class="tiny">Upload material, plan chapters and play mastery quizzes.</div>
+        </div>
+        <a class="link-btn secondary small" href="#courses">Open</a>
+      </div>
     </div>
 
     ${nextTopic?`
@@ -1103,6 +1141,155 @@ function renderRecover() {
   </div>`;
 }
 
+/* ── Course library and mastery quiz ── */
+const ML_CHAPTERS = [
+  'Machine Learning Foundations','Types of Machine Learning','Python for Machine Learning','ML Pipeline',
+  'Data Preprocessing','Feature Engineering','Linear Regression','Classification','Evaluation Metrics','Artificial Neural Networks'
+];
+
+function chapterSeeds(title) {
+  const bank = {
+    'Machine Learning Foundations': [
+      ['What best describes machine learning?',['Typing rules for every case','Learning patterns from data','Only storing data','Drawing charts'],1,'Machine learning uses data to learn patterns that support predictions or decisions.'],
+      ['Why evaluate a model on unseen data?',['To increase file size','To test generalisation','To remove every feature','To avoid training'],1,'Unseen data shows whether the model generalises beyond its training examples.']
+    ],
+    'Types of Machine Learning': [
+      ['Predicting churn from labelled examples is…',['Supervised classification','Unsupervised clustering','Reinforcement learning','Data cleaning'],0,'The outcome is labelled and the prediction is a category.'],
+      ['Grouping customers without labels is…',['Regression','Clustering','Classification','Backpropagation'],1,'Clustering discovers groups without known labels.']
+    ],
+    'Python for Machine Learning': [
+      ['Which Python structure stores an ordered, changeable collection?',['List','Float','Boolean','Comment'],0,'A Python list stores ordered values and can be changed.'],
+      ['Which loop visits each item in a list?',['for','switch','until','select'],0,'A for loop iterates through items in a sequence.']
+    ],
+    'ML Pipeline': [
+      ['What should happen before model evaluation?',['Train the model','Publish the answer','Delete the target','Rename the laptop'],0,'A model is trained before its performance is evaluated.'],
+      ['Why separate training and test data?',['Prevent misleading evaluation','Make the file colourful','Create duplicate targets','Remove all features'],0,'Testing on separate data gives a fairer estimate of generalisation.']
+    ],
+    'Data Preprocessing': [
+      ['One-hot encoding is mainly used for…',['Categorical variables','Deleting duplicates','Video compression','Splitting dates'],0,'One-hot encoding represents categories with indicator columns.'],
+      ['Why fit a scaler only on training data?',['Prevent data leakage','Create more labels','Remove the target','Reduce brightness'],0,'Using test information during preprocessing leaks knowledge into training.']
+    ],
+    'Feature Engineering': [
+      ['Feature engineering means…',['Creating useful model inputs','Deleting every column','Choosing a font','Only collecting labels'],0,'Feature engineering transforms raw information into useful predictors.'],
+      ['A useful engineered feature should be…',['Relevant to the prediction','A secret password','Always text','Copied from the target'],0,'Features should provide relevant information without leaking the answer.']
+    ],
+    'Linear Regression': [
+      ['In advertising spend → sales, the dependent variable is…',['Advertising spend','Sales','Row number','Company name'],1,'Sales is the outcome being predicted.'],
+      ['Which target suits regression?',['Loan default yes/no','Monthly sales amount','Spam/not spam','Disease class'],1,'Monthly sales is a continuous numeric outcome.']
+    ],
+    'Classification': [
+      ['Which problem is classification?',['Predicting temperature','Predicting spam or not spam','Estimating price','Forecasting revenue'],1,'Classification predicts a discrete class.'],
+      ['A false positive means…',['Predicted positive, actually negative','Predicted negative, actually positive','Correct positive','Correct negative'],0,'A false positive is a positive prediction for a negative case.']
+    ],
+    'Evaluation Metrics': [
+      ['When missing a disease case is costly, prioritise…',['Recall','File size','Precision only','Training rows'],0,'Recall measures how many actual positives were found.'],
+      ['The F1-score balances…',['Precision and recall','Rows and columns','Training and storage','Bias and filename'],0,'F1 is the harmonic mean of precision and recall.']
+    ],
+    'Artificial Neural Networks': [
+      ['What does an artificial neuron calculate first?',['A weighted sum plus bias','A confusion matrix','A file path','A database migration'],0,'A neuron combines inputs with weights and bias before activation.'],
+      ['Which is an activation function?',['ReLU','CSV','SQL','Room'],0,'ReLU is a commonly used nonlinear activation function.']
+    ]
+  };
+  return (bank[title]||[]).map(([prompt,options,answer,explanation])=>({prompt,options,answer,explanation,source:'Course material'}));
+}
+
+function nextId(list) { return Math.max(0,...list.map(x=>Number(x.id)||0))+1; }
+
+function importCourseName(fileName) {
+  const clean = String(fileName||'').trim();
+  if (!clean) { toast('Choose a course file first.'); return; }
+  const isML = /machine|learning|prg4206/i.test(clean);
+  if (S.courses.some(c=>c.name.toLowerCase()===clean.toLowerCase())) { toast('This course is already in your library.'); return; }
+  const courseId=nextId(S.courses), courseName=clean.replace(/\.[^.]+$/,'')||'Imported course';
+  const titles=isML?ML_CHAPTERS:[courseName];
+  S.courses.push({id:courseId,name:courseName,fileName:clean,importedAt:Date.now(),template:isML?'Machine Learning':'Manual'});
+  titles.forEach((title,order)=>{
+    const chapterId=nextId(S.chapters);
+    S.chapters.push({id:chapterId,courseId,title,order});
+    S.tasks.push({id:nextId(S.tasks),subject:courseName,topic:title,minutes:60,exam:plusDays(today(),30),priority:2,chapterId});
+    chapterSeeds(title).forEach(seed=>S.questions.push({id:nextId(S.questions),chapterId,...seed}));
+  });
+  save(); render(); toast(isML?'10 Machine Learning chapters and quizzes added.':'Course added as one chapter. Add reviewed questions in the Android app.');
+}
+
+function importCourseFile(input) {
+  const file=input.files&&input.files[0];
+  if (file) importCourseName(file.name);
+  input.value='';
+}
+
+function deleteCourse(id) {
+  const chapters=S.chapters.filter(c=>c.courseId===id), chapterIds=new Set(chapters.map(c=>c.id));
+  const taskIds=new Set(S.tasks.filter(t=>chapterIds.has(t.chapterId)).map(t=>t.id));
+  if (S.sessions.some(s=>taskIds.has(s.taskId)&&s.recorded)) { toast('Completed study history protects this course from deletion.'); return; }
+  confirmAction('Delete this course?','Chapter topics, pending sessions and quiz attempts will be removed.','Delete',()=>{
+    S.sessions=S.sessions.filter(s=>!taskIds.has(s.taskId)); S.tasks=S.tasks.filter(t=>!taskIds.has(t.id));
+    S.questions=S.questions.filter(q=>!chapterIds.has(q.chapterId)); S.attempts=S.attempts.filter(a=>!chapterIds.has(a.chapterId));
+    S.chapters=S.chapters.filter(c=>c.courseId!==id); S.courses=S.courses.filter(c=>c.id!==id); save();render();toast('Course deleted.');
+  });
+}
+
+function bestAttempt(chapterId) {
+  return S.attempts.filter(a=>a.chapterId===chapterId).sort((a,b)=>(b.score/b.total)-(a.score/a.total)||b.at-a.at)[0];
+}
+function quizStars(score,total) { const r=total?score/total:0; return r>=.9?3:r>=.7?2:r>=.5?1:0; }
+function masteryLabel(score,total) { return ['Review this chapter','Keep practising','Strong','Mastered'][quizStars(score,total)]; }
+
+function renderCourses() {
+  return `<div>
+    <div class="row-between"><div><div class="eyebrow">Course library</div><h2>Material → mastery</h2></div><a class="link-btn secondary small" href="#home">Home</a></div>
+    <p class="small" style="margin-bottom:14px">Upload the supplied Machine Learning ZIP to create chapter topics and playable quizzes. Files stay on your device; this browser stores only the file name and study structure.</p>
+    <label class="link-btn full" style="cursor:pointer;margin-bottom:8px">Upload course material<input type="file" accept=".zip,.pdf,.docx,.pptx,.txt" hidden onchange="importCourseFile(this)"></label>
+    <button class="secondary full" onclick="importCourseName('MACHINE-LEARNING.zip')">Load Machine Learning demo course</button>
+    <div class="card brand" style="margin-top:12px"><div class="section-label">Hybrid and transparent</div><p class="small">Reviewed course-material questions work offline. Student-authored questions are supported in Android. Cloud AI remains disconnected until a secure provider and consent flow exist.</p></div>
+    ${S.courses.length?'':`<div class="card empty-state"><div class="ei">📚</div><h3>No course material yet</h3><p>Choose a file or load the demonstration course.</p></div>`}
+    ${S.courses.map(course=>{
+      const chapters=S.chapters.filter(c=>c.courseId===course.id).sort((a,b)=>a.order-b.order);
+      return `<div class="card"><div class="row-between"><div><h3>${esc(course.name)}</h3><div class="tiny">${chapters.length} chapters · ${esc(course.template)}</div></div><button class="danger small" onclick="deleteCourse(${course.id})">Delete</button></div>
+        <div style="margin-top:10px">${chapters.map(ch=>{const qs=S.questions.filter(q=>q.chapterId===ch.id),a=bestAttempt(ch.id);return `<div class="win-row"><div style="min-width:0"><div class="section-label">${esc(ch.title)}</div><div class="tiny">${qs.length} questions${a?` · ${masteryLabel(a.score,a.total)} ${'★'.repeat(quizStars(a.score,a.total))}`:''}</div></div><a class="link-btn secondary small" href="#quiz/${ch.id}" ${qs.length?'':'aria-disabled="true" style="pointer-events:none;opacity:.45"'}>Play</a></div>`}).join('')}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function startQuiz(chapterId, navigate=true) {
+  const questions=S.questions.filter(q=>q.chapterId===Number(chapterId)).sort(()=>Math.random()-.5).slice(0,5);
+  quizState={chapterId:Number(chapterId),questions,index:0,score:0,combo:0,hearts:3,selected:-1,checked:false,finished:false};
+  if (navigate) go('quiz',chapterId);
+}
+function selectQuizAnswer(i){if(!quizState?.checked){quizState.selected=i;render()}}
+function quizTone(ok){if(S.profile.quizMuted)return;try{const C=window.AudioContext||window.webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();o.frequency.value=ok?660:180;g.gain.setValueAtTime(.06,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.16);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.17)}catch{}}
+function checkQuiz(){
+  if(!quizState||quizState.selected<0)return;
+  const q=quizState.questions[quizState.index],ok=quizState.selected===q.answer;quizState.checked=true;
+  if(ok){quizState.score++;quizState.combo++;}else{quizState.combo=0;quizState.hearts=Math.max(0,quizState.hearts-1)}
+  quizTone(ok);render();
+}
+function nextQuiz(){
+  if(quizState.index>=quizState.questions.length-1){quizState.finished=true;render();return}
+  quizState.index++;quizState.selected=-1;quizState.checked=false;render();
+}
+function saveQuizResult(){
+  S.attempts.push({id:nextId(S.attempts),chapterId:quizState.chapterId,score:quizState.score,total:quizState.questions.length,at:Date.now()});save();go('courses');toast('Quiz result saved.');
+}
+
+function renderQuiz(){
+  const ch=S.chapters.find(c=>c.id===quizState?.chapterId);
+  if(!ch||!quizState||!quizState.questions.length)return `<div class="card empty-state"><div class="ei">🎯</div><h3>Quiz not ready</h3><p>Add a Machine Learning course to load reviewed questions.</p><a class="link-btn" href="#courses">Open Course Library</a></div>`;
+  if(quizState.finished){const stars=quizStars(quizState.score,quizState.questions.length);return `<div style="text-align:center;padding:34px 4px"><div style="font-size:68px">🏆</div><div class="eyebrow">${esc(ch.title)}</div><h2>${masteryLabel(quizState.score,quizState.questions.length)}</h2><div class="quiz-stars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div><p class="body" style="margin:10px 0 22px">${quizState.score} of ${quizState.questions.length} correct</p><button class="full" onclick="saveQuizResult()">Save result</button><button class="quiet full" style="margin-top:8px" onclick="startQuiz(${ch.id})">Play again</button></div>`}
+  const q=quizState.questions[quizState.index],ok=quizState.selected===q.answer,pct=Math.round((quizState.index+(quizState.checked?1:0))/quizState.questions.length*100);
+  return `<div>
+    <div class="row-between"><a class="link-btn secondary small" href="#courses">‹ Courses</a><button class="quiet small" onclick="S.profile.quizMuted=!S.profile.quizMuted;save();render()">${S.profile.quizMuted?'🔇 Muted':'🔊 Sound'}</button></div>
+    <div class="prog-bg" style="background:var(--brand-light);margin:14px 0"><div class="prog-fill" style="background:var(--brand);width:${pct}%"></div></div>
+    <div class="row-between"><span class="badge r">${'♥'.repeat(quizState.hearts)}${'♡'.repeat(3-quizState.hearts)}</span>${quizState.combo>=2?`<span class="badge a">🔥 ${quizState.combo} combo</span>`:''}<span class="tiny">${quizState.index+1}/${quizState.questions.length}</span></div>
+    <div class="eyebrow" style="margin-top:18px">${esc(ch.title)}</div><h2>${esc(q.prompt)}</h2><p class="small" style="margin-bottom:14px">Choose the best answer.</p>
+    <div style="display:grid;gap:9px">${q.options.map((option,i)=>{let cls=quizState.selected===i?' selected':'';if(quizState.checked&&i===q.answer)cls=' correct';else if(quizState.checked&&quizState.selected===i)cls=' wrong';return `<button class="quiz-option${cls}" onclick="selectQuizAnswer(${i})" ${quizState.checked?'disabled':''}><span class="quiz-letter">${String.fromCharCode(65+i)}</span><span>${esc(option)}</span></button>`}).join('')}</div>
+    ${quizState.checked?`<div class="card ${ok?'sage':'amber'}" style="margin-top:14px"><h3>${ok?'Correct!':'Good try — learn from this one'}</h3><p class="small">${esc(q.explanation)}</p></div>`:''}
+    <button class="full" style="margin-top:14px" onclick="${quizState.checked?'nextQuiz()':'checkQuiz()'}" ${quizState.selected<0?'disabled':''}>${quizState.checked?(quizState.index===quizState.questions.length-1?'See results':'Next challenge'):'Check answer'}</button>
+    <div class="tiny" style="text-align:center;margin-top:10px">Question source · ${esc(q.source)}</div>
+  </div>`;
+}
+
 /* ── Profile ── */
 function renderProfile() {
   const p = S.profile;
@@ -1165,6 +1352,9 @@ function renderProfile() {
     <div class="card" style="margin-top:14px;padding:0">
       <button class="secondary full" onclick="go('calendar')">Manage free time</button>
     </div>
+    <div class="card" style="margin-top:10px;padding:0">
+      <a class="link-btn secondary full" href="#courses">Open Course Library & quizzes</a>
+    </div>
 
     <p class="tiny" style="color:var(--muted);text-align:center;margin-top:14px">Data stored locally in this browser. Separate from the Android app.</p>
   </div>`;
@@ -1206,8 +1396,10 @@ $('#progressForm').onsubmit=e=>{
   if(!Number.isInteger(val)||val<0||val>max){toast(`Enter 0 to ${max} whole minutes.`);return}
   session.done=val;session.recorded=true;
   S.sessions=S.sessions.filter(x=>x.id===session.id||x.recorded||x.taskId!==task.id||x.day<today());
-  save();$('#progressDlg').close();render();
-  toast(val?`${val} min recorded — well done!`:'Missed session recorded. Create a new recovery plan.');
+  save();$('#progressDlg').close();
+  const hasQuiz=val>0&&task.chapterId&&S.questions.some(q=>q.chapterId===task.chapterId);
+  if(hasQuiz){startQuiz(task.chapterId);toast(`${val} min recorded — chapter challenge unlocked!`)}
+  else{render();toast(val?`${val} min recorded — well done!`:'Missed session recorded. Create a new recovery plan.')}
 };
 
 /* ── Utilities ── */
@@ -1236,7 +1428,8 @@ function toast(msg) {
 // Clock
 (function tick() { const d=new Date(); $('#clock').textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}`; setTimeout(tick,1000); })();
 
-render();
+window.addEventListener('hashchange',routeFromHash);
+if(!location.hash) location.hash='home'; else routeFromHash();
 </script>
 </body>
 </html>

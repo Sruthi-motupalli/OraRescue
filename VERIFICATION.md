@@ -11,6 +11,7 @@ Current feature-branch source, based on `32007a5`. Build environment used JDK 21
 | `./gradlew :app:assembleDebugAndroidTest` | Android instrumentation tests compiled and packaged, including v2→v3 migration, course import, linked topics and saved quiz attempts. These tests were compiled, not executed on a device. |
 | `node preview/planner.test.cjs` | Seven existing planner rule groups passed. The new date-rollover regression also passed. |
 | `node preview/appearance.test.cjs` | Immediate appearance changes, reload persistence, System updates, invalid-preference fallback and separation from saved study data passed. |
+| `node preview/quiz.test.cjs` | Course import, ten linked chapters, question creation, quiz feedback state and saved mastery passed. |
 | Chromium UI walkthrough | All five destinations at 320×520 in Light and Dark. Checked topic form and validation, search and filters, free-time overlap errors, copy validation, confirmation and About dialogs, recovery shortfall, save/discard, progress gating and recording, and profile/theme persistence after reload. Also checked live System switching and bottom navigation at 1024×768. |
 
 Generated build outputs and test reports are excluded from the source archive. The browser walkthrough uses independent browser data.

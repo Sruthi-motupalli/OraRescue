@@ -4,7 +4,7 @@ A native Kotlin / Jetpack Compose study planner with exact free-time windows and
 
 ## Try the interface on your laptop
 
-Open `preview/index.html` in a modern browser, or serve the `preview` folder using a local web server. The interactive demonstration uses its own sample data and browser storage, separate from Android Room.
+Open `preview/index.html` in a modern browser, or use the hosted GitHub Pages preview. The interactive demonstration uses its own sample data and browser storage, separate from Android Room. Hash-based URLs keep Home, Course Library and chapter quizzes directly navigable.
 
 ## Run the Android app
 
@@ -29,8 +29,8 @@ To update an existing install and retain its data, build with the same signing k
 - Home: next session today, nearest exam, completed and planned time, outstanding work, daily goal, topic search and filters.
 - Calendar: select a date, add/edit multiple exact time windows, copy to dates, or set a day off. Overlaps are rejected.
 - Study topics: Add Topic captures subject, topic, future exam date, estimated minutes and priority. On Android, tap a topic card to see its details, then choose Edit topic for edit/delete controls.
-- Course Library (Android): import a PDF, DOCX, PPTX, text file or ZIP through the system document picker. The supplied Machine Learning pack creates ten chapter-linked study topics and a reviewed starter question bank; other files begin as one chapter that the student can refine.
-- Chapter challenges (Android): completing a linked study session offers a short multiple-choice quiz with answer explanations, progress, hearts, combo feedback, original system-tone feedback, reduced-motion and mute controls. Attempts and best mastery results are saved locally.
+- Course Library: Android imports through the system document picker. The browser demonstration accepts a file name or loads the Machine Learning demo directly. The supplied pack creates ten chapter-linked study topics and a reviewed starter question bank; other files begin as one chapter.
+- Chapter challenges: completing a linked study session offers a short multiple-choice quiz with explanations, progress, hearts, combo feedback, sound, reduced-motion and mute controls. Attempts and best mastery results are saved locally in Room on Android and localStorage in the browser.
 - Hybrid questions: curated Machine Learning questions and student-authored questions work offline. AI generation is explicitly not connected until a secure external provider, consent flow and server-side key management are supplied.
 - Recovery: preview exact study times before exams, see which topics could not fit, and go straight to Calendar to edit free time. Split work across windows or require one continuous window. Save or discard from the preview.
 - Profile: local name, avatar, daily goal and splitting preference. Light, Dark and System appearance apply immediately and are saved independently on Android and in the browser.
