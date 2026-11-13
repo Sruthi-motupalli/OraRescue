@@ -594,6 +594,9 @@ function renderHome() {
   const date = today();
   const minute = nowMin();
   const todaySess = sessionsForDay(date);
+  const planQueue = S.sessions
+    .filter(s => !s.recorded || s.day === date)
+    .sort((a,b)=>a.recorded-b.recorded||a.day.localeCompare(b.day)||(a.start??-1)-(b.start??-1));
   const next = todaySess.find(s => !s.recorded && s.start != null && s.end > minute);
   const nextTopic = next && S.tasks.find(t => t.id === next.taskId);
   const plannedToday = todaySess.filter(s => !s.recorded).reduce((sum, s) => sum + s.minutes, 0);
@@ -609,6 +612,7 @@ function renderHome() {
   const filters = ['All','In Progress','Completed',...new Set(S.tasks.map(t=>t.subject))];
   const selectedChapter=S.chapters.find(ch=>ch.id===S.selectedChapterId);
   const selectedTask=selectedChapter&&S.tasks.find(t=>t.chapterId===selectedChapter.id);
+  const selectedIsPlanned=selectedTask&&S.sessions.some(s=>s.taskId===selectedTask.id&&!s.recorded);
   return `
   <div>
     <div class="row-between" style="margin-bottom:12px">
@@ -629,7 +633,7 @@ function renderHome() {
       </div>
     </div>
 
-    ${selectedTask?`<div class="card sage"><div class="section-label">Selected study material</div><h3>${esc(selectedTask.subject)} · ${esc(selectedTask.topic)}</h3><p class="tiny">This chapter will be included when you create your recovery plan.</p><a class="link-btn small" href="#recover">Create plan</a></div>`:''}
+    ${selectedTask&&!selectedIsPlanned?`<div class="card sage"><div class="section-label">Selected study material</div><h3>${esc(selectedTask.subject)} · ${esc(selectedTask.topic)}</h3><p class="tiny">This chapter is selected but has not been scheduled yet.</p><a class="link-btn small" href="#recover">Create plan</a></div>`:''}
 
     ${nextTopic?`
     <div class="card brand">
@@ -661,22 +665,25 @@ function renderHome() {
     </div>
 
     <div class="row-between" style="margin:16px 0 6px">
-      <div class="section-label">Today's Sessions</div>
+      <div class="section-label">My Study Plan</div>
       <button class="quiet small" onclick="go('calendar')">Calendar ›</button>
     </div>
-    ${todaySess.length===0?`<div class="card empty-state"><div class="ei">📅</div><h3>No sessions today</h3><p>${remaining?'Choose free time before your exams and create a plan.':'Add a study topic to start planning.'}</p><div class="action-row">${remaining?`<button class="secondary small" onclick="go('calendar')">Add free time</button><button class="small" onclick="go('recover')">Create plan</button>`:`<button class="small" onclick="go('add')">Add topic</button>`}</div></div>`:
-      todaySess.map(s=>{
+    ${planQueue.length===0?`<div class="card empty-state"><div class="ei">☑</div><h3>Your study plan is clear</h3><p>${remaining?'Select work, add free time and create a plan.':'Add a study topic to start planning.'}</p><div class="action-row">${remaining?`<button class="secondary small" onclick="go('calendar')">Add free time</button><button class="small" onclick="go('recover')">Create plan</button>`:`<button class="small" onclick="go('add')">Add topic</button>`}</div></div>`:
+      planQueue.map(s=>{
         const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:today()};
         const tr=s.start!=null?`${minToTime(s.start)} – ${minToTime(s.end)}`:`${s.minutes} min`;
+        const status=s.recorded?(s.done?'Completed':'Missed'):s.day<date?'Overdue':s.day===date?(canRecord(s)?'Ready':'Today'):'Upcoming';
+        const dateText=s.day===date?'Today':fmtLong(s.day);
         return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
           <div class="row-between">
-            <span class="tiny" style="font-weight:700;color:var(--brand)">${esc(t.subject)}</span>
-            <span class="badge ${s.recorded?'g':'a'}">${tr}</span>
+            <span class="tiny" style="font-weight:700;color:var(--brand)">${dateText} · ${esc(t.subject)}</span>
+            <span class="badge ${s.recorded?'g':s.day<date?'r':'a'}">${status}</span>
           </div>
-          <div class="section-label" style="margin:4px 0 6px">${esc(t.topic)}</div>
+          <div class="section-label" style="margin:4px 0 2px">${esc(t.topic)}</div>
+          <div class="tiny" style="margin-bottom:8px">${tr} · ${s.minutes} min planned</div>
           <div class="row-between">
             <span class="tiny">${s.recorded?(s.done?`${s.done} min completed`:'Missed'):`${s.minutes} min planned`}</span>
-            ${s.recorded?'':`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
+            ${s.recorded?'':`<button class="${canRecord(s)?'':'secondary'} small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Finish session':status}</button>`}
           </div>
         </div>`;
       }).join('')}
@@ -1068,6 +1075,7 @@ function acceptPlan() {
 
 function renderRecover() {
   const outstanding = S.tasks.filter(t=>taskLeft(t)>0).reduce((a,t)=>a+taskLeft(t),0);
+  const hasSavedPlan = S.sessions.some(s=>!s.recorded&&s.day>=today());
   return `<div>
     <div class="row-between" style="margin-bottom:8px">
       <h2>Recovery Plan</h2>
@@ -1086,13 +1094,14 @@ function renderRecover() {
 
     <div class="row" style="gap:8px;margin-bottom:14px">
       <button class="secondary small full" onclick="go('calendar')">Edit free time</button>
-      <button class="small full" onclick="generatePlan()" ${outstanding?'':'disabled'}>${preview?'Recalculate':'Create plan'}</button>
+      <button class="small full" onclick="generatePlan()" ${outstanding?'':'disabled'}>${preview?'Recalculate':hasSavedPlan?'Update plan':'Create plan'}</button>
     </div>
 
     ${!preview?`<div class="card empty-state">
       <div class="ei">♧</div>
-      <h3>${outstanding?'Preview your plan':'No work to schedule'}</h3>
-      <p>${outstanding?'Review the proposed sessions and any shortfall before saving.':'Add a study topic with time remaining.'}</p>
+      <h3>${outstanding?(hasSavedPlan?'Your plan is saved':'Preview your plan'):'No work to schedule'}</h3>
+      <p>${outstanding?(hasSavedPlan?'Your sessions remain available in My Study Plan. Update only when your availability or priorities change.':'Review the proposed sessions and any shortfall before saving.'):'Add a study topic with time remaining.'}</p>
+      ${hasSavedPlan?`<a class="link-btn secondary small" href="#home">Open My Study Plan</a>`:''}
     </div>`:`
     <div class="card ${preview.unplaced.length?'amber':'sage'}" style="margin-bottom:10px">
       <div class="row-between">
