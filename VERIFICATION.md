@@ -2,20 +2,22 @@
 
 Current feature-branch source, based on `32007a5`. Build environment used JDK 21, the checked-in Gradle 8.12 wrapper and Android SDK 35.
 
-## Previously passed before the course-library change
+## Current automated verification
 
 | Check | Result |
 | --- | --- |
-| `./gradlew :app:testDebugUnitTest` | 32 JVM tests passed (21 PlannerTest, 7 ExactWindowTest, 4 StudySnapshotTest). |
+| `./gradlew :app:testDebugUnitTest` | 34 JVM tests passed, including two new quiz-template and mastery-scoring tests. |
 | `./gradlew :app:assembleDebug` | Debug APK built. |
-| `./gradlew :app:assembleDebugAndroidTest` | Android instrumentation tests compiled and packaged, including Room migration, repository, and disk-backed database reopen tests. |
+| `./gradlew :app:assembleDebugAndroidTest` | Android instrumentation tests compiled and packaged, including v2→v3 migration, course import, linked topics and saved quiz attempts. These tests were compiled, not executed on a device. |
 | `node preview/planner.test.cjs` | Seven existing planner rule groups passed. The new date-rollover regression also passed. |
 | `node preview/appearance.test.cjs` | Immediate appearance changes, reload persistence, System updates, invalid-preference fallback and separation from saved study data passed. |
 | Chromium UI walkthrough | All five destinations at 320×520 in Light and Dark. Checked topic form and validation, search and filters, free-time overlap errors, copy validation, confirmation and About dialogs, recovery shortfall, save/discard, progress gating and recording, and profile/theme persistence after reload. Also checked live System switching and bottom navigation at 1024×768. |
 
 Generated build outputs and test reports are excluded from the source archive. The browser walkthrough uses independent browser data.
 
-## Added and awaiting a complete Android build
+GitHub Actions completed the Android and browser verification successfully on both the feature-branch push and pull-request run. The successful branch run is [Android verification #43415225913](https://github.com/Sruthi-motupalli/OraRescue/actions/runs/43415225913).
+
+## Course-library coverage included in the build
 
 - Room schema v3 and a non-destructive v2→v3 migration.
 - Course material, chapter, quiz-question and quiz-attempt persistence.
@@ -23,9 +25,7 @@ Generated build outputs and test reports are excluded from the source archive. T
 - Student-authored questions and saved best-attempt mastery.
 - A post-session chapter challenge with sound, haptics, answer explanations, mute and reduced-motion controls.
 - `QuizScoringTest` for star thresholds and curated-template integrity.
-- Instrumentation coverage for course import, linked topics and persisted quiz attempts.
-
-The current execution environment could not download the Gradle 8.12 distribution, so these new Android changes must not be reported as compiled or passed yet. Run the commands in README from Android Studio or a networked terminal and update this section with the actual results.
+- Instrumentation coverage for course import, linked topics and persisted quiz attempts; compiled successfully but awaiting execution on a device.
 
 ## Still to verify
 
