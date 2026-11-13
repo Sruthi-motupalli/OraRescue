@@ -416,7 +416,7 @@ fun HomeScreen(
                                 else -> dateLabel(session.day)
                             },
                             canRecord = session.day < todayEpoch || session.day == todayEpoch && (!session.hasExactTimes || session.startMinute <= now),
-                            onOpenTopic = { onOpenTopic(task.id) },
+                            onEdit = { onOpenTopic(task.id) },
                             onProgress = { progressSession = session }
                         )
                     }
