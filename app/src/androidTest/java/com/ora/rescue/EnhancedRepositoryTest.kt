@@ -36,6 +36,23 @@ class EnhancedRepositoryTest {
         }
     }
 
+    @Test fun versionTwoMigrationAddsCoursesWithoutLosingTopics() {
+        val name = "ora-v2-course-migration-test"
+        migration.createDatabase(name, 2).apply {
+            execSQL("INSERT INTO tasks (id, subject, topic, examDay, totalMinutes, priority) VALUES (1, 'OS', 'Scheduling', ${day + 3}, 60, 3)")
+            close()
+        }
+        migration.runMigrationsAndValidate(name, 3, true, MIGRATION_2_3).apply {
+            query("SELECT subject, chapterId FROM tasks WHERE id = 1").use {
+                assertTrue(it.moveToFirst())
+                assertEquals("OS", it.getString(0))
+                assertTrue(it.isNull(1))
+            }
+            query("SELECT COUNT(*) FROM course_materials").use { assertTrue(it.moveToFirst()); assertEquals(0, it.getInt(0)) }
+            close()
+        }
+    }
+
     @Test fun savedStudyDataSurvivesClosingAndReopeningRoom() = runBlocking {
         val context = instrumentation.targetContext
         val databaseName = "ora-reopen-${UUID.randomUUID()}.db"
@@ -84,6 +101,33 @@ class EnhancedRepositoryTest {
             val id = before.timeWindows.first { it.day == day }.id
             repo.addTimeWindow(day, 960, 1020, date, editId = id)
             assertEquals(960, repo.snapshot().timeWindows.first { it.day == day }.startMinute)
+        } finally { db.close() }
+    }
+
+    @Test fun courseImportCreatesLinkedTopicsAndPersistentQuizAttempts() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(instrumentation.targetContext, StudyDatabase::class.java).build()
+        try {
+            val repo = StudyRepository(db)
+            repo.importCourse(
+                fileName = "MACHINE-LEARNING.zip",
+                sourceUri = "content://test/machine-learning",
+                mimeType = "application/zip",
+                examDay = day + 30,
+                minutesPerChapter = 60,
+                today = date
+            )
+            val imported = repo.snapshot()
+            assertEquals(1, imported.courseMaterials.size)
+            assertEquals(10, imported.chapters.size)
+            assertEquals(10, imported.tasks.size)
+            assertTrue(imported.tasks.all { it.chapterId != null })
+            val chapter = imported.chapters.first()
+            assertEquals(4, imported.questionsForChapter(chapter.id).size)
+
+            repo.saveQuizAttempt(chapter.id, sessionId = null, score = 3, total = 4)
+            val attempt = repo.snapshot().bestAttempt(chapter.id)
+            assertNotNull(attempt)
+            assertEquals(3, attempt?.score)
         } finally { db.close() }
     }
 

@@ -12,9 +12,11 @@ Open `preview/index.html` to explore the interface on your laptop. Install the s
 6. Record progress only after a session starts. Zero means missed; partial work leaves the remainder for recovery. Future sessions show Upcoming.
 7. In Profile, change the daily goal, save, reopen Home and point out the next session, nearest exam, goal indicator and separate time totals. Reload/reopen to demonstrate storage.
 8. Use topic search and filters. Tap a topic to show its read-only details, then choose Edit topic and demonstrate the delete confirmation.
+9. On Android, choose the book icon on Home and upload the supplied Machine Learning ZIP. Confirm the detected chapters, exam date and minutes per chapter. Show that the chapters become normal schedulable study topics.
+10. Play a chapter challenge from Course Library, or complete a linked session and accept the quiz prompt. Demonstrate answer animation, explanation, mute/reduced-motion controls and the saved mastery result. Add one student-authored question and clearly identify its source.
 
 ## Main files
 
-`MainActivity.kt` handles navigation. `Theme.kt` provides the shared palettes, typography and appearance resolution. `HomeScreen.kt`, `CalendarScreen.kt`, `TaskScreen.kt`, `RecoveryScreen.kt` and `ProfileScreen.kt` render the screens. `Planner.kt` computes recovery, `TimeWindowValidator.kt` checks windows, and `StudyRepository.kt` validates transactions. `StudyDatabase.kt` contains the Room entities and v1→v2 migration. `StudyViewModel.kt` connects saved state and screens.
+`MainActivity.kt` handles navigation. `Theme.kt` provides the shared palettes, typography and appearance resolution. The primary screens remain Home, Calendar, Add Topic, Recovery and Profile. `CourseScreen.kt` and `QuizScreen.kt` implement the native material-to-mastery journey. `QuizContent.kt` contains the reviewed starter bank and transparent source labels. `Planner.kt` computes recovery, `TimeWindowValidator.kt` checks windows, and `StudyRepository.kt` validates transactions. `StudyDatabase.kt` contains Room v3 and the v1→v2→v3 migration path. `StudyViewModel.kt` connects saved state and screens.
 
 The design-mockups images are visual concepts, not Android runtime evidence. Capture actual phone/emulator screenshots for the presentation. Explain the code you understand and state your real group contributions.

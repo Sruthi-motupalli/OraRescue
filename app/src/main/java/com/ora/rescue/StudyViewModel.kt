@@ -170,10 +170,43 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Records completed study progress for a session. */
-    fun progress(id: Long, minutes: Int) = perform(
-        message = "Progress saved. Recover remaining work when you’re ready."
+    fun progress(id: Long, minutes: Int) {
+        val snapshot = _state.value.snapshot
+        val session = snapshot.sessions.firstOrNull { it.id == id }
+        val chapter = session?.let { snapshot.chapterForTask(it.taskId) }
+        val hasQuiz = chapter != null && snapshot.questionsForChapter(chapter.id).isNotEmpty()
+        perform(
+            message = if (hasQuiz && minutes > 0) "Progress saved. Ready for a quick chapter challenge?" else "Progress saved. Recover remaining work when you’re ready.",
+            destination = if (hasQuiz && minutes > 0) "quiz/session/$id" else null
+        ) {
+            repository.recordProgress(id, minutes)
+        }
+    }
+
+    fun importCourse(fileName: String, sourceUri: String, mimeType: String, examDay: Long, minutesPerChapter: Int) = perform(
+        message = "Course imported. Chapters are now study topics.",
+        destination = "courses"
     ) {
-        repository.recordProgress(id, minutes)
+        repository.importCourse(fileName, sourceUri, mimeType, examDay, minutesPerChapter)
+    }
+
+    fun addStudentQuestion(chapterId: Long, prompt: String, options: List<String>, correctIndex: Int, explanation: String) = perform(
+        message = "Question added to this chapter."
+    ) {
+        repository.addStudentQuestion(chapterId, prompt, options, correctIndex, explanation)
+    }
+
+    fun saveQuizAttempt(chapterId: Long, sessionId: Long?, score: Int, total: Int) = perform(
+        message = "Quiz result saved."
+    ) {
+        repository.saveQuizAttempt(chapterId, sessionId, score, total)
+    }
+
+    fun deleteCourse(materialId: Long) = perform(
+        message = "Course and its linked study topics were deleted.",
+        destination = "courses"
+    ) {
+        repository.deleteCourse(materialId)
     }
 
     /** Generates an in-memory preview of the recovery plan for the user to review. */

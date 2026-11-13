@@ -33,7 +33,7 @@ fun HomeScreen(
     snapshot: StudySnapshot,
     busy: Boolean,
     onAdd: () -> Unit,
-    onEdit: (Long) -> Unit,
+    onOpenTopic: (Long) -> Unit,
     onRecover: () -> Unit,
     onCalendar: () -> Unit,
     onProgress: (Long, Int) -> Unit
@@ -175,7 +175,7 @@ fun HomeScreen(
                                 color = cs.onSurfaceVariant
                             )
                         }
-                        TextButton(onClick = { onEdit(task.id) }) {
+                        TextButton(onClick = { onOpenTopic(task.id) }) {
                             Text("View", style = MaterialTheme.typography.labelSmall)
                         }
                     }
@@ -408,7 +408,7 @@ fun HomeScreen(
                             session = session,
                             busy = busy,
                             canRecord = !session.hasExactTimes || session.startMinute <= now,
-                            onEdit = { onEdit(task.id) },
+                            onOpenTopic = { onOpenTopic(task.id) },
                             onProgress = { progressSession = session }
                         )
                     }
@@ -504,7 +504,7 @@ fun HomeScreen(
                         remaining = snapshot.remaining(task),
                         completed = snapshot.completed(task.id),
                         today = todayEpoch,
-                        onClick = { onEdit(task.id) }
+                        onClick = { onOpenTopic(task.id) }
                     )
                 }
             }

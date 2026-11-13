@@ -48,7 +48,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 @Composable
 private fun OraApp(vm: StudyViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -71,8 +70,12 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
 
     LaunchedEffect(vm) {
         vm.events.collect { event ->
-            if (event.destination == "home") {
-                navigateTab("home")
+            event.destination?.let { destination ->
+                if (destination in setOf("home", "calendar", "recover", "profile")) {
+                    navigateTab(destination)
+                } else {
+                    nav.navigate(destination) { launchSingleTop = true }
+                }
             }
             snackbars.showSnackbar(event.message)
         }
@@ -80,6 +83,9 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
 
     val isTopicDetail = route == "topic/{id}"
     val isTopicForm = route == "task/{id}"
+    val isCourses = route == "courses"
+    val isQuiz = route.startsWith("quiz/")
+    val isAuxiliary = isTopicForm || isTopicDetail || isCourses || isQuiz
     val isAddingTopic = isTopicForm && backStack?.arguments?.getLong("id") == 0L
     val cs = MaterialTheme.colorScheme
 
@@ -93,6 +99,8 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                             isAddingTopic -> "Add topic"
                             isTopicForm -> "Edit topic"
                             isTopicDetail -> "Topic details"
+                            isCourses -> "Course library"
+                            isQuiz -> "Chapter challenge"
                             else -> "ora rescue"
                         },
                         fontWeight = FontWeight.Bold,
@@ -100,7 +108,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                     )
                 },
                 navigationIcon = {
-                    if (isTopicForm || isTopicDetail) {
+                    if (isAuxiliary) {
                         IconButton(
                             onClick = { nav.popBackStack() },
                             enabled = !busy,
@@ -118,6 +126,11 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                             color = cs.primary
                         )
                     }
+                    if (route == "home") {
+                        IconButton(onClick = { nav.navigate("courses") { launchSingleTop = true } }) {
+                            Icon(Icons.Rounded.LibraryBooks, contentDescription = "Open course library")
+                        }
+                    }
                     Spacer(Modifier.width(16.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = cs.background)
@@ -125,7 +138,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
         },
         snackbarHost = { SnackbarHost(snackbars) },
         bottomBar = {
-            NavigationBar(
+            if (!isQuiz) NavigationBar(
                 containerColor = cs.surface.copy(alpha = 0.97f),
                 tonalElevation = 6.dp
             ) {
@@ -254,6 +267,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 id = id,
                                 snapshot = state.snapshot,
                                 onEdit = { nav.navigate("task/$id") { launchSingleTop = true } },
+                                onPractice = { nav.navigate("quiz/chapter/$it") },
                                 onBack = { nav.popBackStack() }
                             )
                         }
@@ -280,6 +294,46 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 onCancel = vm::cancelPreview,
                                 onAccept = vm::accept,
                                 onAvailability = { navigateTab("calendar") }
+                            )
+                        }
+                        composable("courses") {
+                            CourseScreen(
+                                snapshot = state.snapshot,
+                                busy = busy,
+                                onImport = vm::importCourse,
+                                onAddQuestion = vm::addStudentQuestion,
+                                onDeleteCourse = vm::deleteCourse,
+                                onPractice = { nav.navigate("quiz/chapter/$it") }
+                            )
+                        }
+                        composable(
+                            route = "quiz/session/{id}",
+                            arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        ) { entry ->
+                            val sessionId = entry.arguments?.getLong("id") ?: 0L
+                            val chapterId = state.snapshot.sessions.firstOrNull { it.id == sessionId }
+                                ?.let { state.snapshot.chapterForTask(it.taskId)?.id } ?: 0L
+                            QuizScreen(
+                                chapterId = chapterId,
+                                sessionId = sessionId,
+                                snapshot = state.snapshot,
+                                busy = busy,
+                                onSave = vm::saveQuizAttempt,
+                                onDone = { nav.popBackStack() }
+                            )
+                        }
+                        composable(
+                            route = "quiz/chapter/{id}",
+                            arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        ) { entry ->
+                            val chapterId = entry.arguments?.getLong("id") ?: 0L
+                            QuizScreen(
+                                chapterId = chapterId,
+                                sessionId = null,
+                                snapshot = state.snapshot,
+                                busy = busy,
+                                onSave = vm::saveQuizAttempt,
+                                onDone = { nav.popBackStack() }
                             )
                         }
                         composable("profile") {

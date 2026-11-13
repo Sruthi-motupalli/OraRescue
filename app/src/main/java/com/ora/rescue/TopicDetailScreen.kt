@@ -23,6 +23,7 @@ fun TopicDetailScreen(
     id: Long,
     snapshot: StudySnapshot,
     onEdit: () -> Unit,
+    onPractice: (Long) -> Unit,
     onBack: () -> Unit
 ) {
     val task = snapshot.tasks.firstOrNull { it.id == id }
@@ -44,6 +45,9 @@ fun TopicDetailScreen(
         val planned = snapshot.sessions.filter {
             it.taskId == task.id && it.status == StudySession.PENDING && it.day >= today
         }.sumOf { it.allocatedMinutes }
+        val chapter = task.chapterId?.let { chapterId -> snapshot.chapters.firstOrNull { it.id == chapterId } }
+        val questions = chapter?.let { snapshot.questionsForChapter(it.id) }.orEmpty()
+        val attempt = chapter?.let { snapshot.bestAttempt(it.id) }
 
         Text(task.subject, color = colors.primary, style = MaterialTheme.typography.labelLarge)
         Text(task.topic, style = MaterialTheme.typography.headlineMedium)
@@ -71,6 +75,27 @@ fun TopicDetailScreen(
                 Text("$planned min planned · $remaining min remaining", color = colors.onSurfaceVariant)
             }
         }
+        if (chapter != null) {
+            OutlinedCard(colors = CardDefaults.outlinedCardColors(containerColor = colors.surface)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Chapter mastery", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        attempt?.let { "${QuizScoring.masteryLabel(it.score, it.total)} · ${it.score}/${it.total} · ${"★".repeat(QuizScoring.stars(it.score, it.total))}" }
+                            ?: "No quiz attempt yet",
+                        color = colors.onSurfaceVariant
+                    )
+                    Button(
+                        onClick = { onPractice(chapter.id) },
+                        enabled = questions.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(if (attempt == null) "Start chapter challenge" else "Practise again") }
+                }
+            }
+        }
         Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("Edit topic") }
     }
 }
+

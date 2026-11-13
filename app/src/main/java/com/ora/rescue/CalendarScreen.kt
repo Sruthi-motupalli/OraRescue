@@ -178,7 +178,6 @@ fun CalendarScreen(
         MinutesDialog("Record study progress", max, max, "0 means missed. Partial completion keeps the remaining work available for recovery.", listOf("Missed" to 0, "Half" to max / 2, "Full" to max), { recording = null }, { onProgress(session.id, it); recording = null })
     }
 }
-
 @Composable
 private fun CalendarLegend(label: String, color: Color) {
     Row(

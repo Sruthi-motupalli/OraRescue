@@ -304,7 +304,8 @@ fun TaskScreen(
                                     topic = topic.trim(),
                                     examDay = examDay,
                                     totalMinutes = nonNullMinutes,
-                                    priority = priority
+                                    priority = priority,
+                                    chapterId = existing?.chapterId
                                 )
                             )
                         }

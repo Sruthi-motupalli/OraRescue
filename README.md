@@ -29,11 +29,16 @@ To update an existing install and retain its data, build with the same signing k
 - Home: next session today, nearest exam, completed and planned time, outstanding work, daily goal, topic search and filters.
 - Calendar: select a date, add/edit multiple exact time windows, copy to dates, or set a day off. Overlaps are rejected.
 - Study topics: Add Topic captures subject, topic, future exam date, estimated minutes and priority. On Android, tap a topic card to see its details, then choose Edit topic for edit/delete controls.
+- Course Library (Android): import a PDF, DOCX, PPTX, text file or ZIP through the system document picker. The supplied Machine Learning pack creates ten chapter-linked study topics and a reviewed starter question bank; other files begin as one chapter that the student can refine.
+- Chapter challenges (Android): completing a linked study session offers a short multiple-choice quiz with answer explanations, progress, hearts, combo feedback, original system-tone feedback, reduced-motion and mute controls. Attempts and best mastery results are saved locally.
+- Hybrid questions: curated Machine Learning questions and student-authored questions work offline. AI generation is explicitly not connected until a secure external provider, consent flow and server-side key management are supplied.
 - Recovery: preview exact study times before exams, see which topics could not fit, and go straight to Calendar to edit free time. Split work across windows or require one continuous window. Save or discard from the preview.
 - Profile: local name, avatar, daily goal and splitting preference. Light, Dark and System appearance apply immediately and are saved independently on Android and in the browser.
 
 Scheduling uses nearest exam, priority and stable task ID. It excludes elapsed time, reserves completed intervals and keeps completed history. The greedy unsplit heuristic does not guarantee an optimal arrangement. Legacy daily-only Android availability remains untimed until replaced with exact windows.
 
 Typography uses bundled Inter with a clear iOS-inspired hierarchy. The browser prefers the Apple system font on supported Apple devices and falls back to Inter. Apple font files are not bundled. See `INTER-LICENSE.txt` and `preview/fonts/OFL.txt`.
+
+Room schema v3 adds course materials, chapters, questions, attempts and optional chapter links while retaining the v1→v2→v3 non-destructive migration path.
 
 See `START-HERE.md`, `FEATURES-AND-DEMO.md` and `VERIFICATION.md`. The project received AI assistance from Codex and Antigravity; members must record their actual contributions and write their own reflections. No grade is guaranteed.

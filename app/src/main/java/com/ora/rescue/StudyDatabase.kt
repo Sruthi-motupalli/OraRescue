@@ -24,7 +24,83 @@ data class StudyTask(
     val topic: String,
     val examDay: Long,
     val totalMinutes: Int,
-    val priority: Int
+    val priority: Int,
+    @ColumnInfo(defaultValue = "NULL") val chapterId: Long? = null
+)
+
+@Entity(tableName = "course_materials")
+data class CourseMaterial(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val sourceUri: String,
+    val mimeType: String,
+    val importedAt: Long
+)
+
+@Entity(
+    tableName = "study_chapters",
+    foreignKeys = [ForeignKey(
+        entity = CourseMaterial::class,
+        parentColumns = ["id"],
+        childColumns = ["materialId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index("materialId")]
+)
+data class StudyChapter(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val materialId: Long,
+    val title: String,
+    val orderIndex: Int
+)
+
+@Entity(
+    tableName = "quiz_questions",
+    foreignKeys = [ForeignKey(
+        entity = StudyChapter::class,
+        parentColumns = ["id"],
+        childColumns = ["chapterId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index("chapterId")]
+)
+data class QuizQuestion(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val chapterId: Long,
+    val prompt: String,
+    val options: String,
+    val correctIndex: Int,
+    val explanation: String,
+    val source: String = SOURCE_CURATED
+) {
+    fun optionList(): List<String> = options.split(OPTION_SEPARATOR)
+
+    companion object {
+        const val OPTION_SEPARATOR = "\u001F"
+        const val SOURCE_CURATED = "Course material"
+        const val SOURCE_STUDENT = "Student question"
+        const val SOURCE_AI = "AI-generated"
+        fun encodeOptions(values: List<String>) = values.joinToString(OPTION_SEPARATOR)
+    }
+}
+
+@Entity(
+    tableName = "quiz_attempts",
+    foreignKeys = [ForeignKey(
+        entity = StudyChapter::class,
+        parentColumns = ["id"],
+        childColumns = ["chapterId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index("chapterId"), Index("sessionId")]
+)
+data class QuizAttempt(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val chapterId: Long,
+    val sessionId: Long?,
+    val score: Int,
+    val total: Int,
+    val completedAt: Long
 )
 
 /**
@@ -163,6 +239,21 @@ interface StudyDao {
     @Query("SELECT * FROM user_profile WHERE id = 1")
     suspend fun userProfile(): UserProfile?
 
+    @Query("SELECT * FROM course_materials ORDER BY importedAt DESC, id DESC")
+    suspend fun courseMaterials(): List<CourseMaterial>
+
+    @Query("SELECT * FROM study_chapters ORDER BY materialId, orderIndex, id")
+    suspend fun studyChapters(): List<StudyChapter>
+
+    @Query("SELECT * FROM quiz_questions ORDER BY chapterId, id")
+    suspend fun quizQuestions(): List<QuizQuestion>
+
+    @Query("SELECT * FROM quiz_attempts ORDER BY completedAt DESC, id DESC")
+    suspend fun quizAttempts(): List<QuizAttempt>
+
+    @Query("SELECT * FROM quiz_attempts WHERE sessionId = :sessionId LIMIT 1")
+    suspend fun quizAttemptForSession(sessionId: Long): QuizAttempt?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveUserProfile(profile: UserProfile)
 
@@ -205,6 +296,24 @@ interface StudyDao {
     @Update
     suspend fun updateSession(session: StudySession)
 
+    @Insert
+    suspend fun insertCourseMaterial(material: CourseMaterial): Long
+
+    @Insert
+    suspend fun insertStudyChapter(chapter: StudyChapter): Long
+
+    @Insert
+    suspend fun insertQuizQuestions(questions: List<QuizQuestion>)
+
+    @Insert
+    suspend fun insertQuizAttempt(attempt: QuizAttempt): Long
+
+    @Query("DELETE FROM course_materials WHERE id = :id")
+    suspend fun deleteCourseMaterial(id: Long)
+
+    @Query("DELETE FROM tasks WHERE chapterId IN (SELECT id FROM study_chapters WHERE materialId = :materialId)")
+    suspend fun deleteTasksForMaterial(materialId: Long)
+
     @Query("DELETE FROM sessions WHERE status = 'pending' AND day >= :fromDay")
     suspend fun clearPending(fromDay: Long)
 
@@ -228,9 +337,23 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN chapterId INTEGER DEFAULT NULL")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `course_materials` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `sourceUri` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `importedAt` INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `study_chapters` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `materialId` INTEGER NOT NULL, `title` TEXT NOT NULL, `orderIndex` INTEGER NOT NULL, FOREIGN KEY(`materialId`) REFERENCES `course_materials`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_study_chapters_materialId` ON `study_chapters` (`materialId`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `quiz_questions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chapterId` INTEGER NOT NULL, `prompt` TEXT NOT NULL, `options` TEXT NOT NULL, `correctIndex` INTEGER NOT NULL, `explanation` TEXT NOT NULL, `source` TEXT NOT NULL, FOREIGN KEY(`chapterId`) REFERENCES `study_chapters`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_quiz_questions_chapterId` ON `quiz_questions` (`chapterId`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `quiz_attempts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chapterId` INTEGER NOT NULL, `sessionId` INTEGER, `score` INTEGER NOT NULL, `total` INTEGER NOT NULL, `completedAt` INTEGER NOT NULL, FOREIGN KEY(`chapterId`) REFERENCES `study_chapters`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_quiz_attempts_chapterId` ON `quiz_attempts` (`chapterId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_quiz_attempts_sessionId` ON `quiz_attempts` (`sessionId`)")
+    }
+}
+
 /**
  * Main Room Database definition for Ora Rescue.
- * Schema Version 2 adds time_windows and user_profile entities.
+ * Schema Version 3 adds course materials, chapter-linked topics, quiz questions and attempts.
  */
 @Database(
     entities = [
@@ -239,9 +362,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         StudySession::class,
         Revision::class,
         TimeWindow::class,
-        UserProfile::class
+        UserProfile::class,
+        CourseMaterial::class,
+        StudyChapter::class,
+        QuizQuestion::class,
+        QuizAttempt::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class StudyDatabase : RoomDatabase() {
@@ -252,6 +379,6 @@ abstract class StudyDatabase : RoomDatabase() {
             context.applicationContext,
             StudyDatabase::class.java,
             "ora-rescue.db"
-        ).addMigrations(MIGRATION_1_2).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
     }
 }
