@@ -486,6 +486,7 @@ fun SessionCard(
     onEdit: () -> Unit,
     onProgress: () -> Unit,
     scheduleLabel: String? = null,
+    onSkip: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val cs = MaterialTheme.colorScheme
@@ -586,6 +587,9 @@ fun SessionCard(
                 }
                 Spacer(Modifier.width(8.dp))
                 if (session.status == StudySession.PENDING) {
+                    if (canRecord && onSkip != null) {
+                        TextButton(onClick = onSkip, enabled = !busy) { Text("Skipped") }
+                    }
                     FilledTonalButton(
                         onClick = onProgress,
                         enabled = !busy && canRecord,

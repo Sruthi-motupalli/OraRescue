@@ -36,14 +36,14 @@ fun HomeScreen(
     onOpenTopic: (Long) -> Unit,
     onRecover: () -> Unit,
     onCalendar: () -> Unit,
-    onProgress: (Long, Int) -> Unit
+    onProgress: (Long, Int) -> Unit,
+    onSkip: (Long) -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     val accents = LocalOraAccents.current
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilter by rememberSaveable { mutableStateOf("All") } // "All", "In Progress", "Completed", or a subject name
     var tab by rememberSaveable { mutableIntStateOf(0) } // 0: My Study Plan, 1: All Topics
-    var progressSession by remember { mutableStateOf<StudySession?>(null) }
 
     val clock by rememberStudyClock()
     val todayEpoch = clock.toLocalDate().toEpochDay()
@@ -417,7 +417,10 @@ fun HomeScreen(
                             },
                             canRecord = session.day < todayEpoch || session.day == todayEpoch && (!session.hasExactTimes || session.startMinute <= now),
                             onEdit = { onOpenTopic(task.id) },
-                            onProgress = { progressSession = session }
+                            onProgress = {
+                                onProgress(session.id, minOf(session.allocatedMinutes, snapshot.remaining(task)))
+                            },
+                            onSkip = if (session.day < todayEpoch) ({ onSkip(session.id) }) else null
                         )
                     }
                 }
@@ -532,27 +535,4 @@ fun HomeScreen(
         }
     }
 
-    // Progress Dialog
-    progressSession?.let { session ->
-        val task = snapshot.tasks.find { it.id == session.taskId }
-        val remaining = task?.let { snapshot.remaining(it) } ?: 0
-        val maxRecordable = minOf(session.allocatedMinutes, remaining)
-
-        MinutesDialog(
-            title = "Record Study Progress",
-            initial = maxRecordable,
-            max = maxRecordable,
-            explanation = "Enter completed minutes for '${task?.topic ?: "this session"}'. Enter 0 for a missed session. Each session can be recorded once; recovery will reschedule any remaining unfinished work.",
-            quickPresets = listOfNotNull(
-                "Missed (0m)" to 0,
-                if (maxRecordable >= 30) "Half (${maxRecordable / 2}m)" to (maxRecordable / 2) else null,
-                "Full (${maxRecordable}m)" to maxRecordable
-            ),
-            onDismiss = { progressSession = null },
-            onSave = {
-                onProgress(session.id, it)
-                progressSession = null
-            }
-        )
-    }
 }

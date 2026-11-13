@@ -51,6 +51,10 @@ vm.runInContext(scripts + `
   assert.ok(plannedHome.includes('My Study Plan'));
   assert.ok(plannedHome.includes('Upcoming'));
   assert.ok(!plannedHome.includes('This chapter is selected but has not been scheduled yet.'));
+  S.sessions.push({id:1000,taskId:selectedTask.id,day:plusDays(today(),-1),start:600,end:660,minutes:60,done:0,recorded:false});
+  finishSessionNow(1000);
+  assert.equal(S.sessions.find(s => s.id === 1000).recorded, true);
+  assert.equal(quizState.chapterId, chapter.id);
   startQuiz(chapter.id, false);
   assert.ok(renderQuiz().includes('Check answer'));
   selectQuizAnswer(0);

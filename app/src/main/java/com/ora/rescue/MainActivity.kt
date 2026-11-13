@@ -86,7 +86,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
     val isTopicForm = route == "task/{id}"
     val isCourses = route == "courses"
     val isQuiz = route.startsWith("quiz/")
-    val isAuxiliary = isTopicForm || isTopicDetail || isCourses || isQuiz
+    val isAuxiliary = isTopicForm || isTopicDetail || isQuiz
     val isAddingTopic = isTopicForm && backStack?.arguments?.getLong("id") == 0L
     val cs = MaterialTheme.colorScheme
 
@@ -156,10 +156,10 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                 )
 
                 NavigationBarItem(
-                    selected = route == "calendar",
-                    onClick = { navigateTab("calendar") },
-                    icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = null) },
-                    label = { Text("Calendar", style = MaterialTheme.typography.labelSmall) },
+                    selected = route == "courses",
+                    onClick = { nav.navigate("courses") { launchSingleTop = true } },
+                    icon = { Icon(Icons.Rounded.LibraryBooks, contentDescription = null) },
+                    label = { Text("Material", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = cs.primary,
                         selectedTextColor = cs.primary,
@@ -168,18 +168,10 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                 )
 
                 NavigationBarItem(
-                    selected = isAddingTopic,
-                    onClick = { nav.navigate("task/0") { launchSingleTop = true } },
-                    enabled = !busy,
-                    icon = { Icon(Icons.Rounded.AddCircle, contentDescription = null) },
-                    label = { Text("Add topic", style = MaterialTheme.typography.labelSmall) }
-                )
-
-                NavigationBarItem(
                     selected = route == "recover",
                     onClick = { navigateTab("recover") },
-                    icon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) },
-                    label = { Text("Recovery", style = MaterialTheme.typography.labelSmall) },
+                    icon = { Icon(Icons.Rounded.Schedule, contentDescription = null) },
+                    label = { Text("Plan study", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = cs.primary,
                         selectedTextColor = cs.primary,
@@ -242,7 +234,11 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 onOpenTopic = { nav.navigate("topic/$it") { launchSingleTop = true } },
                                 onRecover = { navigateTab("recover") },
                                 onCalendar = { navigateTab("calendar") },
-                                onProgress = vm::progress
+                                onProgress = vm::progress,
+                                onSkip = { id ->
+                                    vm.progress(id, 0)
+                                    navigateTab("recover")
+                                }
                             )
                         }
                         composable("calendar") {
