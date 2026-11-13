@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -31,7 +33,7 @@ fun HomeScreen(
     snapshot: StudySnapshot,
     busy: Boolean,
     onAdd: () -> Unit,
-    onOpenTopic: (Long) -> Unit,
+    onEdit: (Long) -> Unit,
     onRecover: () -> Unit,
     onCalendar: () -> Unit,
     onProgress: (Long, Int) -> Unit
@@ -173,7 +175,7 @@ fun HomeScreen(
                                 color = cs.onSurfaceVariant
                             )
                         }
-                        TextButton(onClick = { onOpenTopic(task.id) }) {
+                        TextButton(onClick = { onEdit(task.id) }) {
                             Text("View", style = MaterialTheme.typography.labelSmall)
                         }
                     }
@@ -406,7 +408,7 @@ fun HomeScreen(
                             session = session,
                             busy = busy,
                             canRecord = !session.hasExactTimes || session.startMinute <= now,
-                            onOpenTopic = { onOpenTopic(task.id) },
+                            onEdit = { onEdit(task.id) },
                             onProgress = { progressSession = session }
                         )
                     }
@@ -440,16 +442,23 @@ fun HomeScreen(
                     val distinctSubjects = snapshot.tasks.map { it.subject }.distinct()
                     val filterOptions = listOf("All", "In Progress", "Completed") + distinctSubjects
 
-                    FlowRow(
+                    LazyRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 1.dp)
                     ) {
-                        filterOptions.forEach { filter ->
+                        items(filterOptions) { filter ->
                             FilterChip(
                                 selected = selectedFilter == filter,
                                 onClick = { selectedFilter = filter },
-                                label = { Text(filter, style = MaterialTheme.typography.labelSmall) }
+                                label = {
+                                    Text(
+                                        text = filter,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             )
                         }
                     }
@@ -495,7 +504,7 @@ fun HomeScreen(
                         remaining = snapshot.remaining(task),
                         completed = snapshot.completed(task.id),
                         today = todayEpoch,
-                        onClick = { onOpenTopic(task.id) }
+                        onClick = { onEdit(task.id) }
                     )
                 }
             }

@@ -166,6 +166,8 @@ strong{font-weight:600}
 .card.amber{background:var(--amber-bg);border-color:rgba(192,91,0,.2)}
 .card.brand{background:var(--brand-light);border-color:rgba(119,99,255,.2)}
 .row{display:flex;align-items:center;gap:8px}
+.filter-strip{display:flex;gap:6px;overflow-x:auto;padding:0 1px 4px;margin-bottom:12px;scrollbar-width:thin}
+.filter-strip button{flex:0 0 auto;white-space:nowrap}
 .action-row{display:flex;flex-wrap:wrap;gap:8px}
 .action-row button{flex:1 0 auto}
 .plan-actions{position:sticky;bottom:-20px;z-index:1;background:var(--surface);border-top:1px solid var(--line);padding:10px 0;display:flex;gap:8px}
@@ -644,7 +646,7 @@ function renderHome() {
            aria-label="Search topics or subjects"
            oninput="searchQ=this.value;refreshHomeTopics()"
            style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--control-line);font:14px/1 var(--ff);background:var(--field);color:var(--ink);margin-bottom:8px">
-    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">
+    <div class="filter-strip">
       ${filters.map(f=>`<button class="secondary small" aria-pressed="${subjectF===(f==='All'?'':f)}" data-filter="${esc(f==='All'?'':f)}" onclick="subjectF=this.dataset.filter;refreshHomeTopics()">${esc(f)}</button>`).join('')}
     </div>
     <div id="homeTopics">${renderHomeTopics()}</div>
