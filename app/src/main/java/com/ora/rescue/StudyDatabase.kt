@@ -79,7 +79,7 @@ data class QuizQuestion(
         const val OPTION_SEPARATOR = "\u001F"
         const val SOURCE_CURATED = "Course material"
         const val SOURCE_STUDENT = "Student question"
-        const val SOURCE_AI = "AI-generated"
+        const val SOURCE_AI = "Gemini · course material"
         fun encodeOptions(values: List<String>) = values.joinToString(OPTION_SEPARATOR)
     }
 }

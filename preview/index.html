@@ -504,7 +504,7 @@ function mkSamples() {
       {id:2,taskId:2,day:today(),start:1170,end:1260,minutes:90, done:0,recorded:false},
     ],
     profile: {name:'Shruthi',goal:120,split:true,avatar:'👩🏻‍💻',quizMuted:false},
-    courses: [], chapters: [], questions: [], attempts: []
+    courses: [], chapters: [], questions: [], attempts: [], selectedChapterId:null
   };
 }
 
@@ -530,6 +530,7 @@ if (!S.courses) S.courses = [];
 if (!S.chapters) S.chapters = [];
 if (!S.questions) S.questions = [];
 if (!S.attempts) S.attempts = [];
+if (S.selectedChapterId == null) S.selectedChapterId = null;
 if (S.profile.quizMuted == null) S.profile.quizMuted = false;
 
 function save() { localStorage.setItem(STORE, JSON.stringify(S)); }
@@ -606,6 +607,8 @@ function renderHome() {
   const nearest = S.tasks.filter(t=>t.exam>=date).sort((a,b)=>a.exam.localeCompare(b.exam)||b.priority-a.priority||a.id-b.id)[0];
 
   const filters = ['All','In Progress','Completed',...new Set(S.tasks.map(t=>t.subject))];
+  const selectedChapter=S.chapters.find(ch=>ch.id===S.selectedChapterId);
+  const selectedTask=selectedChapter&&S.tasks.find(t=>t.chapterId===selectedChapter.id);
   return `
   <div>
     <div class="row-between" style="margin-bottom:12px">
@@ -620,11 +623,13 @@ function renderHome() {
       <div class="row-between">
         <div>
           <div class="section-label">📚 Course Library</div>
-          <div class="tiny">Upload material, plan chapters and play mastery quizzes.</div>
+          <div class="tiny">Upload material, select a chapter, study, then unlock its quiz.</div>
         </div>
         <a class="link-btn secondary small" href="#courses">Open</a>
       </div>
     </div>
+
+    ${selectedTask?`<div class="card sage"><div class="section-label">Selected study material</div><h3>${esc(selectedTask.subject)} · ${esc(selectedTask.topic)}</h3><p class="tiny">This chapter will be included when you create your recovery plan.</p><a class="link-btn small" href="#recover">Create plan</a></div>`:''}
 
     ${nextTopic?`
     <div class="card brand">
@@ -1016,7 +1021,7 @@ function generatePlan() {
     }
   }
   // Sort tasks: nearest exam, highest priority, stable id
-  const tasks = [...S.tasks].filter(t=>taskLeft(t)>0)
+  const tasks = [...S.tasks].filter(t=>taskLeft(t)>0 && (!t.chapterId || t.selected !== false))
     .sort((a,b)=>a.exam.localeCompare(b.exam)||b.priority-a.priority||a.id-b.id);
 
   const proposed=[], unplaced=[];
@@ -1206,10 +1211,19 @@ function importCourseName(fileName) {
   titles.forEach((title,order)=>{
     const chapterId=nextId(S.chapters);
     S.chapters.push({id:chapterId,courseId,title,order});
-    S.tasks.push({id:nextId(S.tasks),subject:courseName,topic:title,minutes:60,exam:plusDays(today(),30),priority:2,chapterId});
+    S.tasks.push({id:nextId(S.tasks),subject:courseName,topic:title,minutes:60,exam:plusDays(today(),30),priority:2,chapterId,selected:false});
     chapterSeeds(title).forEach(seed=>S.questions.push({id:nextId(S.questions),chapterId,...seed}));
   });
-  save(); render(); toast(isML?'10 Machine Learning chapters and quizzes added.':'Course added as one chapter. Add reviewed questions in the Android app.');
+  save(); render(); toast(isML?'Course added. Select the chapter you want to study.':'Course added. Select it for study; the Android app uses Gemini after the session.');
+}
+
+function selectChapterForStudy(chapterId) {
+  const chapter=S.chapters.find(ch=>ch.id===Number(chapterId));
+  const task=chapter&&S.tasks.find(t=>t.chapterId===chapter.id);
+  if(!task)return;
+  S.tasks.filter(t=>t.chapterId).forEach(t=>t.selected=t.id===task.id);
+  S.selectedChapterId=chapter.id;
+  save();go('home');toast(`${chapter.title} selected. Add free time, then create your plan.`);
 }
 
 function importCourseFile(input) {
@@ -1238,15 +1252,15 @@ function masteryLabel(score,total) { return ['Review this chapter','Keep practis
 function renderCourses() {
   return `<div>
     <div class="row-between"><div><div class="eyebrow">Course library</div><h2>Material → mastery</h2></div><a class="link-btn secondary small" href="#home">Home</a></div>
-    <p class="small" style="margin-bottom:14px">Upload the supplied Machine Learning ZIP to create chapter topics and playable quizzes. Files stay on your device; this browser stores only the file name and study structure.</p>
+    <p class="small" style="margin-bottom:14px">Upload material, then select the exact chapter you want to study. The quiz appears only after that chapter's session is finished.</p>
     <label class="link-btn full" style="cursor:pointer;margin-bottom:8px">Upload course material<input type="file" accept=".zip,.pdf,.docx,.pptx,.txt" hidden onchange="importCourseFile(this)"></label>
     <button class="secondary full" onclick="importCourseName('MACHINE-LEARNING.zip')">Load Machine Learning demo course</button>
-    <div class="card brand" style="margin-top:12px"><div class="section-label">Hybrid and transparent</div><p class="small">Reviewed course-material questions work offline. Student-authored questions are supported in Android. Cloud AI remains disconnected until a secure provider and consent flow exist.</p></div>
+    <div class="card brand" style="margin-top:12px"><div class="section-label">Gemini-assisted flow</div><p class="small">The Android app sends the selected PDF or text material to Gemini only after a session is finished, then caches the validated questions in Room. This browser demo uses reviewed sample questions and never exposes an API key.</p></div>
     ${S.courses.length?'':`<div class="card empty-state"><div class="ei">📚</div><h3>No course material yet</h3><p>Choose a file or load the demonstration course.</p></div>`}
     ${S.courses.map(course=>{
       const chapters=S.chapters.filter(c=>c.courseId===course.id).sort((a,b)=>a.order-b.order);
       return `<div class="card"><div class="row-between"><div><h3>${esc(course.name)}</h3><div class="tiny">${chapters.length} chapters · ${esc(course.template)}</div></div><button class="danger small" onclick="deleteCourse(${course.id})">Delete</button></div>
-        <div style="margin-top:10px">${chapters.map(ch=>{const qs=S.questions.filter(q=>q.chapterId===ch.id),a=bestAttempt(ch.id);return `<div class="win-row"><div style="min-width:0"><div class="section-label">${esc(ch.title)}</div><div class="tiny">${qs.length} questions${a?` · ${masteryLabel(a.score,a.total)} ${'★'.repeat(quizStars(a.score,a.total))}`:''}</div></div><a class="link-btn secondary small" href="#quiz/${ch.id}" ${qs.length?'':'aria-disabled="true" style="pointer-events:none;opacity:.45"'}>Play</a></div>`}).join('')}</div>
+        <div style="margin-top:10px">${chapters.map(ch=>{const qs=S.questions.filter(q=>q.chapterId===ch.id),a=bestAttempt(ch.id),selected=S.selectedChapterId===ch.id;return `<div class="win-row"><div style="min-width:0"><div class="section-label">${esc(ch.title)}</div><div class="tiny">${qs.length?`${qs.length} quiz questions ready`:'Quiz generated after finishing'}${a?` · ${masteryLabel(a.score,a.total)} ${'★'.repeat(quizStars(a.score,a.total))}`:''}</div></div><button class="${selected?'':'secondary'} small" onclick="selectChapterForStudy(${ch.id})">${selected?'Selected':'Study'}</button></div>`}).join('')}</div>
       </div>`;
     }).join('')}
   </div>`;
@@ -1398,7 +1412,8 @@ $('#progressForm').onsubmit=e=>{
   S.sessions=S.sessions.filter(x=>x.id===session.id||x.recorded||x.taskId!==task.id||x.day<today());
   save();$('#progressDlg').close();
   const hasQuiz=val>0&&task.chapterId&&S.questions.some(q=>q.chapterId===task.chapterId);
-  if(hasQuiz){startQuiz(task.chapterId);toast(`${val} min recorded — chapter challenge unlocked!`)}
+  if(hasQuiz){startQuiz(task.chapterId);toast(`Session finished — chapter challenge unlocked!`)}
+  else if(val>0&&task.chapterId){render();toast('Session finished. The Android app now asks Gemini to create this material quiz.')}
   else{render();toast(val?`${val} min recorded — well done!`:'Missed session recorded. Create a new recovery plan.')}
 };
 

@@ -10,9 +10,9 @@ Ora Rescue has five primary destinations: Home, Calendar, Add Topic, Recovery an
 | Safe acceptance | Discard the preview, recreate it and accept. Completed history is retained; stale plans are rejected. |
 | Progress | Record a completed, partial or missed session after its start. Planned minutes do not count as completed work. |
 | Topic details (Android) | Tap a course topic to see its exam date, priority, estimate and progress. Choose Edit topic to change it. |
-| Course material | Open Course Library from Home, upload the supplied Machine Learning ZIP or load the browser demo, then show the ten linked topics. Android also confirms the exam date and minutes per chapter. |
-| Chapter challenge | Finish a linked session or choose Play in Course Library. Answer shuffled questions, show animated feedback and explanations, then save the mastery result. |
-| Hybrid question bank (Android) | Show the reviewed course-material questions, add a student-authored four-choice question, and explain that cloud AI remains unavailable until securely configured. |
+| Course material | Open Course Library, upload material, then explicitly select the chapter to study. Only that uploaded chapter joins the next recovery preview. |
+| Chapter challenge | Finish the selected chapter's scheduled session. Ora Rescue then opens its quiz automatically; Course Library no longer bypasses the session with a Play button. |
+| Hybrid question bank (Android) | Reviewed and student-authored questions work offline. PDF/text uploads can use Gemini after session completion; validated questions are cached in Room. |
 | Dashboard | Next session today, nearest exam, topic counts, daily goal, planned and completed minutes, remaining work, search and filters. |
 | Profile | Change local name/goal/preferences and reopen Home to show saved results. |
 | Appearance | Switch Light, Dark and System. Confirm the preference after reopening. |
@@ -49,7 +49,7 @@ The group’s *Educational App Ecosystem Review and Ora Rescue Proposal* describ
 | 6. Room persistence | `StudyTask` remains the educational entity. Room v3 also stores course materials, chapters, quiz questions and attempts. DAO operations import and delete complete course paths transactionally, and the migration preserves pre-existing topics. See `VERIFICATION.md` for execution status. |
 | 7. Educational alignment | Students add exam topics, plan within real free time, record progress and preview recovery for unfinished work. This addresses the proposal’s gap of rebuilding a study plan after missed sessions across several subjects. |
 
-Capture Android runtime evidence for the demo and document each member’s actual work and reflection. The browser version demonstrates the same course-to-quiz concept but remains independent from Android Room.
+Capture Android runtime evidence for the demo and document each member’s actual work and reflection. The browser version demonstrates selection and the reviewed post-session quiz but does not call Gemini or share Android Room data.
 
 ## AI assistance and group ownership
 

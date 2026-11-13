@@ -13,7 +13,7 @@ Open `preview/index.html` to explore the interface on your laptop. Install the s
 7. In Profile, change the daily goal, save, reopen Home and point out the next session, nearest exam, goal indicator and separate time totals. Reload/reopen to demonstrate storage.
 8. Use topic search and filters. Tap a topic to show its read-only details, then choose Edit topic and demonstrate the delete confirmation.
 9. On Android, choose the book icon on Home and upload the supplied Machine Learning ZIP. Confirm the detected chapters, exam date and minutes per chapter. Show that the chapters become normal schedulable study topics.
-10. Play a chapter challenge from Course Library, or complete a linked session and accept the quiz prompt. Demonstrate answer animation, explanation, mute/reduced-motion controls and the saved mastery result. Add one student-authored question and clearly identify its source.
+10. Upload material, select one chapter, create its plan and finish the session. The chapter challenge opens automatically; demonstrate answer animation, explanation, mute/reduced-motion controls and the saved mastery result.
 
 ## Main files
 

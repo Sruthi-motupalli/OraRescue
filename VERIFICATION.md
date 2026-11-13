@@ -30,7 +30,7 @@ GitHub Actions completed the Android and browser verification successfully on bo
 
 ## Still to verify
 
-No phone or emulator was connected, so Android runtime appearance, document-picker import, quiz sound/haptics, process restart, Room migration and instrumentation execution remain unverified. Test the native app in Light, Dark and System on a small screen and with enlarged fonts. A full accessibility audit, Android lint and cross-browser testing remain outstanding.
+The Gemini session flow still requires an Android runtime check with a developer-supplied API key, network access and a real PDF/text document. No key is committed. No phone or emulator was connected, so Android runtime appearance, document-picker import, Gemini generation, quiz sound/haptics, process restart, Room migration and instrumentation execution remain unverified. Test the native app in Light, Dark and System on a small screen and with enlarged fonts. A full accessibility audit, Android lint and cross-browser testing remain outstanding.
 
 ### App relaunch check for Assignment 2
 

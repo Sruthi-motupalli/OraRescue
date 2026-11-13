@@ -37,8 +37,14 @@ vm.runInContext(scripts + `
   assert.equal(S.courses.length, 1);
   assert.equal(S.chapters.length, 10);
   assert.equal(S.tasks.filter(t => t.chapterId).length, 10);
+  assert.equal(S.tasks.filter(t => t.chapterId && t.selected).length, 0);
   assert.equal(S.questions.length, 20);
   const chapter = S.chapters[0];
+  selectChapterForStudy(chapter.id);
+  assert.equal(S.selectedChapterId, chapter.id);
+  assert.equal(S.tasks.filter(t => t.chapterId && t.selected).length, 1);
+  assert.ok(renderCourses().includes('Selected'));
+  assert.ok(!renderCourses().includes('>Play</a>'));
   startQuiz(chapter.id, false);
   assert.ok(renderQuiz().includes('Check answer'));
   selectQuizAnswer(0);

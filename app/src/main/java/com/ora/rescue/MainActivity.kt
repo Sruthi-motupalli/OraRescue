@@ -53,6 +53,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     val preview by vm.preview.collectAsStateWithLifecycle()
+    val selectedChapterId by vm.selectedChapterId.collectAsStateWithLifecycle()
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route ?: "home"
@@ -300,10 +301,14 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                             CourseScreen(
                                 snapshot = state.snapshot,
                                 busy = busy,
+                                selectedChapterId = selectedChapterId,
                                 onImport = vm::importCourse,
                                 onAddQuestion = vm::addStudentQuestion,
                                 onDeleteCourse = vm::deleteCourse,
-                                onPractice = { nav.navigate("quiz/chapter/$it") }
+                                onStudy = { taskId ->
+                                    vm.selectStudyChapter(taskId)
+                                    nav.navigate("topic/$taskId")
+                                }
                             )
                         }
                         composable(

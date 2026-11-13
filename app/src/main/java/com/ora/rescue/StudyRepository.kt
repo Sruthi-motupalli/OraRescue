@@ -132,6 +132,26 @@ class StudyRepository(private val database: StudyDatabase) {
         }
     }
 
+    /** Caches validated Gemini questions so later sessions can quiz offline. */
+    suspend fun saveGeneratedQuestions(chapterId: Long, questions: List<GeneratedQuizQuestion>) {
+        require(questions.isNotEmpty()) { "Gemini did not return usable questions." }
+        database.withTransaction {
+            dao.initialize(Revision())
+            require(dao.studyChapters().any { it.id == chapterId }) { "This chapter is no longer available." }
+            dao.insertQuizQuestions(questions.map { question ->
+                QuizQuestion(
+                    chapterId = chapterId,
+                    prompt = question.prompt,
+                    options = QuizQuestion.encodeOptions(question.options),
+                    correctIndex = question.correctIndex,
+                    explanation = question.explanation,
+                    source = QuizQuestion.SOURCE_AI
+                )
+            })
+            dao.bumpRevision()
+        }
+    }
+
     suspend fun saveQuizAttempt(chapterId: Long, sessionId: Long?, score: Int, total: Int) {
         require(total > 0 && score in 0..total) { "Invalid quiz result." }
         database.withTransaction {

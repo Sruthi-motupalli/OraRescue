@@ -29,10 +29,11 @@ private data class PickedMaterial(val name: String, val uri: String, val mimeTyp
 fun CourseScreen(
     snapshot: StudySnapshot,
     busy: Boolean,
+    selectedChapterId: Long?,
     onImport: (String, String, String, Long, Int) -> Unit,
     onAddQuestion: (Long, String, List<String>, Int, String) -> Unit,
     onDeleteCourse: (Long) -> Unit,
-    onPractice: (Long) -> Unit
+    onStudy: (Long) -> Unit
 ) {
     val context = LocalContext.current
     var picked by remember { mutableStateOf<PickedMaterial?>(null) }
@@ -76,7 +77,7 @@ fun CourseScreen(
         item {
             NoteCard(
                 title = "Hybrid question bank",
-                text = "The Machine Learning course uses reviewed questions from the supplied material. You can add your own questions. Optional AI generation is not connected until a secure provider and consent flow are configured.",
+                text = "Choose a chapter to study. After you finish its scheduled session, Gemini creates a short quiz from this material and Ora Rescue caches it for offline review.",
                 icon = Icons.Rounded.AutoAwesome
             )
         }
@@ -111,6 +112,7 @@ fun CourseScreen(
                             }
                         }
                         chapters.forEach { chapter ->
+                            val task = snapshot.tasks.firstOrNull { it.chapterId == chapter.id }
                             val questions = snapshot.questionsForChapter(chapter.id)
                             val attempt = snapshot.bestAttempt(chapter.id)
                             HorizontalDivider()
@@ -123,8 +125,8 @@ fun CourseScreen(
                                 IconButton(onClick = { questionChapter = chapter }, enabled = !busy) {
                                     Icon(Icons.Rounded.AddCircleOutline, contentDescription = "Add question")
                                 }
-                                FilledTonalButton(onClick = { onPractice(chapter.id) }, enabled = questions.isNotEmpty() && !busy) {
-                                    Text("Play")
+                                FilledTonalButton(onClick = { task?.id?.let(onStudy) }, enabled = task != null && !busy) {
+                                    Text(if (chapter.id == selectedChapterId) "Selected" else "Study")
                                 }
                             }
                         }

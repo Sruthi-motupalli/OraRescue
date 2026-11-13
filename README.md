@@ -29,9 +29,20 @@ To update an existing install and retain its data, build with the same signing k
 - Home: next session today, nearest exam, completed and planned time, outstanding work, daily goal, topic search and filters.
 - Calendar: select a date, add/edit multiple exact time windows, copy to dates, or set a day off. Overlaps are rejected.
 - Study topics: Add Topic captures subject, topic, future exam date, estimated minutes and priority. On Android, tap a topic card to see its details, then choose Edit topic for edit/delete controls.
-- Course Library: Android imports through the system document picker. The browser demonstration accepts a file name or loads the Machine Learning demo directly. The supplied pack creates ten chapter-linked study topics and a reviewed starter question bank; other files begin as one chapter.
-- Chapter challenges: completing a linked study session offers a short multiple-choice quiz with explanations, progress, hearts, combo feedback, sound, reduced-motion and mute controls. Attempts and best mastery results are saved locally in Room on Android and localStorage in the browser.
-- Hybrid questions: curated Machine Learning questions and student-authored questions work offline. AI generation is explicitly not connected until a secure external provider, consent flow and server-side key management are supplied.
+- Course Library: upload material, select the exact chapter to study, add free time and create a recovery plan. Unselected uploaded chapters are excluded from that recovery preview.
+- Chapter challenges: finishing the selected chapter's session opens its short multiple-choice quiz automatically. The separate Course Library practice shortcut was removed so the journey remains material → session → quiz.
+- Hybrid questions: reviewed and student-authored questions work offline. For PDF and text uploads without cached questions, the Android app asks Gemini for five grounded questions after completion, validates them, then stores them in Room.
+
+### Gemini setup
+
+Create a Gemini API key in Google AI Studio, then place it in your user-level `~/.gradle/gradle.properties` (never in the repository):
+
+```properties
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Rebuild the app after adding the key. The browser preview deliberately uses reviewed demonstration questions and never contains the key. Direct client-side API keys are suitable for this assessed prototype but can be extracted from an APK; production deployment should move Gemini access behind a protected backend or Firebase AI Logic with App Check.
 - Recovery: preview exact study times before exams, see which topics could not fit, and go straight to Calendar to edit free time. Split work across windows or require one continuous window. Save or discard from the preview.
 - Profile: local name, avatar, daily goal and splitting preference. Light, Dark and System appearance apply immediately and are saved independently on Android and in the browser.
 
