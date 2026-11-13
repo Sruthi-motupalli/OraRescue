@@ -287,6 +287,10 @@ dialog p{font-size:14px;color:var(--ink2);margin-bottom:16px}
 .p-hero .av{font-size:60px;line-height:1}
 .p-hero h3{font-size:20px;font-weight:700;margin-top:8px}
 .p-hero p{font-size:13px;color:var(--ink2);margin-top:4px}
+.login-gate{width:min(430px,100%);margin:auto;padding:24px}
+.login-gate .card{padding:22px}
+.login-gate h1{font-size:28px;margin:8px 0}
+.login-gate[hidden],.phone[hidden]{display:none!important}
 
 /* ── Empty state ── */
 .empty-state{text-align:center;padding:24px 16px}
@@ -371,8 +375,27 @@ applyAppearance();
     </div>
   </aside>
 
+  <section class="login-gate" id="loginGate" aria-labelledby="loginTitle">
+    <div class="card">
+      <div class="eyebrow">LOCAL DEMO ACCESS</div>
+      <h1 id="loginTitle">Welcome to Ora Rescue</h1>
+      <p class="small muted">Sign in to open the study-planning demonstration.</p>
+      <form id="loginForm">
+        <label class="field">Login ID<input name="loginId" type="email" autocomplete="username" required></label>
+        <label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <p id="loginError" class="error-msg" hidden>Use the sample teacher credentials below.</p>
+        <button class="full" type="submit">Sign in</button>
+      </form>
+      <div class="card brand" style="margin-top:14px">
+        <div class="section-label">Teacher demo login</div>
+        <p class="small"><b>Login ID:</b> teacher@ora.demo<br><b>Password:</b> OraDemo2026</p>
+        <p class="tiny">Local demonstration only. No account data is sent to a server.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- Phone frame -->
-  <div class="phone" aria-label="Ora Rescue app preview">
+  <div class="phone" id="appPhone" aria-label="Ora Rescue app preview" hidden>
     <div class="status-bar">
       <span id="clock">9:41</span>
       <span>● ▰ 100%</span>
@@ -1241,7 +1264,12 @@ function importCourseName(fileName) {
     S.tasks.push({id:nextId(S.tasks),subject:courseName,topic:title,minutes:60,exam:plusDays(today(),30),priority:2,chapterId,selected:false});
     chapterSeeds(title).forEach(seed=>S.questions.push({id:nextId(S.questions),chapterId,...seed}));
   });
-  save(); render(); toast(isML?'Course added. Select the chapter you want to study.':'Course added. Select it for study; the Android app uses Gemini after the session.');
+  const firstChapter=S.chapters.find(ch=>ch.courseId===courseId);
+  const firstTask=firstChapter&&S.tasks.find(t=>t.chapterId===firstChapter.id);
+  if(firstTask){S.tasks.filter(t=>t.chapterId).forEach(t=>t.selected=t.id===firstTask.id);S.selectedChapterId=firstChapter.id}
+  save();
+  if(firstTask){go('recover');toast(isML?'Course, study topics and quizzes created. Review and save the plan.':'Study topic created. Review the plan; Android generates its material quiz with Gemini.');}
+  else {render();toast('Course imported.');}
 }
 
 function selectChapterForStudy(chapterId) {
@@ -1396,12 +1424,29 @@ function renderProfile() {
     <div class="card" style="margin-top:10px;padding:0">
       <a class="link-btn secondary full" href="#courses">Open Course Library & quizzes</a>
     </div>
+    <div class="card" style="margin-top:10px;padding:0">
+      <button class="secondary full" onclick="signOutDemo()">Sign out</button>
+    </div>
 
     <p class="tiny" style="color:var(--muted);text-align:center;margin-top:14px">Data stored locally in this browser. Separate from the Android app.</p>
   </div>`;
 }
 
 function setAvatar(av) { S.profile.avatar=av; save(); render(); toast('Avatar updated'); }
+
+const DEMO_LOGIN_ID='teacher@ora.demo', DEMO_LOGIN_PASSWORD='OraDemo2026';
+function showSignedInState(){
+  const signedIn=localStorage.getItem('ora-demo-signed-in')==='true';
+  $('#loginGate').hidden=signedIn;$('#appPhone').hidden=!signedIn;
+  if(signedIn)render();
+}
+function signOutDemo(){localStorage.removeItem('ora-demo-signed-in');showSignedInState();}
+$('#loginForm').onsubmit=e=>{
+  e.preventDefault();const data=new FormData(e.target);
+  const ok=String(data.get('loginId')).trim().toLowerCase()===DEMO_LOGIN_ID&&data.get('password')===DEMO_LOGIN_PASSWORD;
+  $('#loginError').hidden=ok;
+  if(ok){localStorage.setItem('ora-demo-signed-in','true');showSignedInState();}
+};
 
 // Profile form binding (called after render)
 document.addEventListener('submit', e => {
@@ -1499,6 +1544,7 @@ function toast(msg) {
 
 window.addEventListener('hashchange',routeFromHash);
 if(!location.hash) location.hash='home'; else routeFromHash();
+showSignedInState();
 </script>
 </body>
 </html>

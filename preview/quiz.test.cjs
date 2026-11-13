@@ -3,6 +3,8 @@ const vm = require('vm');
 const assert = require('assert');
 
 const html = fs.readFileSync(require('path').join(__dirname, 'index.html'), 'utf8');
+assert.ok(html.includes('Teacher demo login'));
+assert.ok(html.includes('teacher@ora.demo'));
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]).join('\n');
 const storage = new Map();
 const element = () => ({
@@ -37,7 +39,9 @@ vm.runInContext(scripts + `
   assert.equal(S.courses.length, 1);
   assert.equal(S.chapters.length, 10);
   assert.equal(S.tasks.filter(t => t.chapterId).length, 10);
-  assert.equal(S.tasks.filter(t => t.chapterId && t.selected).length, 0);
+  assert.equal(S.tasks.filter(t => t.chapterId && t.selected).length, 1);
+  assert.ok(S.selectedChapterId);
+  assert.ok(renderRecover().includes('Recovery'));
   assert.equal(S.questions.length, 20);
   const chapter = S.chapters[0];
   selectChapterForStudy(chapter.id);

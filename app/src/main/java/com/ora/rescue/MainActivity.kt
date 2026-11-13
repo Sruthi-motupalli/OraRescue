@@ -13,9 +13,11 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +36,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val vm: StudyViewModel = viewModel()
+            val prefs = (application as OraApplication).prefs
+            var signedIn by remember { mutableStateOf(prefs.getBoolean("demo_signed_in", false)) }
             val themePreference by vm.themePreference.collectAsStateWithLifecycle()
             OraRescueTheme(themePreference = themePreference) {
                 val dark = LocalOraAccents.current.dark
@@ -43,13 +47,23 @@ class MainActivity : ComponentActivity() {
                         isAppearanceLightNavigationBars = !dark
                     }
                 }
-                OraApp(vm)
+                if (signedIn) {
+                    OraApp(vm, onSignOut = {
+                        prefs.edit().putBoolean("demo_signed_in", false).apply()
+                        signedIn = false
+                    })
+                } else {
+                    LoginScreen(onLogin = {
+                        prefs.edit().putBoolean("demo_signed_in", true).apply()
+                        signedIn = true
+                    })
+                }
             }
         }
     }
 }
 @Composable
-private fun OraApp(vm: StudyViewModel = viewModel()) {
+private fun OraApp(vm: StudyViewModel = viewModel(), onSignOut: () -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     val preview by vm.preview.collectAsStateWithLifecycle()
@@ -133,6 +147,11 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                         }
                         IconButton(onClick = { nav.navigate("courses") { launchSingleTop = true } }) {
                             Icon(Icons.Rounded.LibraryBooks, contentDescription = "Open course library")
+                        }
+                    }
+                    if (route == "profile") {
+                        IconButton(onClick = onSignOut) {
+                            Icon(Icons.Rounded.Logout, contentDescription = "Sign out")
                         }
                     }
                     Spacer(Modifier.width(16.dp))

@@ -2,6 +2,8 @@
 
 A native Kotlin / Jetpack Compose study planner with exact free-time windows and local Room storage.
 
+Demo sign-in: `teacher@ora.demo` / `OraDemo2026`. This is intentionally a local classroom-demo gate, not production authentication.
+
 ## Try the interface on your laptop
 
 Open `preview/index.html` in a modern browser, or use the hosted GitHub Pages preview. The interactive demonstration uses its own sample data and browser storage, separate from Android Room. Hash-based URLs keep Home, Course Library and chapter quizzes directly navigable.

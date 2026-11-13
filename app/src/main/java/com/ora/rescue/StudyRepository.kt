@@ -49,6 +49,8 @@ class StudyRepository(private val database: StudyDatabase) {
         )
     }
 
+    data class ImportedCourse(val materialId: Long, val firstTaskId: Long, val firstChapterId: Long)
+
     suspend fun importCourse(
         fileName: String,
         sourceUri: String,
@@ -56,14 +58,14 @@ class StudyRepository(private val database: StudyDatabase) {
         examDay: Long,
         minutesPerChapter: Int,
         today: LocalDate = LocalDate.now()
-    ) {
+    ): ImportedCourse {
         require(fileName.isNotBlank()) { "Choose a course material file." }
         require(examDay > today.toEpochDay()) { "Choose an exam date after today." }
         require(minutesPerChapter in 15..1440) { "Choose 15 to 1,440 minutes per chapter." }
         val chapterTitles = CourseTemplates.chaptersFor(fileName)
         require(chapterTitles.isNotEmpty()) { "No chapters were found." }
 
-        database.withTransaction {
+        return database.withTransaction {
             dao.initialize(Revision())
             val materialId = dao.insertCourseMaterial(
                 CourseMaterial(
@@ -73,9 +75,11 @@ class StudyRepository(private val database: StudyDatabase) {
                     importedAt = System.currentTimeMillis()
                 )
             )
+            var firstTaskId = 0L
+            var firstChapterId = 0L
             chapterTitles.forEachIndexed { index, title ->
                 val chapterId = dao.insertStudyChapter(StudyChapter(materialId = materialId, title = title, orderIndex = index))
-                dao.insert(
+                val taskId = dao.insert(
                     StudyTask(
                         subject = fileName.substringBeforeLast('.').ifBlank { "Imported course" },
                         topic = title,
@@ -85,6 +89,10 @@ class StudyRepository(private val database: StudyDatabase) {
                         chapterId = chapterId
                     )
                 )
+                if (index == 0) {
+                    firstTaskId = taskId
+                    firstChapterId = chapterId
+                }
                 val seeds = CourseTemplates.questionsFor(title)
                 if (seeds.isNotEmpty()) {
                     dao.insertQuizQuestions(seeds.map { seed ->
@@ -100,6 +108,7 @@ class StudyRepository(private val database: StudyDatabase) {
             }
             dao.clearPending(today.toEpochDay())
             dao.bumpRevision()
+            ImportedCourse(materialId, firstTaskId, firstChapterId)
         }
     }
 

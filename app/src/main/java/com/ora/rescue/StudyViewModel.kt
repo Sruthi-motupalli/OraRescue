@@ -229,10 +229,28 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun importCourse(fileName: String, sourceUri: String, mimeType: String, examDay: Long, minutesPerChapter: Int) = perform(
-        message = "Course imported. Chapters are now study topics.",
-        destination = "courses"
+        message = "Course imported. Review the generated plan, then save it.",
+        destination = "recover"
     ) {
-        repository.importCourse(fileName, sourceUri, mimeType, examDay, minutesPerChapter)
+        val imported = repository.importCourse(fileName, sourceUri, mimeType, examDay, minutesPerChapter)
+        _selectedChapterId.value = imported.firstChapterId
+        prefs.edit().putLong("selected_chapter_id", imported.firstChapterId).apply()
+
+        var snapshot = repository.snapshot()
+        val chapter = snapshot.chapters.first { it.id == imported.firstChapterId }
+        if (snapshot.questionsForChapter(chapter.id).isEmpty()) {
+            val material = snapshot.courseMaterials.first { it.id == imported.materialId }
+            // A network/API failure must not undo the imported study path.
+            runCatching {
+                val generated = quizGenerator.generate(material, chapter.title)
+                repository.saveGeneratedQuestions(chapter.id, generated)
+                snapshot = repository.snapshot()
+            }
+        }
+
+        // Availability still controls real times; without it the preview explains the shortfall.
+        val scoped = snapshot.copy(tasks = snapshot.tasks.filter { it.chapterId == null || it.chapterId == imported.firstChapterId })
+        _preview.value = Planner.build(scoped, LocalDate.now(), snapshot.profile.preferredSplit, LocalTime.now().let { it.hour * 60 + it.minute })
     }
 
     fun addStudentQuestion(chapterId: Long, prompt: String, options: List<String>, correctIndex: Int, explanation: String) = perform(
