@@ -482,10 +482,10 @@ fun SessionCard(
     task: StudyTask,
     session: StudySession,
     busy: Boolean,
-    scheduleLabel: String? = null,
     canRecord: Boolean,
     onEdit: () -> Unit,
     onProgress: () -> Unit,
+    scheduleLabel: String? = null,
     modifier: Modifier = Modifier
 ) {
     val cs = MaterialTheme.colorScheme
