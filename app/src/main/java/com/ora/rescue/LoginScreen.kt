@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
-const val DEMO_LOGIN_ID = "teacher@ora.demo"
+const val DEMO_LOGIN_ID = "demo@orarescue.app"
 const val DEMO_LOGIN_PASSWORD = "OraDemo2026"
 
 /** Local demonstration gate only. It intentionally does not claim server security. */
@@ -58,14 +58,14 @@ fun LoginScreen(onLogin: () -> Unit) {
             Button(
                 onClick = {
                     if (email.trim().equals(DEMO_LOGIN_ID, ignoreCase = true) && password == DEMO_LOGIN_PASSWORD) onLogin()
-                    else error = "Use the sample teacher credentials shown below."
+                    else error = "Use the sample credentials shown below."
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
             ) { Text("Sign in") }
 
             OutlinedCard(colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Teacher demo login", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text("Sample demo login", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Text("Login ID: $DEMO_LOGIN_ID")
                     Text("Password: $DEMO_LOGIN_PASSWORD")
                     Text("Local demonstration only—no account or personal data is sent to a server.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

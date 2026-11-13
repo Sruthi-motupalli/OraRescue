@@ -3,8 +3,8 @@ const vm = require('vm');
 const assert = require('assert');
 
 const html = fs.readFileSync(require('path').join(__dirname, 'index.html'), 'utf8');
-assert.ok(html.includes('Teacher demo login'));
-assert.ok(html.includes('teacher@ora.demo'));
+assert.ok(html.includes('Sample demo login'));
+assert.ok(html.includes('demo@orarescue.app'));
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]).join('\n');
 const storage = new Map();
 const element = () => ({

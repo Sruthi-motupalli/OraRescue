@@ -34,7 +34,7 @@ It is not automatically a high-scoring submission. The largest risks are present
 
 - Added a prominent **Add task** route that does not require course material.
 - Restored **Calendar** as a primary navigation destination.
-- Added a clearly labelled local teacher demo sign-in with visible sample credentials.
+- Added a clearly labelled local demo sign-in with visible sample credentials.
 - Made course import select the first chapter, prepare quiz content and open a plan preview automatically; saved availability remains required for real session times.
 - Clarified that course upload is optional.
 - Kept assigned sessions visible by date in the selected calendar day's agenda.

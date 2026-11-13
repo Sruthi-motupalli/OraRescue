@@ -1,6 +1,6 @@
 # Start here
 
-Teacher demo login: `teacher@ora.demo` / `OraDemo2026`. This is a local demonstration gate, not a cloud account system.
+Sample demo login: `demo@orarescue.app` / `OraDemo2026`. This is a local demonstration gate, not a cloud account system.
 
 Open `preview/index.html` to explore the interface on your laptop. Install the supplied debug APK on a test phone or emulator, or run the native app from Android Studio. For an existing install, see the signing note in `README.md` before updating. Browser and Android data are independent.
 

@@ -16,7 +16,7 @@ Ora Rescue has five primary destinations: Home, Calendar, Material, Plan and Pro
 | Dashboard | Today-first task queue, next session, nearest exam, completed-task/minute progress, remaining work, search and filters. Completing a card removes it immediately; upcoming cards can be pulled forward with one action. |
 | Manual task flow | Add a subject/topic, estimate, exam date and priority without uploading any course material. Course upload is optional. |
 | Calendar schedule | Primary Calendar destination marks free time, assigned sessions and exams; selecting a date opens its exact agenda and planning controls. |
-| Teacher demo access | A clearly labelled local-only sign-in provides visible sample teacher credentials and persists the demo session until sign-out. It is not presented as cloud authentication. |
+| Demo access | A clearly labelled local-only sign-in provides visible sample credentials and persists the demo session until sign-out. It is not presented as cloud authentication. |
 | Import automation | Upload creates chapter-linked study topics, selects the first chapter, prepares its quiz (curated template or Gemini when configured), and opens a recovery preview. Real session times still require saved free-time windows. |
 | Profile | Change local name/goal/preferences and reopen Home to show saved results. |
 | Appearance | Switch Light, Dark and System. Confirm the preference after reopening. |

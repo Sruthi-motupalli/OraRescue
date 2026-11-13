@@ -2,7 +2,7 @@
 
 A native Kotlin / Jetpack Compose study planner with exact free-time windows and local Room storage.
 
-Demo sign-in: `teacher@ora.demo` / `OraDemo2026`. This is intentionally a local classroom-demo gate, not production authentication.
+Demo sign-in: `demo@orarescue.app` / `OraDemo2026`. This is intentionally a local classroom-demo gate, not production authentication.
 
 ## Try the interface on your laptop
 
