@@ -141,6 +141,30 @@ fun HomeScreen(
             }
         }
 
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(onClick = onAdd, enabled = !busy, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Rounded.AddTask, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add task")
+                }
+                OutlinedButton(onClick = onCalendar, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Rounded.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Calendar")
+                }
+            }
+            Text(
+                "Add a task manually—course upload is optional.",
+                style = MaterialTheme.typography.bodySmall,
+                color = cs.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+        }
+
         if (nextSession != null && nextTopic != null) {
             item {
                 NoteCard(

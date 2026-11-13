@@ -1,6 +1,6 @@
 # Features and demo
 
-Ora Rescue has five primary destinations: Home, Calendar, Add Topic, Recovery and Profile. Native topic cards open Topic Details, with a separate action to edit. Light uses icy lavender and violet accents. Dark uses navy and layered lavender surfaces. Android uses licensed Inter. The preview prefers the Apple system font where available and falls back to bundled Inter.
+Ora Rescue has five primary destinations: Home, Calendar, Material, Plan and Profile. A prominent Add task action opens the manual topic form without requiring an upload. Native topic cards open Topic Details, with a separate action to edit. Light uses icy lavender and violet accents. Dark uses navy and layered lavender surfaces. Android uses licensed Inter. The preview prefers the Apple system font where available and falls back to bundled Inter.
 
 | Feature | Show in the demonstration |
 | --- | --- |
@@ -14,6 +14,8 @@ Ora Rescue has five primary destinations: Home, Calendar, Add Topic, Recovery an
 | Chapter challenge | Finish the selected chapter's scheduled session. Ora Rescue then opens its quiz automatically; Course Library no longer bypasses the session with a Play button. |
 | Hybrid question bank (Android) | Reviewed and student-authored questions work offline. PDF/text uploads can use Gemini after session completion; validated questions are cached in Room. |
 | Dashboard | Today-first task queue, next session, nearest exam, completed-task/minute progress, remaining work, search and filters. Completing a card removes it immediately; upcoming cards can be pulled forward with one action. |
+| Manual task flow | Add a subject/topic, estimate, exam date and priority without uploading any course material. Course upload is optional. |
+| Calendar schedule | Primary Calendar destination marks free time, assigned sessions and exams; selecting a date opens its exact agenda and planning controls. |
 | Profile | Change local name/goal/preferences and reopen Home to show saved results. |
 | Appearance | Switch Light, Dark and System. Confirm the preference after reopening. |
 | Persistence | Android uses Room schema v3 with non-destructive migrations from v1 and v2. Browser course and quiz data persist independently in local storage. |

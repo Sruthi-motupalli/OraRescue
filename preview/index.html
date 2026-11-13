@@ -380,8 +380,9 @@ applyAppearance();
     <main class="screen" id="screen" aria-live="polite"></main>
     <nav aria-label="Bottom navigation">
       <button data-p="home" onclick="go('home')"><span class="ic" aria-hidden="true">☑</span>My plan</button>
+      <button data-p="calendar" onclick="go('calendar')"><span class="ic" aria-hidden="true">▦</span>Calendar</button>
       <button data-p="courses" onclick="go('courses')"><span class="ic" aria-hidden="true">▤</span>Material</button>
-      <button data-p="recover" onclick="go('recover')"><span class="ic" aria-hidden="true">◷</span>Plan study</button>
+      <button data-p="recover" onclick="go('recover')"><span class="ic" aria-hidden="true">◷</span>Plan</button>
       <button data-p="profile" onclick="go('profile')"><span class="ic" aria-hidden="true">♙</span>Profile</button>
     </nav>
   </div>
@@ -630,6 +631,12 @@ function renderHome() {
       <div class="tiny" style="margin-top:6px">1 Upload material&nbsp; → &nbsp;2 Plan study&nbsp; → &nbsp;3 Complete or skip&nbsp; → &nbsp;4 Quiz or recovery</div>
     </div>
 
+    <div class="action-row" style="margin:0 0 12px">
+      <button onclick="go('add')">＋ Add task</button>
+      <button class="secondary" onclick="go('calendar')">▦ Calendar</button>
+    </div>
+    <p class="tiny" style="margin:-6px 0 12px">Course upload is optional. Add any subject or study task manually.</p>
+
     <div class="card brand" style="padding:13px 14px">
       <div class="row-between">
         <div>
@@ -784,7 +791,7 @@ function renderCalendar() {
 
   return `<div>
     <div class="row-between" style="margin-bottom:10px">
-      <h2>Calendar</h2>
+      <div><h2>Calendar</h2><div class="tiny">See assigned tasks by date and manage free time.</div></div>
       <button class="secondary small" onclick="calDay=today();calYear=new Date().getFullYear();calMonth=new Date().getMonth();render()">Today</button>
     </div>
 

@@ -51,6 +51,10 @@ vm.runInContext(scripts + `
   assert.ok(plannedHome.includes('Today'));
   assert.ok(plannedHome.includes('Upcoming'));
   assert.ok(plannedHome.includes('Do now'));
+  assert.ok(plannedHome.includes('Add task'));
+  assert.ok(plannedHome.includes('Course upload is optional'));
+  assert.ok(renderCalendar().includes('Agenda'));
+  assert.ok(renderCalendar().includes('See assigned tasks by date'));
   assert.ok(!plannedHome.includes('This chapter is selected but has not been scheduled yet.'));
   S.sessions.push({id:1000,taskId:selectedTask.id,day:plusDays(today(),-1),start:600,end:660,minutes:60,done:0,recorded:false});
   finishSessionNow(1000);

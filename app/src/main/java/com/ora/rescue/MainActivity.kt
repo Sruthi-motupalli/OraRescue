@@ -128,6 +128,9 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                         )
                     }
                     if (route == "home") {
+                        IconButton(onClick = { nav.navigate("task/0") { launchSingleTop = true } }, enabled = !busy) {
+                            Icon(Icons.Rounded.AddTask, contentDescription = "Add task without course material")
+                        }
                         IconButton(onClick = { nav.navigate("courses") { launchSingleTop = true } }) {
                             Icon(Icons.Rounded.LibraryBooks, contentDescription = "Open course library")
                         }
@@ -156,6 +159,18 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                 )
 
                 NavigationBarItem(
+                    selected = route == "calendar",
+                    onClick = { navigateTab("calendar") },
+                    icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = null) },
+                    label = { Text("Calendar", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
+                    )
+                )
+
+                NavigationBarItem(
                     selected = route == "courses",
                     onClick = { nav.navigate("courses") { launchSingleTop = true } },
                     icon = { Icon(Icons.Rounded.LibraryBooks, contentDescription = null) },
@@ -171,7 +186,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                     selected = route == "recover",
                     onClick = { navigateTab("recover") },
                     icon = { Icon(Icons.Rounded.Schedule, contentDescription = null) },
-                    label = { Text("Plan study", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text("Plan", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = cs.primary,
                         selectedTextColor = cs.primary,

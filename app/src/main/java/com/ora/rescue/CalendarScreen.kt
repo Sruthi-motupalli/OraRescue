@@ -63,7 +63,7 @@ fun CalendarScreen(
         item { Column {
             Eyebrow("YOUR STUDY SCHEDULE")
             Text("Calendar", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Choose when you have room to recover.", color = cs.onSurfaceVariant)
+            Text("See assigned tasks by date and manage your free time.", color = cs.onSurfaceVariant)
         } }
         item { Surface(shape = RoundedCornerShape(24.dp), color = cs.surface) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -153,7 +153,7 @@ fun CalendarScreen(
         if (sessions.isEmpty()) item {
             Text(
                 if (past) "No study sessions were saved for this date."
-                else "No study sessions yet. Add free time, then create and save a plan.",
+                else "No tasks assigned to this date. Add free time, then create and save a plan.",
                 color = cs.onSurfaceVariant
             )
         }
