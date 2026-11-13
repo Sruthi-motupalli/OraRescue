@@ -388,6 +388,35 @@ class StudyRepository(private val database: StudyDatabase) {
     }
 
     /**
+     * Completes any pending session immediately, including work planned for later.
+     * The future allocation is moved to today as an unslotted session before it is closed,
+     * so progress is never falsely recorded before its scheduled start time.
+     */
+    suspend fun completeNow(sessionId: Long, minutes: Int, today: LocalDate = LocalDate.now()) {
+        val todayDay = today.toEpochDay()
+        database.withTransaction {
+            dao.initialize(Revision())
+            val session = requireNotNull(dao.session(sessionId)) { "This session changed. Refresh the plan." }
+            require(session.status == StudySession.PENDING) { "Progress for this session is already recorded." }
+            val task = requireNotNull(dao.task(session.taskId)) { "Task no longer exists." }
+            val remaining = readSnapshot().remaining(task)
+            require(minutes in 1..minOf(session.allocatedMinutes, remaining)) { "Enter valid completed minutes for this session." }
+
+            dao.updateSession(
+                session.copy(
+                    day = todayDay,
+                    startMinute = -1,
+                    endMinute = -1,
+                    completedMinutes = minutes,
+                    status = StudySession.CLOSED
+                )
+            )
+            dao.clearTaskPending(task.id, todayDay)
+            dao.bumpRevision()
+        }
+    }
+
+    /**
      * Atomically commits an accepted recovery plan to the database.
      * Strictly verifies that the database has not changed since the preview was generated.
      */

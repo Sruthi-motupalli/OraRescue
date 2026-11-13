@@ -235,6 +235,7 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 onRecover = { navigateTab("recover") },
                                 onCalendar = { navigateTab("calendar") },
                                 onProgress = vm::progress,
+                                onCompleteNow = vm::completeNow,
                                 onSkip = { id ->
                                     vm.progress(id, 0)
                                     navigateTab("recover")

@@ -593,15 +593,18 @@ function renderHome() {
   const date = today();
   const minute = nowMin();
   const todaySess = sessionsForDay(date);
-  const planQueue = S.sessions
-    .filter(s => !s.recorded || s.day === date)
-    .sort((a,b)=>a.recorded-b.recorded||a.day.localeCompare(b.day)||(a.start??-1)-(b.start??-1));
+  const activeSessions = S.sessions.filter(s => !s.recorded);
+  const todayQueue = activeSessions.filter(s => s.day === date).sort((a,b)=>(a.start??-1)-(b.start??-1));
+  const overdueQueue = activeSessions.filter(s => s.day < date).sort((a,b)=>a.day.localeCompare(b.day)||(a.start??-1)-(b.start??-1));
+  const upcomingQueue = activeSessions.filter(s => s.day > date).sort((a,b)=>a.day.localeCompare(b.day)||(a.start??-1)-(b.start??-1));
   const next = todaySess.find(s => !s.recorded && s.start != null && s.end > minute);
   const nextTopic = next && S.tasks.find(t => t.id === next.taskId);
-  const plannedToday = todaySess.filter(s => !s.recorded).reduce((sum, s) => sum + s.minutes, 0);
+  const plannedToday = todaySess.reduce((sum, s) => sum + s.minutes, 0);
   const remaining = S.tasks.reduce((sum, t) => sum + taskLeft(t), 0);
   const doneToday = todaySess.reduce((a,s)=>a+s.done, 0);
-  const pct = Math.min(100, Math.round(doneToday/goalMin*100));
+  const completedTodayCount = todaySess.filter(s=>s.recorded&&s.done>0).length;
+  const todayTaskCount = todaySess.length;
+  const pct = plannedToday ? Math.min(100, Math.round(doneToday/plannedToday*100)) : 0;
   const doneTopics = S.tasks.filter(t=>taskLeft(t)<=0).length;
   const totalFocus = S.sessions.reduce((a,s)=>a+s.done, 0);
   const openCount  = S.tasks.filter(t=>taskLeft(t)>0).length;
@@ -662,35 +665,39 @@ function renderHome() {
     </div>
 
     <div class="goal-card">
-      <div class="row-between"><span class="tiny" style="color:var(--on-banner)">TODAY'S GOAL</span><span class="tiny" style="color:var(--on-banner)">${doneToday} / ${goalMin} min</span></div>
-      <h3>${doneToday} min completed today</h3>
-      <p class="sub">${plannedToday} min planned today · ${remaining} min remaining across topics</p>
+      <div class="row-between"><span class="tiny" style="color:var(--on-banner)">TODAY'S PLAN</span><span class="tiny" style="color:var(--on-banner)">${completedTodayCount} of ${todayTaskCount} tasks</span></div>
+      <h3>${todayTaskCount ? `${doneToday} of ${plannedToday} planned min` : 'Nothing scheduled today'}</h3>
+      <p class="sub">${todayQueue.length} active today · ${remaining} min remaining across topics</p>
       <div class="prog-bg" role="progressbar" aria-label="Daily study goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="prog-fill" style="width:${pct}%"></div></div>
     </div>
 
     <div class="row-between" style="margin:16px 0 6px">
-      <div class="section-label">My Study Plan</div>
+      <div class="section-label">Today</div>
       <button class="quiet small" onclick="go('calendar')">Calendar ›</button>
     </div>
-    ${planQueue.length===0?`<div class="card empty-state"><div class="ei">☑</div><h3>Your study plan is clear</h3><p>${remaining?'Select work, add free time and create a plan.':'Add a study topic to start planning.'}</p><div class="action-row">${remaining?`<button class="secondary small" onclick="go('calendar')">Add free time</button><button class="small" onclick="go('recover')">Create plan</button>`:`<button class="small" onclick="go('add')">Add topic</button>`}</div></div>`:
-      planQueue.map(s=>{
+    ${todayQueue.length===0?`<div class="card empty-state"><div class="ei">☑</div><h3>${todayTaskCount?'Today is complete':'Nothing active today'}</h3><p>${todayTaskCount?'Completed tasks are saved in your progress and removed from this list.':remaining?'Create a plan or do an upcoming task now.':'Add a study topic to start planning.'}</p><div class="action-row">${remaining?`<button class="secondary small" onclick="go('calendar')">Add free time</button><button class="small" onclick="go('recover')">Create plan</button>`:`<button class="small" onclick="go('add')">Add topic</button>`}</div></div>`:
+      todayQueue.map(s=>{
         const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:today()};
         const tr=s.start!=null?`${minToTime(s.start)} – ${minToTime(s.end)}`:`${s.minutes} min`;
-        const status=s.recorded?(s.done?'Completed':'Missed'):s.day<date?'Overdue':s.day===date?(canRecord(s)?'Ready':'Today'):'Upcoming';
-        const dateText=s.day===date?'Today':fmtLong(s.day);
+        const status=canRecord(s)?'Ready':'Later today';
+        const dateText='Today';
         return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
           <div class="row-between">
             <span class="tiny" style="font-weight:700;color:var(--brand)">${dateText} · ${esc(t.subject)}</span>
-            <span class="badge ${s.recorded?'g':s.day<date?'r':'a'}">${status}</span>
+            <span class="badge a">${status}</span>
           </div>
           <div class="section-label" style="margin:4px 0 2px">${esc(t.topic)}</div>
           <div class="tiny" style="margin-bottom:8px">${tr} · ${s.minutes} min planned</div>
           <div class="row-between">
-            <span class="tiny">${s.recorded?(s.done?`${s.done} min completed`:'Missed'):`${s.minutes} min planned`}</span>
-            ${s.recorded?'':canRecord(s)?`<span class="action-row"><button class="small" onclick="finishSessionNow(${s.id})">✓ Complete</button>${s.day<date?`<button class="secondary small" onclick="skipSession(${s.id})">Skipped</button>`:''}</span>`:`<button class="secondary small" disabled>${status}</button>`}
+            <span class="tiny">${s.minutes} min planned</span>
+            ${canRecord(s)?`<button class="small" onclick="finishSessionNow(${s.id})">✓ Complete</button>`:`<button class="secondary small" onclick="doSessionNow(${s.id})">Do now</button>`}
           </div>
         </div>`;
       }).join('')}
+
+    ${overdueQueue.length?`<div class="row-between" style="margin:18px 0 8px"><div class="section-label">Needs recovery (${overdueQueue.length})</div><button class="quiet small" onclick="go('recover')">Recover ›</button></div>${overdueQueue.map(s=>{const t=S.tasks.find(x=>x.id===s.taskId);return `<div class="card" style="padding:12px 14px"><div class="row-between"><div><b>${esc(t?.topic||'Study session')}</b><div class="tiny">${fmtLong(s.day)} · ${s.minutes} min</div></div><span class="action-row"><button class="secondary small" onclick="skipSession(${s.id})">Skipped</button><button class="small" onclick="doSessionNow(${s.id})">Do now</button></span></div></div>`}).join('')}`:''}
+
+    ${upcomingQueue.length?`<div class="row-between" style="margin:18px 0 8px"><div class="section-label">Upcoming (${upcomingQueue.length})</div><button class="quiet small" onclick="go('calendar')">Calendar ›</button></div>${upcomingQueue.slice(0,3).map(s=>{const t=S.tasks.find(x=>x.id===s.taskId);return `<div class="card" style="padding:12px 14px"><div class="row-between"><div><b>${esc(t?.topic||'Study session')}</b><div class="tiny">${fmtLong(s.day)} · ${s.minutes} min</div></div><button class="secondary small" onclick="doSessionNow(${s.id})">Do now</button></div></div>`}).join('')}`:''}
 
     <div class="row-between" style="margin:18px 0 8px">
       <div class="section-label">All Topics (${S.tasks.length})</div>
@@ -1427,6 +1434,14 @@ $('#progressForm').onsubmit=e=>{
 function finishSessionNow(id){
   const session=S.sessions.find(x=>x.id===Number(id)),task=S.tasks.find(t=>t.id===session?.taskId);
   if(!task||!canRecord(session)){toast('This task becomes available when its session starts.');return}
+  recordSession(session,Math.min(session.minutes,taskLeft(task)));
+}
+
+function doSessionNow(id){
+  const session=S.sessions.find(x=>x.id===Number(id)),task=S.tasks.find(t=>t.id===session?.taskId);
+  if(!session||session.recorded||!task){toast('This task is no longer available.');return}
+  // Moving a future task to an unslotted session now keeps the no-early-progress rule honest.
+  session.day=today();session.start=null;session.end=null;
   recordSession(session,Math.min(session.minutes,taskLeft(task)));
 }
 

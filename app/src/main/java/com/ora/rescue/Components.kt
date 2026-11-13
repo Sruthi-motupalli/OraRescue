@@ -597,7 +597,7 @@ fun SessionCard(
                     ) {
                         Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Finish session")
+                        Text(if (canRecord) "Complete" else "Do now")
                     }
                 }
             }

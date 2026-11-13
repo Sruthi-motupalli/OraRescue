@@ -37,6 +37,7 @@ fun HomeScreen(
     onRecover: () -> Unit,
     onCalendar: () -> Unit,
     onProgress: (Long, Int) -> Unit,
+    onCompleteNow: (Long, Int) -> Unit,
     onSkip: (Long) -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
@@ -52,15 +53,18 @@ fun HomeScreen(
     // Real stats
     val now = clock.hour * 60 + clock.minute
     val todaySessions = snapshot.sessions.filter { it.day == todayEpoch }.sortedBy { it.startMinute }
-    val planSessions = snapshot.sessions
-        .filter { it.status == StudySession.PENDING || it.day == todayEpoch }
-        .sortedWith(compareBy<StudySession> { it.status != StudySession.PENDING }.thenBy { it.day }.thenBy { it.startMinute })
+    val activeSessions = snapshot.sessions.filter { it.status == StudySession.PENDING }
+    val todayPlan = activeSessions.filter { it.day == todayEpoch }.sortedBy { it.startMinute }
+    val overduePlan = activeSessions.filter { it.day < todayEpoch }.sortedWith(compareBy<StudySession> { it.day }.thenBy { it.startMinute })
+    val upcomingPlan = activeSessions.filter { it.day > todayEpoch }.sortedWith(compareBy<StudySession> { it.day }.thenBy { it.startMinute })
     val nextSession = todaySessions.firstOrNull {
         it.status == StudySession.PENDING && it.hasExactTimes && it.endMinute > now
     }
     val nextTopic = nextSession?.let { session -> snapshot.tasks.find { it.id == session.taskId } }
     val todayWorked = todaySessions.sumOf { it.completedMinutes }
-    val todayPlanned = todaySessions.filter { it.status == StudySession.PENDING }.sumOf { it.allocatedMinutes }
+    val todayPlanned = todaySessions.sumOf { it.allocatedMinutes }
+    val todayCompletedTasks = todaySessions.count { it.status == StudySession.CLOSED && it.completedMinutes > 0 }
+    val todayTaskCount = todaySessions.size
     val todayCapacity = snapshot.dayCapacity(todayEpoch)
     val totalDoneMinutes = snapshot.sessions.sumOf { it.completedMinutes }
     val doneTopics = snapshot.tasks.count { snapshot.remaining(it) == 0 }
@@ -244,8 +248,7 @@ fun HomeScreen(
 
         // Today's Goal & Recovery Shortcut Banner
         item {
-            val goal = profile.studyGoalMinutes
-            val goalProgress = if (goal > 0) (todayWorked.toFloat() / goal).coerceIn(0f, 1f) else 0f
+            val goalProgress = if (todayPlanned > 0) (todayWorked.toFloat() / todayPlanned).coerceIn(0f, 1f) else 0f
             val goalPercent = (goalProgress * 100).toInt()
 
             Surface(
@@ -266,7 +269,7 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Today's goal", style = MaterialTheme.typography.labelSmall, color = accents.onBanner.copy(alpha = 0.9f))
+                            Text("Today's plan", style = MaterialTheme.typography.labelSmall, color = accents.onBanner.copy(alpha = 0.9f))
                             IconButton(
                                 onClick = onRecover,
                                 modifier = Modifier
@@ -279,14 +282,14 @@ fun HomeScreen(
                         }
 
                         Text(
-                            text = "$todayWorked / $goal min completed today",
+                            text = if (todayTaskCount > 0) "$todayCompletedTasks of $todayTaskCount tasks · $todayWorked of $todayPlanned min" else "Nothing scheduled today",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = accents.onBanner
                         )
 
                         Text(
-                            text = "$todayPlanned min planned today · $outstanding min remaining across topics",
+                            text = "${todayPlan.size} active today · $outstanding min remaining across topics",
                             style = MaterialTheme.typography.bodySmall,
                             color = accents.onBanner
                         )
@@ -326,7 +329,7 @@ fun HomeScreen(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(Icons.Rounded.Checklist, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Text("My Plan (${planSessions.count { it.status == StudySession.PENDING }})")
+                            Text("My Plan (${activeSessions.size})")
                         }
                     }
                 )
@@ -344,7 +347,7 @@ fun HomeScreen(
         }
 
         if (tab == 0) {
-            // TAB 0: PERSISTENT PLAN QUEUE (overdue, today and upcoming)
+            // TAB 0: today first; completed cards disappear immediately.
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -352,7 +355,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "My Study Plan",
+                        text = "Today",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = cs.onSurface
@@ -365,7 +368,7 @@ fun HomeScreen(
                 }
             }
 
-            if (planSessions.isEmpty()) {
+            if (todayPlan.isEmpty()) {
                 item {
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -377,13 +380,14 @@ fun HomeScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Your study plan is clear",
+                                text = if (todayTaskCount > 0) "Today is complete" else "Nothing active today",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = cs.onSurface
                             )
                             Text(
                                 text = when {
+                                    todayTaskCount > 0 -> "Completed tasks are saved in your progress and removed from this list."
                                     snapshot.tasks.isEmpty() -> "Add your first study topic to start planning."
                                     openTasks == 0 -> "Your current topics are complete. Add another topic when you’re ready."
                                     todayCapacity == 0 -> "Add free time today or on another date before your exam."
@@ -403,7 +407,7 @@ fun HomeScreen(
                     }
                 }
             } else {
-                items(planSessions, key = { "plan-session-${it.id}" }) { session ->
+                items(todayPlan, key = { "plan-session-${it.id}" }) { session ->
                     val task = snapshot.tasks.find { it.id == session.taskId }
                     if (task != null) {
                         SessionCard(
@@ -415,13 +419,32 @@ fun HomeScreen(
                                 session.day == todayEpoch -> "Today"
                                 else -> dateLabel(session.day)
                             },
-                            canRecord = session.day < todayEpoch || session.day == todayEpoch && (!session.hasExactTimes || session.startMinute <= now),
+                            // Home always offers a direct action. Future work is first moved to "now" by the repository.
+                            canRecord = true,
                             onEdit = { onOpenTopic(task.id) },
                             onProgress = {
-                                onProgress(session.id, minOf(session.allocatedMinutes, snapshot.remaining(task)))
+                                if (session.hasExactTimes && session.startMinute > now) onCompleteNow(session.id, minOf(session.allocatedMinutes, snapshot.remaining(task)))
+                                else onProgress(session.id, minOf(session.allocatedMinutes, snapshot.remaining(task)))
                             },
                             onSkip = if (session.day < todayEpoch) ({ onSkip(session.id) }) else null
                         )
+                    }
+                }
+            }
+
+            if (overduePlan.isNotEmpty()) {
+                item { Text("Needs recovery (${overduePlan.size})", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
+                items(overduePlan, key = { "overdue-${it.id}" }) { session ->
+                    snapshot.tasks.find { it.id == session.taskId }?.let { task ->
+                        SessionCard(task, session, busy, true, { onOpenTopic(task.id) }, { onCompleteNow(session.id, minOf(session.allocatedMinutes, snapshot.remaining(task))) }, "Overdue · ${dateLabel(session.day)}", { onSkip(session.id) })
+                    }
+                }
+            }
+            if (upcomingPlan.isNotEmpty()) {
+                item { Text("Upcoming (${upcomingPlan.size})", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
+                items(upcomingPlan.take(3), key = { "upcoming-${it.id}" }) { session ->
+                    snapshot.tasks.find { it.id == session.taskId }?.let { task ->
+                        SessionCard(task, session, busy, true, { onOpenTopic(task.id) }, { onCompleteNow(session.id, minOf(session.allocatedMinutes, snapshot.remaining(task))) }, dateLabel(session.day))
                     }
                 }
             }

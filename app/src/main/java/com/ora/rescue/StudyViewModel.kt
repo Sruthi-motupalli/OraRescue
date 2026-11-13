@@ -201,6 +201,33 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Lets a learner pull planned work forward and finish it now from the home queue. */
+    fun completeNow(id: Long, minutes: Int) {
+        val snapshot = _state.value.snapshot
+        val session = snapshot.sessions.firstOrNull { it.id == id }
+        val chapter = session?.let { snapshot.chapterForTask(it.taskId) }
+        if (chapter == null) {
+            perform("Session completed and removed from today's active list.") {
+                repository.completeNow(id, minutes)
+            }
+            return
+        }
+        if (snapshot.questionsForChapter(chapter.id).isNotEmpty()) {
+            perform("Session finished. Your chapter challenge is ready!", "quiz/session/$id") {
+                repository.completeNow(id, minutes)
+            }
+            return
+        }
+        val material = snapshot.courseMaterials.firstOrNull { it.id == chapter.materialId }
+        perform(message = null) {
+            repository.completeNow(id, minutes)
+            require(material != null) { "The linked course material is no longer available." }
+            val questions = quizGenerator.generate(material, chapter.title)
+            repository.saveGeneratedQuestions(chapter.id, questions)
+            notices.send(UiNotice("Session finished. Gemini created your chapter challenge!", "quiz/session/$id"))
+        }
+    }
+
     fun importCourse(fileName: String, sourceUri: String, mimeType: String, examDay: Long, minutesPerChapter: Int) = perform(
         message = "Course imported. Chapters are now study topics.",
         destination = "courses"

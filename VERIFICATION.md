@@ -32,6 +32,10 @@ GitHub Actions completed the Android and browser verification successfully on bo
 
 The Gemini session flow still requires an Android runtime check with a developer-supplied API key, network access and a real PDF/text document. No key is committed. No phone or emulator was connected, so Android runtime appearance, document-picker import, Gemini generation, quiz sound/haptics, process restart, Room migration and instrumentation execution remain unverified. Test the native app in Light, Dark and System on a small screen and with enlarged fonts. A full accessibility audit, Android lint and cross-browser testing remain outstanding.
 
+### Today-queue UX regression check
+
+The latest source makes Home a today-first queue: completed cards disappear, progress is measured against today's scheduled tasks/minutes, overdue work is separated under Needs recovery, and upcoming work has a direct Complete/Do now path. `node preview/planner.test.cjs` and `node preview/quiz.test.cjs` pass for this revision. Android build commands could not be rerun in the current workspace because the Gradle 8.12 distribution was not cached and outbound access to `services.gradle.org` was unavailable; GitHub Actions remains the required Android verification for this revision.
+
 ### App relaunch check for Assignment 2
 
 1. On a phone or emulator, add a recognizable topic and set a free-time window before its exam.

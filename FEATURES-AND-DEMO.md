@@ -13,7 +13,7 @@ Ora Rescue has five primary destinations: Home, Calendar, Add Topic, Recovery an
 | Course material | Open Course Library, upload material, then explicitly select the chapter to study. Only that uploaded chapter joins the next recovery preview. |
 | Chapter challenge | Finish the selected chapter's scheduled session. Ora Rescue then opens its quiz automatically; Course Library no longer bypasses the session with a Play button. |
 | Hybrid question bank (Android) | Reviewed and student-authored questions work offline. PDF/text uploads can use Gemini after session completion; validated questions are cached in Room. |
-| Dashboard | Next session today, nearest exam, topic counts, daily goal, planned and completed minutes, remaining work, search and filters. |
+| Dashboard | Today-first task queue, next session, nearest exam, completed-task/minute progress, remaining work, search and filters. Completing a card removes it immediately; upcoming cards can be pulled forward with one action. |
 | Profile | Change local name/goal/preferences and reopen Home to show saved results. |
 | Appearance | Switch Light, Dark and System. Confirm the preference after reopening. |
 | Persistence | Android uses Room schema v3 with non-destructive migrations from v1 and v2. Browser course and quiz data persist independently in local storage. |
