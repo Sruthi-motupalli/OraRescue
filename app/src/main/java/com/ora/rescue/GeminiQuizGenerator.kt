@@ -26,7 +26,7 @@ class GeminiQuizGenerator(private val contentResolver: ContentResolver) {
         require(material.mimeType == "application/pdf" || material.mimeType.startsWith("text/")) {
             "Gemini quiz generation currently supports PDF and text files."
         }
-        val bytes = contentResolver.openInputStream(Uri.parse(material.sourceUri))?.use { it.readBytes(MAX_BYTES + 1) }
+        val bytes = contentResolver.openInputStream(Uri.parse(material.sourceUri))?.use { it.readBytes() }
             ?: error("Ora Rescue could not reopen this course material.")
         require(bytes.size <= MAX_BYTES) { "Course material must be 10 MB or smaller for this app build." }
 
