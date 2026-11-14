@@ -22,6 +22,8 @@
   --card: rgba(252,250,255,.94);
   --brand: #5546c6;
   --on-brand: #fff;
+  --action: #5546c6;
+  --on-action: #fff;
   --brand-dark: #382a85;
   --brand-light: #eae5ff;
   --line: #d8d0eb;
@@ -59,6 +61,8 @@
   --card: rgba(35,30,58,.94);
   --brand: #c4b7ff;
   --on-brand: #211650;
+  --action: #755fe8;
+  --on-action: #fff;
   --brand-dark: #e6ddff;
   --brand-light: #38306b;
   --line: #49415e;
@@ -249,17 +253,18 @@ strong{font-weight:600}
 .presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 
 /* ── Buttons ── */
-button{cursor:pointer;font:600 14px/1 var(--ff);border:0;border-radius:12px;min-height:44px;padding:0 18px;background:var(--brand);color:var(--on-brand);transition:filter .15s}
+button{cursor:pointer;font:600 14px/1 var(--ff);border:0;border-radius:12px;min-height:44px;padding:0 18px;background:var(--action);color:var(--on-action);transition:filter .15s}
 button:hover{filter:brightness(.95)}
 button:disabled{opacity:.4;cursor:default;filter:none}
 button.secondary{background:var(--field);color:var(--brand);border:1px solid var(--control-line)}
-button[data-filter][aria-pressed="true"]{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+button[data-filter][aria-pressed="true"]{background:var(--action);color:var(--on-action);border-color:var(--action)}
 button.quiet{background:transparent;color:var(--muted);min-height:36px;padding:4px 10px}
 button.quiet:hover{color:var(--ink);background:var(--brand-light)}
 button.danger{background:var(--error-bg);color:var(--error);border:1px solid var(--error)}
 button.small{font-size:12px;min-height:34px;padding:0 12px;border-radius:10px}
+button.small:not(.secondary):not(.quiet):not(.danger):not(.quiz-option){color:var(--on-action)}
 button.full{width:100%}
-.link-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;background:var(--brand);color:var(--on-brand);font:600 14px/1 var(--ff);text-decoration:none}
+.link-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;background:var(--action);color:var(--on-action);font:600 14px/1 var(--ff);text-decoration:none}
 .link-btn.secondary{background:var(--field);color:var(--brand);border:1px solid var(--control-line)}
 .quiz-option{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--control-line);padding:12px 14px;height:auto;line-height:1.35}
 .quiz-option.selected{background:var(--brand-light);border-color:var(--brand);color:var(--brand-dark)}
