@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ora Rescue · Preview</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="ora-rescue-logo.png">
 <style>
 /* ── Font stack: Apple SF system font on supported Apple devices, Inter (OFL-licensed,
    bundled) on Windows / Android. SF Pro files are NOT redistributed here. ── */
@@ -103,6 +105,8 @@ body{
 .layout{display:flex;justify-content:center;align-items:flex-start;gap:48px;max-width:1100px;margin:30px auto;padding:0 20px}
 .sidebar{flex:1;max-width:420px;padding-top:40px}
 .sidebar h1{font-size:40px;font-weight:700;line-height:1.1;letter-spacing:-1px;color:var(--ink);margin:12px 0 14px}
+.brand-logo{display:block;width:82px;height:82px;object-fit:contain;margin-bottom:14px;filter:drop-shadow(0 8px 16px var(--shadow))}
+.login-gate .brand-logo{width:76px;height:76px;margin:0 auto 10px}
 .sidebar p{font-size:14px;color:var(--ink2);line-height:1.6;max-width:360px}
 .pills{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
 .pill{background:var(--brand-light);color:var(--brand-dark);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}
@@ -369,6 +373,7 @@ applyAppearance();
 <div class="layout">
   <!-- Desktop intro sidebar -->
   <aside class="sidebar">
+    <img class="brand-logo" src="ora-rescue-logo.png" alt="Ora Rescue logo">
     <span class="eyebrow">Ora Rescue · Browser Preview</span>
     <h1>Your study time, reclaimed.</h1>
     <p>Add exam topics, set free time, import course material and play chapter mastery quizzes.</p>
@@ -382,6 +387,7 @@ applyAppearance();
 
   <section class="login-gate" id="loginGate" aria-labelledby="loginTitle">
     <div class="card">
+      <img class="brand-logo" src="ora-rescue-logo.png" alt="Ora Rescue logo">
       <div class="eyebrow">LOCAL DEMO ACCESS</div>
       <h1 id="loginTitle">Welcome to Ora Rescue</h1>
       <p class="small muted">Sign in to open the study-planning demonstration.</p>
