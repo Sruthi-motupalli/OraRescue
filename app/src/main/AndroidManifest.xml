@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application android:name=".OraApplication" android:label="Ora Rescue"
-        android:icon="@drawable/ic_ora" android:allowBackup="false"
+        android:icon="@drawable/ora_rescue_logo" android:roundIcon="@drawable/ora_rescue_logo" android:allowBackup="false"
         android:supportsRtl="true" android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
             <intent-filter>

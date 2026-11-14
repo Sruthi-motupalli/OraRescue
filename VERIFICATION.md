@@ -1,19 +1,46 @@
-# Verification — 11 November 2026
+# Verification — 13 November 2026
 
-## Passed
+Current feature-branch source, based on `32007a5`. Build environment used JDK 21, the checked-in Gradle 8.12 wrapper and Android SDK 35.
 
-- Android JVM unit tests: **32**, zero failures/errors (21 PlannerTest, 7 ExactWindowTest, 4 StudySnapshotTest). Reports in `app/build/test-results/testDebugUnitTest` on the development machine; generated build folders are excluded from the ZIP.
-- `:app:assembleDebug` built the Enhanced APK after the typography update.
-- `:app:assembleDebugAndroidTest` compiled and packaged the device tests, including migration and repository checks.
-- Browser planning checks: **7 groups** in `preview/planner.test.cjs` cover splitting, continuous windows, completed interval reservation, elapsed time, exam cutoff, chronological output and progress gating.
-- SQLite structural migration check: applying the v1→v2 SQL produced matching structures for all six tables and preserved completed minutes with legacy exact-time defaults of -1. This does not replace a Room runtime migration test.
-- Browser UI checked: date selection, window saving, overlap rejection, recovery generation/acceptance, search, profile goal save/reload, and blocked future-session progress. Laptop preview frame now keeps bottom navigation visible while content scrolls.
-- Source ZIP integrity, required files and byte-for-byte archive contents checked during packaging. No build/cache folders or machine-specific SDK configuration included.
+## Current automated verification
 
-## Not run / limitations
+| Check | Result |
+| --- | --- |
+| `./gradlew :app:testDebugUnitTest` | 34 JVM tests passed, including two new quiz-template and mastery-scoring tests. |
+| `./gradlew :app:assembleDebug` | Debug APK built. |
+| `./gradlew :app:assembleDebugAndroidTest` | Android instrumentation tests compiled and packaged, including v2→v3 migration, course import, linked topics and saved quiz attempts. These tests were compiled, not executed on a device. |
+| `node preview/planner.test.cjs` | Seven existing planner rule groups passed. The new date-rollover regression also passed. |
+| `node preview/appearance.test.cjs` | Immediate appearance changes, reload persistence, System updates, invalid-preference fallback and separation from saved study data passed. |
+| `node preview/quiz.test.cjs` | Course import, ten linked chapters, question creation, quiz feedback state and saved mastery passed. |
+| Chromium UI walkthrough | All five destinations at 320×520 in Light and Dark. Checked topic form and validation, search and filters, free-time overlap errors, copy validation, confirmation and About dialogs, recovery shortfall, save/discard, progress gating and recording, and profile/theme persistence after reload. Also checked live System switching and bottom navigation at 1024×768. |
 
-No Android device/emulator runtime or instrumentation execution was performed. Device persistence, real Android screenshots, small-device/large-font behavior and a complete accessibility audit still need device testing. A final lint run was not performed for this revision; earlier lint results do not verify these changes. Browser UI checks use browser-only data, not Room. Generated design mockups are not runtime screenshots. No claim of full test coverage is made.
+Generated build outputs and test reports are excluded from the source archive. The browser walkthrough uses independent browser data.
 
-## GitHub source update — 11 November 2026
+GitHub Actions completed the Android and browser verification successfully on both the feature-branch push and pull-request run. The successful branch run is [Android verification #43415225913](https://github.com/Sruthi-motupalli/OraRescue/actions/runs/43415225913).
 
-Re-ran all 32 JVM tests after the initial theme changes: zero failures. Browser rule checks: seven groups passed. Android Kotlin compilation passed. Debug APK packaging succeeded after preserving the locked prior output and rebuilding. The initial theme preferences/palettes are saved in this source snapshot, but dark-mode conversion and browser theme controls remain unfinished. No device runtime or new lint verification was performed.
+## Course-library coverage included in the build
+
+- Room schema v3 and a non-destructive v2→v3 migration.
+- Course material, chapter, quiz-question and quiz-attempt persistence.
+- A Machine Learning template with ten chapters and reviewed starter questions.
+- Student-authored questions and saved best-attempt mastery.
+- A post-session chapter challenge with sound, haptics, answer explanations, mute and reduced-motion controls.
+- `QuizScoringTest` for star thresholds and curated-template integrity.
+- Instrumentation coverage for course import, linked topics and persisted quiz attempts; compiled successfully but awaiting execution on a device.
+
+## Still to verify
+
+The Gemini session flow still requires an Android runtime check with a developer-supplied API key, network access and a real PDF/text document. No key is committed. No phone or emulator was connected, so Android runtime appearance, document-picker import, Gemini generation, quiz sound/haptics, process restart, Room migration and instrumentation execution remain unverified. Test the native app in Light, Dark and System on a small screen and with enlarged fonts. A full accessibility audit, Android lint and cross-browser testing remain outstanding.
+
+### Today-queue UX regression check
+
+The latest source makes Home a today-first queue: completed cards disappear, progress is measured against today's scheduled tasks/minutes, overdue work is separated under Needs recovery, and upcoming work has a direct Complete/Do now path. `node preview/planner.test.cjs` and `node preview/quiz.test.cjs` pass for this revision. Android build commands could not be rerun in the current workspace because the Gradle 8.12 distribution was not cached and outbound access to `services.gradle.org` was unavailable; GitHub Actions remains the required Android verification for this revision.
+
+### App relaunch check for Assignment 2
+
+1. On a phone or emulator, add a recognizable topic and set a free-time window before its exam.
+2. Save a recovery plan and record some progress once a session starts. Change the daily goal in Profile.
+3. Force-stop Ora Rescue from Android settings or run `adb shell am force-stop com.ora.rescue`, then open it again from the launcher.
+4. Open Home → All Topics, tap the topic and verify its estimate and recorded progress. Confirm the free-time window in Calendar and the daily goal in Profile.
+
+The disk-backed test closes and reopens Room and compares the stored snapshot. The device procedure above verifies the complete app relaunch.

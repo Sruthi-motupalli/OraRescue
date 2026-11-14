@@ -79,6 +79,18 @@ class StudyRepositoryTest {
         assertEquals(before, repository.snapshot())
     }
 
+    @Test fun upcomingSessionCanBeMovedToNowAndCompletedOnce() = runBlocking {
+        val plan = preparedPlan()
+        repository.accept(plan, today)
+        val future = repository.snapshot().sessions.first { it.day > day }
+        repository.completeNow(future.id, future.allocatedMinutes, today)
+        val saved = repository.snapshot().sessions.single { it.id == future.id }
+        assertEquals(day, saved.day)
+        assertFalse(saved.hasExactTimes)
+        assertEquals(StudySession.CLOSED, saved.status)
+        assertThrowsSuspend { repository.completeNow(future.id, 1, today) }
+    }
+
     @Test fun taskAvailabilityAndProgressSurviveDatabaseReopen() = runBlocking {
         database.close()
         val name = "ora-repository-verification.db"

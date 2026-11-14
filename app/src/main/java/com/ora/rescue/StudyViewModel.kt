@@ -36,6 +36,7 @@ data class UiNotice(val message: String, val destination: String? = null)
 class StudyViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as OraApplication).repository
     private val prefs      = (application as OraApplication).prefs
+    private val quizGenerator = GeminiQuizGenerator(application.contentResolver)
 
     private val _state = MutableStateFlow(StudyUiState())
     val state: StateFlow<StudyUiState> = _state.asStateFlow()
@@ -45,6 +46,9 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _preview = MutableStateFlow<RecoveryPlan?>(null)
     val preview: StateFlow<RecoveryPlan?> = _preview.asStateFlow()
+
+    private val _selectedChapterId = MutableStateFlow(prefs.getLong("selected_chapter_id", 0L).takeIf { it > 0 })
+    val selectedChapterId: StateFlow<Long?> = _selectedChapterId.asStateFlow()
 
     private val notices = Channel<UiNotice>(Channel.BUFFERED)
     val events: Flow<UiNotice> = notices.receiveAsFlow()
@@ -170,15 +174,119 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Records completed study progress for a session. */
-    fun progress(id: Long, minutes: Int) = perform(
-        message = "Progress saved. Recover remaining work when you’re ready."
+    fun progress(id: Long, minutes: Int) {
+        val snapshot = _state.value.snapshot
+        val session = snapshot.sessions.firstOrNull { it.id == id }
+        val chapter = session?.let { snapshot.chapterForTask(it.taskId) }
+        if (chapter == null || minutes <= 0) {
+            perform("Progress saved. Recover remaining work when you’re ready.") {
+                repository.recordProgress(id, minutes)
+            }
+            return
+        }
+        if (snapshot.questionsForChapter(chapter.id).isNotEmpty()) {
+            perform("Session finished. Your chapter challenge is ready!", "quiz/session/$id") {
+                repository.recordProgress(id, minutes)
+            }
+            return
+        }
+        val material = snapshot.courseMaterials.firstOrNull { it.id == chapter.materialId }
+        perform(message = null) {
+            // Completion is saved first; a network failure must never erase studied work.
+            repository.recordProgress(id, minutes)
+            require(material != null) { "The linked course material is no longer available." }
+            val questions = quizGenerator.generate(material, chapter.title)
+            repository.saveGeneratedQuestions(chapter.id, questions)
+            notices.send(UiNotice("Session finished. Gemini created your chapter challenge!", "quiz/session/$id"))
+        }
+    }
+
+    /** Lets a learner pull planned work forward and finish it now from the home queue. */
+    fun completeNow(id: Long, minutes: Int) {
+        val snapshot = _state.value.snapshot
+        val session = snapshot.sessions.firstOrNull { it.id == id }
+        val chapter = session?.let { snapshot.chapterForTask(it.taskId) }
+        if (chapter == null) {
+            perform("Session completed and removed from today's active list.") {
+                repository.completeNow(id, minutes)
+            }
+            return
+        }
+        if (snapshot.questionsForChapter(chapter.id).isNotEmpty()) {
+            perform("Session finished. Your chapter challenge is ready!", "quiz/session/$id") {
+                repository.completeNow(id, minutes)
+            }
+            return
+        }
+        val material = snapshot.courseMaterials.firstOrNull { it.id == chapter.materialId }
+        perform(message = null) {
+            repository.completeNow(id, minutes)
+            require(material != null) { "The linked course material is no longer available." }
+            val questions = quizGenerator.generate(material, chapter.title)
+            repository.saveGeneratedQuestions(chapter.id, questions)
+            notices.send(UiNotice("Session finished. Gemini created your chapter challenge!", "quiz/session/$id"))
+        }
+    }
+
+    fun importCourse(fileName: String, sourceUri: String, mimeType: String, examDay: Long, minutesPerChapter: Int) = perform(
+        message = "Course imported. Review the generated plan, then save it.",
+        destination = "recover"
     ) {
-        repository.recordProgress(id, minutes)
+        val imported = repository.importCourse(fileName, sourceUri, mimeType, examDay, minutesPerChapter)
+        _selectedChapterId.value = imported.firstChapterId
+        prefs.edit().putLong("selected_chapter_id", imported.firstChapterId).apply()
+
+        var snapshot = repository.snapshot()
+        val chapter = snapshot.chapters.first { it.id == imported.firstChapterId }
+        if (snapshot.questionsForChapter(chapter.id).isEmpty()) {
+            val material = snapshot.courseMaterials.first { it.id == imported.materialId }
+            // A network/API failure must not undo the imported study path.
+            runCatching {
+                val generated = quizGenerator.generate(material, chapter.title)
+                repository.saveGeneratedQuestions(chapter.id, generated)
+                snapshot = repository.snapshot()
+            }
+        }
+
+        // Availability still controls real times; without it the preview explains the shortfall.
+        val scoped = snapshot.copy(tasks = snapshot.tasks.filter { it.chapterId == null || it.chapterId == imported.firstChapterId })
+        _preview.value = Planner.build(scoped, LocalDate.now(), snapshot.profile.preferredSplit, LocalTime.now().let { it.hour * 60 + it.minute })
+    }
+
+    fun addStudentQuestion(chapterId: Long, prompt: String, options: List<String>, correctIndex: Int, explanation: String) = perform(
+        message = "Question added to this chapter."
+    ) {
+        repository.addStudentQuestion(chapterId, prompt, options, correctIndex, explanation)
+    }
+
+    fun saveQuizAttempt(chapterId: Long, sessionId: Long?, score: Int, total: Int) = perform(
+        message = "Quiz result saved."
+    ) {
+        repository.saveQuizAttempt(chapterId, sessionId, score, total)
+    }
+
+    fun deleteCourse(materialId: Long) = perform(
+        message = "Course and its linked study topics were deleted.",
+        destination = "courses"
+    ) {
+        repository.deleteCourse(materialId)
+    }
+
+    /** Selects the one uploaded chapter that the next recovery plan should schedule. */
+    fun selectStudyChapter(taskId: Long) {
+        val chapterId = _state.value.snapshot.tasks.firstOrNull { it.id == taskId }?.chapterId ?: return
+        _selectedChapterId.value = chapterId
+        prefs.edit().putLong("selected_chapter_id", chapterId).apply()
     }
 
     /** Generates an in-memory preview of the recovery plan for the user to review. */
     fun preview(split: Boolean) = perform(message = null) {
-        _preview.value = Planner.build(repository.snapshot(), LocalDate.now(), split, LocalTime.now().let { it.hour * 60 + it.minute })
+        val snapshot = repository.snapshot()
+        val selected = _selectedChapterId.value
+        val scoped = snapshot.copy(tasks = snapshot.tasks.filter { task ->
+            task.chapterId == null || task.chapterId == selected
+        })
+        _preview.value = Planner.build(scoped, LocalDate.now(), split, LocalTime.now().let { it.hour * 60 + it.minute })
     }
 
     /** Cancels and discards the active preview without modifying database state. */

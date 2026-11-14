@@ -14,13 +14,19 @@ android {
         versionCode = 2
         versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        val geminiKey = providers.gradleProperty("GEMINI_API_KEY")
+            .orElse(providers.environmentVariable("GEMINI_API_KEY"))
+            .getOrElse("")
+        val geminiModel = providers.gradleProperty("GEMINI_MODEL").getOrElse("gemini-2.5-flash")
+        buildConfigField("String", "GEMINI_API_KEY", "\"${geminiKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
+        buildConfigField("String", "GEMINI_MODEL", "\"$geminiModel\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }

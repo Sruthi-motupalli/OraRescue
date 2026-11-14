@@ -47,13 +47,25 @@ data class StudySnapshot(
     val availability: List<DailyAvailability> = emptyList(),
     val timeWindows: List<TimeWindow> = emptyList(),
     val sessions: List<StudySession> = emptyList(),
-    val profile: UserProfile = UserProfile()
+    val profile: UserProfile = UserProfile(),
+    val courseMaterials: List<CourseMaterial> = emptyList(),
+    val chapters: List<StudyChapter> = emptyList(),
+    val quizQuestions: List<QuizQuestion> = emptyList(),
+    val quizAttempts: List<QuizAttempt> = emptyList()
 ) {
     /** Sums all completed minutes for a given task across all sessions. */
     fun completed(taskId: Long): Int = sessions.filter { it.taskId == taskId }.sumOf { it.completedMinutes }
 
     /** Remaining minutes to study = estimated total minutes minus completed minutes. */
     fun remaining(task: StudyTask): Int = (task.totalMinutes - completed(task.id)).coerceAtLeast(0)
+
+    fun chapterForTask(taskId: Long): StudyChapter? = tasks.firstOrNull { it.id == taskId }
+        ?.chapterId?.let { chapterId -> chapters.firstOrNull { it.id == chapterId } }
+
+    fun questionsForChapter(chapterId: Long): List<QuizQuestion> = quizQuestions.filter { it.chapterId == chapterId }
+
+    fun bestAttempt(chapterId: Long): QuizAttempt? = quizAttempts.filter { it.chapterId == chapterId }
+        .maxWithOrNull(compareBy<QuizAttempt> { it.score.toFloat() / it.total.coerceAtLeast(1) }.thenBy { it.completedAt })
 
     /**
      * Total configured study availability in minutes for a specific day.

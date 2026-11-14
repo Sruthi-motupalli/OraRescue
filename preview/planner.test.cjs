@@ -4,7 +4,7 @@ const html=fs.readFileSync(__dirname+'/index.html','utf8');
 const source=html.slice(html.indexOf('function generatePlan()'),html.indexOf('function acceptPlan()'));
 const progressRule=html.slice(html.indexOf('function canRecord('),html.indexOf('function nowMin()'));
 function plan(tasks,windows,sessions=[],split=true,clock=0){
- const context={S:{tasks,windows,sessions},TODAY:'2026-11-11',splitMode:split,preview:null,
+ const context={S:{tasks,windows,sessions},today:()=> '2026-11-11',splitMode:split,preview:null,
   nowMin:()=>clock,localDay:()=> '2026-11-11',render:()=>{},
   winsForDay:d=>windows.filter(w=>w.day===d).sort((a,b)=>a.start-b.start),
   taskLeft:t=>Math.max(0,t.minutes-sessions.filter(s=>s.taskId===t.id).reduce((n,s)=>n+s.done,0))};
@@ -29,3 +29,31 @@ assert.equal(c.canRecord({day:'2026-11-11',start:901}),false);
 assert.equal(c.canRecord({day:'2026-11-11',start:900}),true);
 assert.equal(c.canRecord({day:'2026-11-10',start:1000,recorded:true}),false);
 console.log('7 browser rule groups passed: splitting, contiguous placement, completed intervals, elapsed time, exam cutoff, chronology and progress gating.');
+
+// Simulate a tab left open through midnight without reloading its study data.
+let liveDay = '2026-11-11';
+let saved = false;
+const rolloverWindows = [win(900, 960), win(900, 960, '2026-11-12')];
+const rollover = vm.createContext({
+  S: {tasks:[task(1)], windows:rolloverWindows, sessions:[]},
+  today: () => liveDay,
+  nowMin: () => 0,
+  splitMode: true,
+  preview: null,
+  winsForDay: day => rolloverWindows.filter(window => window.day === day),
+  taskLeft: topic => topic.minutes,
+  render: () => {},
+  save: () => { saved = true; },
+  toast: () => {},
+});
+const planAndAccept = html.slice(html.indexOf('function generatePlan()'), html.indexOf('function renderRecover()'));
+vm.runInContext(planAndAccept, rollover);
+rollover.generatePlan();
+assert.equal(rollover.preview.sessions[0].day, '2026-11-11');
+liveDay = '2026-11-12';
+rollover.acceptPlan();
+assert.equal(saved, false);
+assert.equal(rollover.preview, null);
+rollover.generatePlan();
+assert.equal(rollover.preview.sessions[0].day, '2026-11-12');
+console.log('Date rollover regression passed: reject yesterday’s preview and use only current or future windows.');

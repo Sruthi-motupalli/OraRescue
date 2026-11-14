@@ -31,14 +31,169 @@ class StudyRepository(private val database: StudyDatabase) {
         val windows = dao.timeWindows()
         val sessions = dao.sessions()
         val profile = dao.userProfile() ?: UserProfile()
+        val courseMaterials = dao.courseMaterials()
+        val chapters = dao.studyChapters()
+        val quizQuestions = dao.quizQuestions()
+        val quizAttempts = dao.quizAttempts()
         return StudySnapshot(
             revision = rev,
             tasks = tasks,
             availability = avail,
             timeWindows = windows,
             sessions = sessions,
-            profile = profile
+            profile = profile,
+            courseMaterials = courseMaterials,
+            chapters = chapters,
+            quizQuestions = quizQuestions,
+            quizAttempts = quizAttempts
         )
+    }
+
+    data class ImportedCourse(val materialId: Long, val firstTaskId: Long, val firstChapterId: Long)
+
+    suspend fun importCourse(
+        fileName: String,
+        sourceUri: String,
+        mimeType: String,
+        examDay: Long,
+        minutesPerChapter: Int,
+        today: LocalDate = LocalDate.now()
+    ): ImportedCourse {
+        require(fileName.isNotBlank()) { "Choose a course material file." }
+        require(examDay > today.toEpochDay()) { "Choose an exam date after today." }
+        require(minutesPerChapter in 15..1440) { "Choose 15 to 1,440 minutes per chapter." }
+        val chapterTitles = CourseTemplates.chaptersFor(fileName)
+        require(chapterTitles.isNotEmpty()) { "No chapters were found." }
+
+        return database.withTransaction {
+            dao.initialize(Revision())
+            val materialId = dao.insertCourseMaterial(
+                CourseMaterial(
+                    name = fileName.substringBeforeLast('.').ifBlank { fileName },
+                    sourceUri = sourceUri,
+                    mimeType = mimeType,
+                    importedAt = System.currentTimeMillis()
+                )
+            )
+            var firstTaskId = 0L
+            var firstChapterId = 0L
+            chapterTitles.forEachIndexed { index, title ->
+                val chapterId = dao.insertStudyChapter(StudyChapter(materialId = materialId, title = title, orderIndex = index))
+                val taskId = dao.insert(
+                    StudyTask(
+                        subject = fileName.substringBeforeLast('.').ifBlank { "Imported course" },
+                        topic = title,
+                        examDay = examDay,
+                        totalMinutes = minutesPerChapter,
+                        priority = 2,
+                        chapterId = chapterId
+                    )
+                )
+                if (index == 0) {
+                    firstTaskId = taskId
+                    firstChapterId = chapterId
+                }
+                val seeds = CourseTemplates.questionsFor(title)
+                if (seeds.isNotEmpty()) {
+                    dao.insertQuizQuestions(seeds.map { seed ->
+                        QuizQuestion(
+                            chapterId = chapterId,
+                            prompt = seed.prompt,
+                            options = QuizQuestion.encodeOptions(seed.options),
+                            correctIndex = seed.correctIndex,
+                            explanation = seed.explanation
+                        )
+                    })
+                }
+            }
+            dao.clearPending(today.toEpochDay())
+            dao.bumpRevision()
+            ImportedCourse(materialId, firstTaskId, firstChapterId)
+        }
+    }
+
+    suspend fun addStudentQuestion(
+        chapterId: Long,
+        prompt: String,
+        options: List<String>,
+        correctIndex: Int,
+        explanation: String
+    ) {
+        require(prompt.isNotBlank()) { "Enter a question." }
+        require(options.size == 4 && options.all { it.isNotBlank() }) { "Enter four answer choices." }
+        require(correctIndex in options.indices) { "Choose the correct answer." }
+        database.withTransaction {
+            dao.initialize(Revision())
+            require(dao.studyChapters().any { it.id == chapterId }) { "This chapter is no longer available." }
+            dao.insertQuizQuestions(
+                listOf(
+                    QuizQuestion(
+                        chapterId = chapterId,
+                        prompt = prompt.trim(),
+                        options = QuizQuestion.encodeOptions(options.map { it.trim() }),
+                        correctIndex = correctIndex,
+                        explanation = explanation.trim().ifBlank { "Review the course material for this answer." },
+                        source = QuizQuestion.SOURCE_STUDENT
+                    )
+                )
+            )
+            dao.bumpRevision()
+        }
+    }
+
+    /** Caches validated Gemini questions so later sessions can quiz offline. */
+    suspend fun saveGeneratedQuestions(chapterId: Long, questions: List<GeneratedQuizQuestion>) {
+        require(questions.isNotEmpty()) { "Gemini did not return usable questions." }
+        database.withTransaction {
+            dao.initialize(Revision())
+            require(dao.studyChapters().any { it.id == chapterId }) { "This chapter is no longer available." }
+            dao.insertQuizQuestions(questions.map { question ->
+                QuizQuestion(
+                    chapterId = chapterId,
+                    prompt = question.prompt,
+                    options = QuizQuestion.encodeOptions(question.options),
+                    correctIndex = question.correctIndex,
+                    explanation = question.explanation,
+                    source = QuizQuestion.SOURCE_AI
+                )
+            })
+            dao.bumpRevision()
+        }
+    }
+
+    suspend fun saveQuizAttempt(chapterId: Long, sessionId: Long?, score: Int, total: Int) {
+        require(total > 0 && score in 0..total) { "Invalid quiz result." }
+        database.withTransaction {
+            dao.initialize(Revision())
+            require(dao.studyChapters().any { it.id == chapterId }) { "This chapter is no longer available." }
+            if (sessionId != null) require(dao.quizAttemptForSession(sessionId) == null) { "This session quiz was already completed." }
+            dao.insertQuizAttempt(
+                QuizAttempt(
+                    chapterId = chapterId,
+                    sessionId = sessionId,
+                    score = score,
+                    total = total,
+                    completedAt = System.currentTimeMillis()
+                )
+            )
+            dao.bumpRevision()
+        }
+    }
+
+    suspend fun deleteCourse(materialId: Long, today: LocalDate = LocalDate.now()) {
+        database.withTransaction {
+            dao.initialize(Revision())
+            val snapshot = readSnapshot()
+            val chapterIds = snapshot.chapters.filter { it.materialId == materialId }.map { it.id }.toSet()
+            val linkedTaskIds = snapshot.tasks.filter { it.chapterId in chapterIds }.map { it.id }.toSet()
+            require(snapshot.sessions.none { it.taskId in linkedTaskIds && it.status != StudySession.PENDING }) {
+                "This course has completed study history, so it cannot be deleted. Keep it as your learning record."
+            }
+            dao.deleteTasksForMaterial(materialId)
+            dao.deleteCourseMaterial(materialId)
+            dao.clearPending(today.toEpochDay())
+            dao.bumpRevision()
+        }
     }
 
     /**
@@ -236,6 +391,35 @@ class StudyRepository(private val database: StudyDatabase) {
             )
 
             // Clear subsequent pending allocations for this task so recovery can re-plan remaining work
+            dao.clearTaskPending(task.id, todayDay)
+            dao.bumpRevision()
+        }
+    }
+
+    /**
+     * Completes any pending session immediately, including work planned for later.
+     * The future allocation is moved to today as an unslotted session before it is closed,
+     * so progress is never falsely recorded before its scheduled start time.
+     */
+    suspend fun completeNow(sessionId: Long, minutes: Int, today: LocalDate = LocalDate.now()) {
+        val todayDay = today.toEpochDay()
+        database.withTransaction {
+            dao.initialize(Revision())
+            val session = requireNotNull(dao.session(sessionId)) { "This session changed. Refresh the plan." }
+            require(session.status == StudySession.PENDING) { "Progress for this session is already recorded." }
+            val task = requireNotNull(dao.task(session.taskId)) { "Task no longer exists." }
+            val remaining = readSnapshot().remaining(task)
+            require(minutes in 1..minOf(session.allocatedMinutes, remaining)) { "Enter valid completed minutes for this session." }
+
+            dao.updateSession(
+                session.copy(
+                    day = todayDay,
+                    startMinute = -1,
+                    endMinute = -1,
+                    completedMinutes = minutes,
+                    status = StudySession.CLOSED
+                )
+            )
             dao.clearTaskPending(task.id, todayDay)
             dao.bumpRevision()
         }

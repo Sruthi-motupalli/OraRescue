@@ -1,6 +1,6 @@
 @file:OptIn(
     androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.material3.ExperimentalMaterial3Api::class
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class
 )
 
 package com.ora.rescue
@@ -22,7 +22,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +41,7 @@ fun ProfileScreen(
     onNavigateToCalendar: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
+    val accents = LocalOraAccents.current
     val profile = snapshot.profile
     val today = LocalDate.now().toEpochDay()
     val todayDone = snapshot.sessions.filter { it.day == today }.sumOf { it.completedMinutes }
@@ -97,9 +97,7 @@ fun ProfileScreen(
                             .size(96.dp)
                             .clip(CircleShape)
                             .background(
-                                Brush.radialGradient(
-                                    listOf(Color(0xFFB5CEFF), Color(0xFFBCA5FF), Color(0xFF907AFF))
-                                )
+                                accents.avatar
                             )
                             .border(3.dp, cs.surface, CircleShape)
                             .clickable { showAvatarDialog = true },
@@ -123,7 +121,7 @@ fun ProfileScreen(
                         )
                         IconButton(
                             onClick = { showEditNameDialog = true },
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(Icons.Rounded.Edit, contentDescription = "Edit name", tint = cs.primary, modifier = Modifier.size(16.dp))
                         }
@@ -146,15 +144,15 @@ fun ProfileScreen(
             ) {
                 StatTile(
                     symbol = "✓",
-                    symbolColor = Color(0xFF6B58E8),
-                    symbolBg = cs.primaryContainer,
+                    symbolColor = cs.onTertiaryContainer,
+                    symbolBg = cs.tertiaryContainer,
                     value = "$doneTopics",
                     label = "Topics Done",
                     modifier = Modifier.weight(1f)
                 )
                 StatTile(
                     symbol = "◷",
-                    symbolColor = Color(0xFF4C7BFE),
+                    symbolColor = cs.onSecondaryContainer,
                     symbolBg = cs.secondaryContainer,
                     value = "${totalDoneMinutes / 60} h ${totalDoneMinutes % 60} m",
                     label = "Focus Time",
@@ -162,7 +160,7 @@ fun ProfileScreen(
                 )
                 StatTile(
                     symbol = "ϟ",
-                    symbolColor = cs.error,
+                    symbolColor = cs.onErrorContainer,
                     symbolBg = cs.errorContainer,
                     value = "$openTopics",
                     label = "Open Topics",
@@ -181,9 +179,7 @@ fun ProfileScreen(
                 Box(
                     modifier = Modifier
                         .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF668BFF), Color(0xFF7C6AFF), Color(0xFFA47CF4))
-                            )
+                            accents.banner
                         )
                         .padding(18.dp)
                 ) {
@@ -194,12 +190,12 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Icon(Icons.Rounded.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                Text("Your Study Goal", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
+                                Icon(Icons.Rounded.Star, contentDescription = null, tint = accents.onBanner, modifier = Modifier.size(16.dp))
+                                Text("Your Study Goal", style = MaterialTheme.typography.labelMedium, color = accents.onBanner.copy(alpha = 0.9f))
                             }
                             TextButton(
                                 onClick = { showEditGoalDialog = true },
-                                colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+                                colors = ButtonDefaults.textButtonColors(contentColor = accents.onBanner)
                             ) {
                                 Text("Adjust Target ›", style = MaterialTheme.typography.labelSmall)
                             }
@@ -209,7 +205,7 @@ fun ProfileScreen(
                             text = "${profile.studyGoalMinutes} min daily target",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = accents.onBanner
                         )
 
                         Text(
@@ -220,7 +216,7 @@ fun ProfileScreen(
                             else
                                 "Small steps. Stronger habits.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.9f)
+                            color = accents.onBanner.copy(alpha = 0.9f)
                         )
 
                         LinearProgressIndicator(
@@ -229,8 +225,8 @@ fun ProfileScreen(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
-                            color = Color.White,
-                            trackColor = Color.White.copy(alpha = 0.3f)
+                            color = accents.onBanner,
+                            trackColor = accents.onBanner.copy(alpha = 0.3f)
                         )
                     }
                 }
@@ -262,11 +258,11 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = cs.onSurfaceVariant
                     )
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        ThemePreference.values().forEach { pref ->
+                        ThemePreference.entries.forEach { pref ->
                             val selected = themePreference == pref
                             val label = when (pref) {
                                 ThemePreference.LIGHT  -> "Light"
@@ -285,7 +281,6 @@ fun ProfileScreen(
                                 leadingIcon = {
                                     Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
                                 },
-                                modifier = Modifier.weight(1f),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = cs.primaryContainer,
                                     selectedLabelColor = cs.onPrimaryContainer,
@@ -294,11 +289,6 @@ fun ProfileScreen(
                             )
                         }
                     }
-                    Text(
-                        "Font: Inter (bundled, OFL license). Browser uses -apple-system/SF Pro where available.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = cs.onSurfaceVariant
-                    )
                 }
             }
         }
@@ -356,6 +346,7 @@ fun ProfileScreen(
     // Edit Name Dialog
     if (showEditNameDialog) {
         var newName by rememberSaveable { mutableStateOf(profile.name) }
+        val validName = newName.isNotBlank() && newName.trim().length <= 40
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
             title = { Text("Edit Student Name", fontWeight = FontWeight.Bold) },
@@ -363,18 +354,19 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { if (it.length <= 50) newName = it },
-                    label = { Text("Display Name") },
+                    label = { Text("Display name") },
+                    isError = !validName,
+                    supportingText = { if (!validName) Text("Enter a name with 1 to 40 characters.") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
                 Button(
+                    enabled = validName && !busy,
                     onClick = {
-                        if (newName.isNotBlank()) {
-                            onUpdateProfile(newName.trim(), profile.studyGoalMinutes, profile.preferredSplit, profile.avatarIndex)
-                            showEditNameDialog = false
-                        }
+                        onUpdateProfile(newName.trim(), profile.studyGoalMinutes, profile.preferredSplit, profile.avatarIndex)
+                        showEditNameDialog = false
                     }
                 ) {
                     Text("Save")
@@ -392,6 +384,8 @@ fun ProfileScreen(
     if (showEditGoalDialog) {
         val cs2 = MaterialTheme.colorScheme
         var goalText by rememberSaveable { mutableStateOf(profile.studyGoalMinutes.toString()) }
+        val goal = goalText.toIntOrNull()
+        val validGoal = goal != null && goal in 15..1440
         AlertDialog(
             onDismissRequest = { showEditGoalDialog = false },
             title = { Text("Daily Study Target", fontWeight = FontWeight.Bold) },
@@ -401,12 +395,14 @@ fun ProfileScreen(
                     OutlinedTextField(
                         value = goalText,
                         onValueChange = { if (it.length <= 4) goalText = it },
-                        label = { Text("Daily Minutes") },
+                        label = { Text("Daily minutes") },
+                        isError = !validGoal,
+                        supportingText = { if (!validGoal) Text("Enter 15 to 1,440 minutes.") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(60, 90, 120, 180, 240).forEach { mins ->
                             FilterChip(
                                 selected = goalText == mins.toString(),
@@ -419,12 +415,11 @@ fun ProfileScreen(
             },
             confirmButton = {
                 Button(
+                    enabled = validGoal && !busy,
                     onClick = {
-                        val mins = goalText.toIntOrNull()
-                        if (mins != null && mins in 15..1440) {
-                            onUpdateProfile(profile.name, mins, profile.preferredSplit, profile.avatarIndex)
-                            showEditGoalDialog = false
-                        }
+                        val minutes = goal ?: return@Button
+                        onUpdateProfile(profile.name, minutes, profile.preferredSplit, profile.avatarIndex)
+                        showEditGoalDialog = false
                     }
                 ) {
                     Text("Save")
@@ -485,9 +480,10 @@ fun ProfileScreen(
             onDismissRequest = { showAvatarDialog = false },
             title = { Text("Choose Avatar", fontWeight = FontWeight.Bold) },
             text = {
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     StudentAvatars.forEachIndexed { index, emoji ->
                         Box(

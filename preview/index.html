@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ora Rescue · Preview</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="ora-rescue-logo.png">
 <style>
 /* ── Font stack: Apple SF system font on supported Apple devices, Inter (OFL-licensed,
    bundled) on Windows / Android. SF Pro files are NOT redistributed here. ── */
@@ -12,26 +14,87 @@
 :root{
   --ff: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
         Inter, 'Segoe UI', Roboto, sans-serif;
-  --ink: #1c1b2e;
-  --ink2: #5c5876;
-  --muted: #8b87a8;
-  --paper: #f3f1ff;
-  --surface: #ffffff;
-  --card: rgba(255,255,255,0.80);
-  --brand: #7763ff;
-  --brand-dark: #5040c0;
+  color-scheme: light;
+  --ink: #22233f;
+  --ink2: #4f4967;
+  --muted: #5f5775;
+  --paper: #f2f0ff;
+  --surface: #fcfaff;
+  --field: #fcfaff;
+  --card: rgba(252,250,255,.94);
+  --brand: #5546c6;
+  --on-brand: #fff;
+  --action: #5546c6;
+  --on-action: #fff;
+  --brand-dark: #382a85;
   --brand-light: #eae5ff;
-  --line: #e2ddf5;
-  --sage: #299764;
-  --sage-bg: #eafaf3;
-  --amber: #c05b00;
-  --amber-bg: #fff4ea;
-  --error: #c0001a;
+  --line: #d8d0eb;
+  --control-line: #817895;
+  --sage: #226747;
+  --sage-bg: #e3f5ea;
+  --amber: #874d14;
+  --amber-bg: #ffefdc;
+  --error: #aa2847;
+  --error-bg: #ffe5ec;
+  --blue: #253d81;
+  --blue-bg: #e3ebff;
+  --glow-a: #d6ceff;
+  --glow-b: #dbeeff;
+  --screen-a: #f2f7ff;
+  --screen-b: #ece8ff;
+  --avatar-a: #dceaff;
+  --avatar-b: #e5d7ff;
+  --banner: linear-gradient(115deg,#4157bd,#6c43ba);
+  --on-banner: #fff;
+  --frame: #1e1d30;
+  --frame-edge: #aaa8c0;
+  --shadow: rgba(58,44,118,.22);
+  --toast: #2f2b43;
+  --on-toast: #f4effd;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --ink: #f0edf9;
+  --ink2: #d7cee7;
+  --muted: #c8bfda;
+  --paper: #10101f;
+  --surface: #211d37;
+  --field: #18162b;
+  --card: rgba(35,30,58,.94);
+  --brand: #c4b7ff;
+  --on-brand: #211650;
+  --action: #755fe8;
+  --on-action: #fff;
+  --brand-dark: #e6ddff;
+  --brand-light: #38306b;
+  --line: #49415e;
+  --control-line: #9a90ad;
+  --sage: #b9f0cf;
+  --sage-bg: #203c32;
+  --amber: #ffc484;
+  --amber-bg: #442d21;
+  --error: #ffadc1;
+  --error-bg: #542539;
+  --blue: #dce5ff;
+  --blue-bg: #28365c;
+  --glow-a: #271f48;
+  --glow-b: #1c2846;
+  --screen-a: #161a32;
+  --screen-b: #211b38;
+  --avatar-a: #304675;
+  --avatar-b: #563a7d;
+  --banner: linear-gradient(115deg,#292e62,#492f70);
+  --on-banner: #f3edff;
+  --frame: #0b0a13;
+  --frame-edge: #49415e;
+  --shadow: rgba(0,0,0,.44);
+  --toast: #ebe5f8;
+  --on-toast: #2a253d;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  background: radial-gradient(ellipse at 15% 85%,#d6ceff,transparent 48%),
-              radial-gradient(ellipse at 90% 10%,#dbeeff,transparent 45%),
+  background: radial-gradient(ellipse at 15% 85%,var(--glow-a),transparent 48%),
+              radial-gradient(ellipse at 90% 10%,var(--glow-b),transparent 45%),
               var(--paper);
   color:var(--ink);
   font:16px/1.5 var(--ff);
@@ -41,7 +104,9 @@ body{
 /* ── Layout ── */
 .layout{display:flex;justify-content:center;align-items:flex-start;gap:48px;max-width:1100px;margin:30px auto;padding:0 20px}
 .sidebar{flex:1;max-width:420px;padding-top:40px}
-.sidebar h1{font-size:40px;font-weight:700;line-height:1.1;letter-spacing:-1px;color:#1a1832;margin:12px 0 14px}
+.sidebar h1{font-size:40px;font-weight:700;line-height:1.1;letter-spacing:-1px;color:var(--ink);margin:12px 0 14px}
+.brand-logo{display:block;width:82px;height:82px;object-fit:contain;margin-bottom:14px;filter:drop-shadow(0 8px 16px var(--shadow))}
+.login-gate .brand-logo{width:76px;height:76px;margin:0 auto 10px}
 .sidebar p{font-size:14px;color:var(--ink2);line-height:1.6;max-width:360px}
 .pills{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
 .pill{background:var(--brand-light);color:var(--brand-dark);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}
@@ -51,21 +116,21 @@ body{
 
 /* ── Phone Frame ── */
 .phone{
-  width:390px;height:min(844px, calc(100dvh - 48px));min-height:520px;
-  border:7px solid #1e1d30;
+  width:390px;height:min(844px, calc(100dvh - 48px));
+  border:7px solid var(--frame);
   border-radius:46px;
-  background:linear-gradient(155deg,#f2f7ff 0%,#ece8ff 65%,#f4f1ff 100%);
-  box-shadow:0 28px 70px rgba(90,75,175,0.22),0 0 0 2px #aaa8c0;
+  background:linear-gradient(155deg,var(--screen-a),var(--screen-b) 65%,var(--paper));
+  box-shadow:0 28px 70px var(--shadow),0 0 0 2px var(--frame-edge);
   display:flex;flex-direction:column;overflow:hidden;position:relative;
 }
 .status-bar{
   height:40px;padding:10px 24px 0;
   display:flex;justify-content:space-between;align-items:center;
-  font-size:12px;font-weight:700;color:#22223a;position:relative;flex-shrink:0;
+  font-size:12px;font-weight:700;color:var(--ink);position:relative;flex-shrink:0;
 }
 .status-bar::after{
   content:'';position:absolute;top:7px;left:calc(50% - 42px);
-  width:84px;height:21px;border-radius:14px;background:#1a1930;
+  width:84px;height:21px;border-radius:14px;background:var(--frame);
 }
 .screen{flex:1;min-height:0;overflow-y:auto;padding:14px 18px 20px;scrollbar-width:thin;scrollbar-color:rgba(119,99,255,.25) transparent}
 .screen::-webkit-scrollbar{width:3px}
@@ -73,8 +138,8 @@ body{
 
 /* ── Bottom Navigation ── */
 nav{
-  height:72px;background:rgba(255,255,255,0.93);
-  border-top:1px solid rgba(220,215,250,.85);
+  height:72px;background:var(--surface);
+  border-top:1px solid var(--line);
   display:flex;align-items:center;justify-content:space-around;
   padding:0 8px 8px;flex-shrink:0;
 }
@@ -88,14 +153,6 @@ nav button{
 nav button .ic{font-size:21px;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;transition:all .15s}
 nav button.active{color:var(--brand);font-weight:700}
 nav button.active .ic{background:var(--brand-light)}
-nav button.add-btn{
-  width:52px;height:52px;max-width:52px;min-height:52px;flex:none;
-  border-radius:50%;background:linear-gradient(135deg,#9b7bff,#6b55f8);
-  color:#fff;box-shadow:0 8px 20px rgba(119,99,255,.38);margin:0 6px;
-  padding:0;
-}
-nav button.add-btn .ic{font-size:28px;background:transparent;color:#fff;border-radius:50%}
-
 /* ── Typography helpers ── */
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--brand)}
 h2{font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--ink);margin:4px 0 8px}
@@ -109,7 +166,7 @@ strong{font-weight:600}
 
 /* ── Cards ── */
 .card{
-  background:var(--card);border:1px solid rgba(220,215,250,.85);
+  background:var(--card);border:1px solid var(--line);
   border-radius:20px;padding:16px;margin-bottom:12px;
   box-shadow:0 4px 16px rgba(100,80,220,.05);
 }
@@ -117,71 +174,81 @@ strong{font-weight:600}
 .card.amber{background:var(--amber-bg);border-color:rgba(192,91,0,.2)}
 .card.brand{background:var(--brand-light);border-color:rgba(119,99,255,.2)}
 .row{display:flex;align-items:center;gap:8px}
+.filter-strip{display:flex;gap:6px;overflow-x:auto;padding:0 1px 4px;margin-bottom:12px;scrollbar-width:thin}
+.filter-strip button{flex:0 0 auto;white-space:nowrap}
+.action-row{display:flex;flex-wrap:wrap;gap:8px}
+.action-row button{flex:1 0 auto}
+.plan-actions{position:sticky;bottom:-20px;z-index:1;background:var(--surface);border-top:1px solid var(--line);padding:10px 0;display:flex;gap:8px}
+.plan-actions button{flex:1;min-width:0;padding:6px 8px}
+.section-label,h2,h3,.meta,.small{overflow-wrap:anywhere}
 .row-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
 
 /* ── Stat chips ── */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
-.stat-box{background:rgba(255,255,255,.82);border:1px solid #e5e0f8;border-radius:16px;padding:12px 8px;text-align:center}
-.stat-box .si{width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;font-size:14px;color:#fff}
-.stat-box:nth-child(1) .si{background:linear-gradient(135deg,#b993ff,#8865ff)}
-.stat-box:nth-child(2) .si{background:linear-gradient(135deg,#8eccff,#5c8eff)}
-.stat-box:nth-child(3) .si{background:linear-gradient(135deg,#ffadc1,#fa6d8e)}
+.stat-box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 8px;text-align:center}
+.stat-box .si{width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;font-size:14px;color:var(--on-banner)}
+.stat-box:nth-child(1) .si{background:var(--sage-bg);color:var(--sage)}
+.stat-box:nth-child(2) .si{background:var(--blue-bg);color:var(--blue)}
+.stat-box:nth-child(3) .si{background:var(--brand-light);color:var(--brand-dark)}
 .stat-box strong{display:block;font-size:17px;font-weight:700;color:var(--ink)}
 .stat-box span{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600}
 
 /* ── Goal banner ── */
 .goal-card{
-  background:linear-gradient(115deg,#637cf8 0%,#765ef0 55%,#9971f4 100%);
-  border-radius:20px;padding:18px 16px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden;
+  background:var(--banner);
+  border-radius:20px;padding:18px 16px;color:var(--on-banner);margin-bottom:14px;position:relative;overflow:hidden;
   box-shadow:0 10px 24px rgba(110,85,245,.28);
 }
 .goal-card::after{
   content:'';position:absolute;width:130px;height:130px;border-radius:35px;
   background:#ffffff12;transform:rotate(32deg);right:-40px;top:0;pointer-events:none;
 }
-.goal-card h3{font-size:20px;font-weight:700;color:#fff;margin:4px 0 2px}
-.goal-card .sub{font-size:12px;opacity:.85;margin-bottom:12px}
+.goal-card h3{font-size:20px;font-weight:700;color:var(--on-banner);margin:4px 0 2px}
+.goal-card .sub{font-size:12px;margin-bottom:12px}
 .prog-bg{height:7px;border-radius:6px;background:rgba(255,255,255,.28);overflow:hidden}
-.prog-fill{height:100%;border-radius:6px;background:#fff;transition:width .3s}
+.prog-fill{height:100%;border-radius:6px;background:var(--on-banner);transition:width .3s}
 
 /* ── Badge ── */
 .badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:600;background:var(--brand-light);color:var(--brand-dark)}
 .badge.g{background:var(--sage-bg);color:var(--sage)}
 .badge.a{background:var(--amber-bg);color:var(--amber)}
-.badge.r{background:#fde8ed;color:#c7254e}
+.badge.r{background:var(--error-bg);color:var(--error)}
 
 /* ── Calendar ── */
 .cal-wdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:12px}
 .cell{
   aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;
-  background:rgba(255,255,255,.55);border:1px solid rgba(220,215,250,.7);position:relative;transition:all .15s;
+  background:var(--card);border:1px solid var(--line);position:relative;transition:all .15s;
 }
-.cell:hover{background:#fff;border-color:var(--brand)}
-.cell.sel{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 4px 12px rgba(119,99,255,.35)}
+.cell:hover{background:var(--surface);border-color:var(--brand)}
+.cell.sel{background:var(--brand);color:var(--on-brand);border-color:var(--brand);box-shadow:0 4px 12px rgba(119,99,255,.35)}
 .cell.today:not(.sel){border:2px solid var(--brand);font-weight:800}
-.cell.past:not(.sel){opacity:.5}
+.cell.past:not(.sel){color:var(--muted)}
 .cell.empty{background:transparent;border-color:transparent;cursor:default}
 .dots{display:flex;gap:2px;margin-top:2px}
 .dot{width:4px;height:4px;border-radius:50%;background:var(--brand-light)}
-.dot.g{background:#2ebd72}.dot.p{background:var(--brand)}.dot.a{background:#f38f32}
+.cell.sel .dot{background:var(--on-brand)}
+.dot.g{background:var(--sage)}.dot.p{background:var(--brand)}.dot.a{background:var(--amber)}
 .legend{display:flex;gap:14px;justify-content:center;margin-bottom:12px;font-size:11px;color:var(--muted)}
 .legend .li{display:flex;align-items:center;gap:4px}
 
 /* ── Window rows ── */
 .win-row{
-  background:rgba(255,255,255,.88);border:1px solid #e3def8;border-radius:14px;
+  background:var(--field);border:1px solid var(--line);border-radius:14px;
   padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
 }
 .win-time{font-size:14px;font-weight:700;color:var(--ink)}
 .win-dur{font-size:12px;color:var(--muted)}
 
 /* ── Forms ── */
+.time-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 4px}
+@media(max-width:380px){.time-fields{grid-template-columns:1fr}}
 .field{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:12px}
 .field input,.field select{
   display:block;width:100%;margin-top:5px;padding:12px 14px;
-  border:1px solid #d8d2f2;border-radius:12px;background:rgba(255,255,255,.88);
+  border:1px solid var(--control-line);border-radius:12px;background:var(--field);
   font:14px/1 var(--ff);color:var(--ink);
 }
 .field input:focus,.field select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(119,99,255,.18)}
@@ -190,21 +257,34 @@ strong{font-weight:600}
 .presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 
 /* ── Buttons ── */
-button{cursor:pointer;font:600 14px/1 var(--ff);border:0;border-radius:12px;min-height:44px;padding:0 18px;background:var(--brand);color:#fff;transition:filter .15s}
+button{cursor:pointer;font:600 14px/1 var(--ff);border:0;border-radius:12px;min-height:44px;padding:0 18px;background:var(--action);color:var(--on-action);transition:filter .15s}
 button:hover{filter:brightness(.95)}
 button:disabled{opacity:.4;cursor:default;filter:none}
-button.secondary{background:rgba(255,255,255,.88);color:var(--brand);border:1px solid #d8d2f2}
+button.secondary{background:var(--field);color:var(--brand);border:1px solid var(--control-line)}
+button[data-filter][aria-pressed="true"]{background:var(--action);color:var(--on-action);border-color:var(--action)}
 button.quiet{background:transparent;color:var(--muted);min-height:36px;padding:4px 10px}
-button.quiet:hover{color:var(--ink);background:rgba(0,0,0,.04)}
-button.danger{background:#fde8ed;color:#c7254e;border:1px solid #f9ccd7}
+button.quiet:hover{color:var(--ink);background:var(--brand-light)}
+button.danger{background:var(--error-bg);color:var(--error);border:1px solid var(--error)}
 button.small{font-size:12px;min-height:34px;padding:0 12px;border-radius:10px}
+button.small:not(.secondary):not(.quiet):not(.danger):not(.quiz-option){color:var(--on-action)}
 button.full{width:100%}
+.link-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;background:var(--action);color:var(--on-action);font:600 14px/1 var(--ff);text-decoration:none}
+.link-btn.secondary{background:var(--field);color:var(--brand);border:1px solid var(--control-line)}
+.quiz-option{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--control-line);padding:12px 14px;height:auto;line-height:1.35}
+.quiz-option.selected{background:var(--brand-light);border-color:var(--brand);color:var(--brand-dark)}
+.quiz-option.correct{background:var(--sage-bg);border-color:var(--sage);color:var(--sage);animation:quiz-pop .24s ease-out}
+.quiz-option.wrong{background:var(--error-bg);border-color:var(--error);color:var(--error);animation:quiz-shake .24s linear}
+.quiz-letter{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--surface);flex:0 0 auto}
+.quiz-stars{font-size:38px;letter-spacing:4px;color:var(--brand);text-align:center;animation:quiz-pop .35s ease-out}
+@keyframes quiz-pop{0%{transform:scale(.92)}70%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes quiz-shake{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 
 /* ── Dialogs ── */
 dialog{
-  border:1px solid #ddd7f8;border-radius:22px;padding:24px;
-  width:min(360px,90vw);background:#fff;
-  box-shadow:0 20px 60px rgba(40,30,80,.22);color:var(--ink);
+  border:1px solid var(--line);border-radius:22px;padding:24px;
+  width:min(360px,92vw);background:var(--surface);margin:auto;max-height:calc(100dvh - 24px);overflow:auto;
+  box-shadow:0 20px 60px var(--shadow);color:var(--ink);
 }
 dialog::backdrop{background:rgba(25,20,45,.45);backdrop-filter:blur(2px)}
 dialog h2{font-size:19px;font-weight:700;margin-bottom:8px}
@@ -212,10 +292,14 @@ dialog p{font-size:14px;color:var(--ink2);margin-bottom:16px}
 .error-msg{font-size:13px;color:var(--error);font-weight:600;margin:8px 0}
 
 /* ── Profile Hero ── */
-.p-hero{background:linear-gradient(135deg,#dceaff,#e5d7ff);border-radius:22px;padding:24px;text-align:center;margin-bottom:12px}
+.p-hero{background:linear-gradient(135deg,var(--avatar-a),var(--avatar-b));border-radius:22px;padding:24px;text-align:center;margin-bottom:12px}
 .p-hero .av{font-size:60px;line-height:1}
 .p-hero h3{font-size:20px;font-weight:700;margin-top:8px}
 .p-hero p{font-size:13px;color:var(--ink2);margin-top:4px}
+.login-gate{width:min(430px,100%);margin:auto;padding:24px}
+.login-gate .card{padding:22px}
+.login-gate h1{font-size:28px;margin:8px 0}
+.login-gate[hidden],.phone[hidden]{display:none!important}
 
 /* ── Empty state ── */
 .empty-state{text-align:center;padding:24px 16px}
@@ -226,7 +310,7 @@ dialog p{font-size:14px;color:var(--ink2);margin-bottom:16px}
 /* ── Toast ── */
 #toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:#1f1d36;color:#fff;padding:12px 20px;border-radius:14px;
+  background:var(--toast);color:var(--on-toast);padding:12px 20px;border-radius:14px;
   font-size:13px;font-weight:600;z-index:999;box-shadow:0 10px 30px rgba(0,0,0,.22);
   opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;
 }
@@ -236,61 +320,114 @@ dialog p{font-size:14px;color:var(--ink2);margin-bottom:16px}
 @media(max-width:830px){
   .layout{flex-direction:column;align-items:center;margin:12px auto;padding:0 12px;gap:0}
   .sidebar{display:none}
-  .phone{width:100%;max-width:390px}
+  .phone{width:100%;max-width:390px;height:min(844px, calc(100dvh - 24px))}
 }
 
 /* Final readability and keyboard pass. */
-.cell{min-height:44px;padding:4px 0;color:var(--ink);font-family:var(--ff);line-height:1.2;background:rgba(255,255,255,.5)}
-.cell.sel{color:white}.cell:focus-visible{outline:3px solid var(--brand-dark);outline-offset:1px}
-button:disabled{opacity:.5;cursor:default}h2{font-weight:600}.goal-card h3{font-weight:600}
+.cell{min-height:44px;padding:4px 0;color:var(--ink);font-family:var(--ff);line-height:1.2;background:var(--card)}
+.cell:focus-visible{outline:3px solid var(--brand-dark);outline-offset:1px}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+input::placeholder{color:var(--muted)}
+.appearance{min-width:0;border:0;margin:0 0 14px}
+.appearance legend{margin-bottom:6px}
+.appearance label{flex:1;display:flex;align-items:center;gap:6px;min-height:44px;padding:6px 8px;border:1px solid var(--control-line);border-radius:12px;cursor:pointer}
+.appearance label:has(:checked){background:var(--brand-light);color:var(--brand-dark);border-color:var(--brand)}
+input[type=radio],input[type=checkbox]{accent-color:var(--brand)}h2{font-weight:600}.goal-card h3{font-weight:600}
 .muted{color:var(--ink2)}
 </style>
+<script>
+const THEME_KEY = 'ora_appearance';
+const appearances = ['light', 'dark', 'system'];
+const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+let appearance = 'system';
+try {
+  const savedAppearance = localStorage.getItem(THEME_KEY);
+  if (appearances.includes(savedAppearance)) appearance = savedAppearance;
+} catch {
+  // The preview can still use the system palette with storage disabled.
+}
+
+function applyAppearance() {
+  document.documentElement.dataset.theme =
+    appearance === 'system' ? (systemTheme.matches ? 'dark' : 'light') : appearance;
+}
+
+function setAppearance(value) {
+  if (!appearances.includes(value)) return;
+  appearance = value;
+  applyAppearance();
+  try {
+    localStorage.setItem(THEME_KEY, value);
+  } catch {
+    toast('Appearance changed. Browser storage is unavailable.');
+  }
+}
+
+systemTheme.addEventListener('change', applyAppearance);
+applyAppearance();
+</script>
 </head>
 <body>
 
 <div class="layout">
   <!-- Desktop intro sidebar -->
   <aside class="sidebar">
+    <img class="brand-logo" src="ora-rescue-logo.png" alt="Ora Rescue logo">
     <span class="eyebrow">Ora Rescue · Browser Preview</span>
     <h1>Your study time, reclaimed.</h1>
-    <p>A deterministic study-recovery planner with exact free-time windows, local Room persistence, and zero cloud tracking. All five Android screens are recreated here.</p>
-    <div class="pills">
-      <span class="pill">Icy Lavender</span>
-      <span class="pill g">Exact Windows</span>
-      <span class="pill a">Deterministic</span>
-      <span class="pill">100% Local</span>
-    </div>
+    <p>Add exam topics, set free time, import course material and play chapter mastery quizzes.</p>
     <div class="sidebar-note">
       This is a browser simulation. Data lives in <code>localStorage</code>, separate from the Android Room database. Font: Apple SF system font on macOS/iOS; Inter (OFL-licensed, bundled) on other platforms.
     </div>
     <div style="margin-top:18px">
-      <button class="secondary small" onclick="resetData()">↺ Reset sample data</button>
+      <button class="secondary small" onclick="confirmAction('Reset sample data?', 'This replaces your study data and profile in this browser.', 'Reset', resetData)">↺ Reset sample data</button>
     </div>
   </aside>
 
+  <section class="login-gate" id="loginGate" aria-labelledby="loginTitle">
+    <div class="card">
+      <img class="brand-logo" src="ora-rescue-logo.png" alt="Ora Rescue logo">
+      <div class="eyebrow">LOCAL DEMO ACCESS</div>
+      <h1 id="loginTitle">Welcome to Ora Rescue</h1>
+      <p class="small muted">Sign in to open the study-planning demonstration.</p>
+      <form id="loginForm">
+        <label class="field">Login ID<input name="loginId" type="email" autocomplete="username" required></label>
+        <label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <p id="loginError" class="error-msg" hidden>Use the sample credentials below.</p>
+        <button class="full" type="submit">Sign in</button>
+      </form>
+      <div class="card brand" style="margin-top:14px">
+        <div class="section-label">Sample demo login</div>
+        <p class="small"><b>Login ID:</b> demo@orarescue.app<br><b>Password:</b> OraDemo2026</p>
+        <p class="tiny">Local demonstration only. No account data is sent to a server.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- Phone frame -->
-  <div class="phone" aria-label="Ora Rescue app preview">
+  <div class="phone" id="appPhone" aria-label="Ora Rescue app preview" hidden>
     <div class="status-bar">
       <span id="clock">9:41</span>
       <span>● ▰ 100%</span>
     </div>
     <main class="screen" id="screen" aria-live="polite"></main>
     <nav aria-label="Bottom navigation">
-      <button data-p="home" onclick="go('home')"><span class="ic">⌂</span>Home</button>
-      <button data-p="calendar" onclick="go('calendar')"><span class="ic">▦</span>Calendar</button>
-      <button class="add-btn" aria-label="Add topic" onclick="go('add')"><span class="ic">＋</span></button>
-      <button data-p="recover" onclick="go('recover')"><span class="ic">♧</span>Recovery</button>
-      <button data-p="profile" onclick="go('profile')"><span class="ic">♙</span>Profile</button>
+      <button data-p="home" onclick="go('home')"><span class="ic" aria-hidden="true">☑</span>My plan</button>
+      <button data-p="calendar" onclick="go('calendar')"><span class="ic" aria-hidden="true">▦</span>Calendar</button>
+      <button data-p="courses" onclick="go('courses')"><span class="ic" aria-hidden="true">▤</span>Material</button>
+      <button data-p="recover" onclick="go('recover')"><span class="ic" aria-hidden="true">◷</span>Plan</button>
+      <button data-p="profile" onclick="go('profile')"><span class="ic" aria-hidden="true">♙</span>Profile</button>
     </nav>
   </div>
 </div>
 
 <!-- Dialogs -->
-<dialog id="windowDlg">
+<dialog id="windowDlg" aria-labelledby="wdTitle" aria-describedby="wdSub">
   <form id="windowForm">
     <h2 id="wdTitle">Add free time</h2>
     <p id="wdSub" class="small" style="color:var(--muted)"></p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px">
+    <div class="time-fields">
       <label class="field">Start time<input type="time" name="start" required value="16:00"></label>
       <label class="field">End time<input type="time" name="end" required value="18:00"></label>
     </div>
@@ -300,7 +437,7 @@ button:disabled{opacity:.5;cursor:default}h2{font-weight:600}.goal-card h3{font-
       <button type="button" class="secondary small" onclick="setWin('19:30','21:30')">19:30–21:30</button>
       <button type="button" class="secondary small" onclick="setWin('21:00','23:00')">21–23</button>
     </div>
-    <div class="error-msg" id="wdErr" hidden></div>
+    <div class="error-msg" id="wdErr" role="alert" hidden></div>
     <div class="row-between" style="margin-top:16px">
       <button type="button" class="quiet" onclick="$('#windowDlg').close()">Cancel</button>
       <button type="submit">Save window</button>
@@ -308,12 +445,12 @@ button:disabled{opacity:.5;cursor:default}h2{font-weight:600}.goal-card h3{font-
   </form>
 </dialog>
 
-<dialog id="copyDlg">
+<dialog id="copyDlg" aria-labelledby="copyTitle">
   <form id="copyForm">
-    <h2>Copy free time</h2>
-    <p>Add today's windows to selected upcoming dates. Existing windows are preserved; overlaps skip the whole day.</p>
+    <h2 id="copyTitle">Copy free time</h2>
+    <p>Copy the selected day’s windows to upcoming dates. If any date has a conflict, the copy is cancelled.</p>
     <div id="copyDateList" style="display:grid;gap:8px;margin:12px 0 4px"></div>
-    <div class="error-msg" id="copyErr" hidden></div>
+    <div class="error-msg" id="copyErr" role="alert" hidden></div>
     <div class="row-between" style="margin-top:16px">
       <button type="button" class="quiet" onclick="$('#copyDlg').close()">Cancel</button>
       <button type="submit">Copy windows</button>
@@ -321,9 +458,9 @@ button:disabled{opacity:.5;cursor:default}h2{font-weight:600}.goal-card h3{font-
   </form>
 </dialog>
 
-<dialog id="progressDlg">
+<dialog id="progressDlg" aria-labelledby="progressTitle">
   <form id="progressForm">
-    <h2>Record progress</h2>
+    <h2 id="progressTitle">Record progress</h2>
     <p id="progressSub" class="small" style="color:var(--muted)"></p>
     <label class="field">Completed minutes
       <input type="number" name="done" min="0" required>
@@ -336,14 +473,25 @@ button:disabled{opacity:.5;cursor:default}h2{font-weight:600}.goal-card h3{font-
   </form>
 </dialog>
 
-<dialog id="aboutDlg">
-  <h2>About Ora Rescue</h2>
+<dialog id="aboutDlg" aria-labelledby="aboutTitle">
+  <h2 id="aboutTitle">About Ora Rescue</h2>
   <p>Kotlin · Jetpack Compose · Material 3 · Room SQLite · 100% offline. Zero accounts, telemetry, or cloud storage.</p>
   <p style="margin-top:8px;font-size:13px;color:var(--muted)">Font: Apple SF system font where available (macOS/iOS); Inter (OFL, bundled) elsewhere. SF Pro files are not redistributed.</p>
   <div style="margin-top:16px"><button class="full secondary" onclick="$('#aboutDlg').close()">Close</button></div>
 </dialog>
 
-<div id="toast"></div>
+<dialog id="confirmDlg" aria-labelledby="confirmTitle" aria-describedby="confirmDetail">
+  <form id="confirmForm" method="dialog">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmDetail"></p>
+    <div class="row-between">
+      <button type="submit" class="secondary" value="cancel" autofocus>Cancel</button>
+      <button type="submit" class="danger" id="confirmButton" value="confirm"></button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
 
 <script>
 /* =====================================================================
@@ -369,32 +517,35 @@ function minToTime(m) { return `${pad(Math.floor(m/60))}:${pad(m%60)}`; }
 function timeToMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
 function canRecord(s) { const date=localDay(new Date()); return !!s && !s.recorded && (s.day<date || s.day===date && (s.start==null || s.start<=nowMin())); }
 function nowMin() { const n=new Date(); return n.getHours()*60+n.getMinutes(); }
-const TODAY = localDay(new Date());
+function today() { return localDay(new Date()); }
 
 /* ── Sample data factory ── */
 function mkSamples() {
   return {
     tasks: [
-      {id:1,subject:'Operating Systems',topic:'CPU Scheduling & Semaphores',minutes:120,exam:plusDays(TODAY,5),priority:3},
-      {id:2,subject:'Machine Learning',topic:'Decision Trees & Ensembles',minutes:90,exam:plusDays(TODAY,8),priority:2},
-      {id:3,subject:'Mobile Dev',topic:'Compose & Room Migration',minutes:60,exam:plusDays(TODAY,12),priority:2}
+      {id:1,subject:'Operating Systems',topic:'CPU Scheduling & Semaphores',minutes:120,exam:plusDays(today(),5),priority:3},
+      {id:2,subject:'Machine Learning',topic:'Decision Trees & Ensembles',minutes:90,exam:plusDays(today(),8),priority:2},
+      {id:3,subject:'Mobile Dev',topic:'Compose & Room Migration',minutes:60,exam:plusDays(today(),12),priority:2}
     ],
     windows: [
-      {id:101,day:TODAY,            start:960, end:1080},
-      {id:102,day:TODAY,            start:1170,end:1290},
-      {id:103,day:plusDays(TODAY,1),start:960, end:1080},
-      {id:104,day:plusDays(TODAY,2),start:1020,end:1200},
+      {id:101,day:today(),            start:960, end:1080},
+      {id:102,day:today(),            start:1170,end:1290},
+      {id:103,day:plusDays(today(),1),start:960, end:1080},
+      {id:104,day:plusDays(today(),2),start:1020,end:1200},
     ],
     sessions: [
-      {id:1,taskId:1,day:TODAY,start:960, end:1080,minutes:120,done:0,recorded:false},
-      {id:2,taskId:2,day:TODAY,start:1170,end:1260,minutes:90, done:0,recorded:false},
+      {id:1,taskId:1,day:today(),start:960, end:1080,minutes:120,done:0,recorded:false},
+      {id:2,taskId:2,day:today(),start:1170,end:1260,minutes:90, done:0,recorded:false},
     ],
-    profile: {name:'Shruthi',goal:120,split:true,avatar:'👩🏻‍💻'}
+    profile: {name:'Shruthi',goal:120,split:true,avatar:'👩🏻‍💻',quizMuted:false},
+    courses: [], chapters: [], questions: [], attempts: [], selectedChapterId:null
   };
 }
 
 /* ── State ── */
-const STORE = 'ora_v3';
+// v4 intentionally starts the revised demo with a clean browser snapshot. Earlier
+// preview builds stored sample selections and sign-in state under different keys.
+const STORE = 'ora_v4';
 let S;
 // Keep earlier preview data accessible; upgrade its field names without deleting it.
 function loadPreviewData() {
@@ -411,27 +562,48 @@ function loadPreviewData() {
 try { S = loadPreviewData(); } catch { S = mkSamples(); }
 if (!S.profile) S.profile = {name:'Student',goal:120,split:true,avatar:'👩🏻‍💻'};
 if (!S.windows)  S.windows = [];
+if (!S.courses) S.courses = [];
+if (!S.chapters) S.chapters = [];
+if (!S.questions) S.questions = [];
+if (!S.attempts) S.attempts = [];
+if (S.selectedChapterId == null) S.selectedChapterId = null;
+if (S.profile.quizMuted == null) S.profile.quizMuted = false;
 
 function save() { localStorage.setItem(STORE, JSON.stringify(S)); }
-function resetData() { S = mkSamples(); save(); calDay = TODAY; calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); go('home'); toast('Sample data restored'); }
+function resetData() { S = mkSamples(); splitMode = S.profile.split; save(); calDay = today(); calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); go('home'); toast('Sample data restored'); }
 
 /* ── Navigation ── */
-let page = 'home', editId = null, calDay = TODAY;
+let page = 'home', editId = null, calDay = today(), quizState = null;
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
-let searchQ = '', subjectF = '', preview = null, splitMode = true;
+let searchQ = '', subjectF = '', preview = null, splitMode = S.profile.split;
 
 function go(p, id=null) {
-  page = p; editId = id;
-  if (p !== 'recover') preview = null;
-  render(); $('#screen').scrollTop = 0;
+  const next = id == null ? p : `${p}/${id}`;
+  if (location.hash.slice(1) === next) routeFromHash();
+  else location.hash = next;
+}
+
+function routeFromHash() {
+  const [nextPage='home', rawId] = location.hash.slice(1).split('/');
+  page = ['home','calendar','add','recover','profile','courses','quiz'].includes(nextPage) ? nextPage : 'home';
+  editId = rawId == null ? null : Number(rawId);
+  if (page !== 'recover') preview = null;
+  if (page === 'quiz' && (!quizState || quizState.chapterId !== editId)) startQuiz(editId, false);
+  render();
+  $('#screen').scrollTop = 0;
 }
 
 function render() {
-  document.querySelectorAll('nav button[data-p]').forEach(b =>
-    b.classList.toggle('active', b.dataset.p === page));
+  document.querySelectorAll('nav button[data-p]').forEach(button => {
+    const active = button.dataset.p === page;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
   $('#screen').innerHTML = {
     home: renderHome, calendar: renderCalendar, add: renderAdd,
-    recover: renderRecover, profile: renderProfile
+    recover: renderRecover, profile: renderProfile, courses: renderCourses,
+    quiz: renderQuiz
   }[page]?.() ?? renderHome();
   if (page === 'add') bindAddForm();
 }
@@ -442,6 +614,9 @@ function taskLeft(t)  { return Math.max(0, t.minutes - taskDone(t.id)); }
 function priLabel(p)  { return ['Low','Low','Medium','High'][p]||'Medium'; }
 function greeting()   { const h=new Date().getHours(); return h<12?'Good Morning':h<18?'Good Afternoon':'Good Evening'; }
 function winsForDay(d){ return S.windows.filter(w=>w.day===d).sort((a,b)=>a.start-b.start); }
+function sessionsForDay(day) {
+  return S.sessions.filter(s => s.day === day).sort((a, b) => (a.start ?? -1) - (b.start ?? -1));
+}
 function dayCapMin(d) { return winsForDay(d).reduce((a,w)=>a+(w.end-w.start),0); }
 
 function winOverlap(d, s, e, skipId=0) {
@@ -452,48 +627,64 @@ function winOverlap(d, s, e, skipId=0) {
 function renderHome() {
   const p = S.profile;
   const goalMin = p.goal || 120;
-  const todaySess = S.sessions.filter(s=>s.day===TODAY);
+  const date = today();
+  const minute = nowMin();
+  const todaySess = sessionsForDay(date);
+  const activeSessions = S.sessions.filter(s => !s.recorded);
+  const todayQueue = activeSessions.filter(s => s.day === date).sort((a,b)=>(a.start??-1)-(b.start??-1));
+  const overdueQueue = activeSessions.filter(s => s.day < date).sort((a,b)=>a.day.localeCompare(b.day)||(a.start??-1)-(b.start??-1));
+  const upcomingQueue = activeSessions.filter(s => s.day > date).sort((a,b)=>a.day.localeCompare(b.day)||(a.start??-1)-(b.start??-1));
+  const next = todaySess.find(s => !s.recorded && s.start != null && s.end > minute);
+  const nextTopic = next && S.tasks.find(t => t.id === next.taskId);
+  const plannedToday = todaySess.reduce((sum, s) => sum + s.minutes, 0);
+  const remaining = S.tasks.reduce((sum, t) => sum + taskLeft(t), 0);
   const doneToday = todaySess.reduce((a,s)=>a+s.done, 0);
-  const pct = Math.min(100, Math.round(doneToday/goalMin*100));
+  const completedTodayCount = todaySess.filter(s=>s.recorded&&s.done>0).length;
+  const todayTaskCount = todaySess.length;
+  const pct = plannedToday ? Math.min(100, Math.round(doneToday/plannedToday*100)) : 0;
   const doneTopics = S.tasks.filter(t=>taskLeft(t)<=0).length;
   const totalFocus = S.sessions.reduce((a,s)=>a+s.done, 0);
   const openCount  = S.tasks.filter(t=>taskLeft(t)>0).length;
 
-  const nearest = S.tasks.filter(t=>taskLeft(t)>0).sort((a,b)=>a.exam.localeCompare(b.exam))[0];
+  const nearest = S.tasks.filter(t=>t.exam>=date).sort((a,b)=>a.exam.localeCompare(b.exam)||b.priority-a.priority||a.id-b.id)[0];
 
   const filters = ['All','In Progress','Completed',...new Set(S.tasks.map(t=>t.subject))];
-  const filtered = S.tasks.filter(t => {
-    const qs = searchQ.toLowerCase();
-    const matchQ = !qs || t.topic.toLowerCase().includes(qs) || t.subject.toLowerCase().includes(qs);
-    if (!matchQ) return false;
-    if (subjectF==='In Progress') return taskLeft(t)>0;
-    if (subjectF==='Completed')   return taskLeft(t)<=0;
-    if (subjectF && subjectF!=='All') return t.subject===subjectF;
-    return true;
-  });
-
+  const selectedChapter=S.chapters.find(ch=>ch.id===S.selectedChapterId);
+  const selectedTask=selectedChapter&&S.tasks.find(t=>t.chapterId===selectedChapter.id);
+  const selectedIsPlanned=selectedTask&&S.sessions.some(s=>s.taskId===selectedTask.id&&!s.recorded);
   return `
   <div>
     <div class="row-between" style="margin-bottom:12px">
       <div>
         <div class="eyebrow">${greeting()}</div>
-        <h2>Hello, ${esc(p.name)} 👋</h2>
+        <h2>Hello, ${esc(p.name)}</h2>
       </div>
-      <div style="font-size:48px;cursor:pointer" onclick="go('profile')" title="Profile">${esc(p.avatar||'👩🏻‍💻')}</div>
+      <button class="quiet" style="font-size:38px" onclick="go('profile')" aria-label="Open profile">${esc(p.avatar||'👩🏻‍💻')}</button>
     </div>
 
-    <div class="stats-row">
-      <div class="stat-box"><div class="si">✓</div><strong>${doneTopics}</strong><span>Done</span></div>
-      <div class="stat-box"><div class="si">◷</div><strong>${Math.floor(totalFocus/60)}h ${totalFocus%60}m</strong><span>Focus</span></div>
-      <div class="stat-box"><div class="si">ϟ</div><strong>${openCount}</strong><span>Open</span></div>
+    <div class="action-row" style="margin:0 0 12px">
+      <button onclick="go('add')">＋ Add task</button>
+      <button class="secondary" onclick="go('calendar')">▦ Calendar</button>
+    </div>
+    <p class="tiny" style="margin:-6px 0 12px">Course upload is optional. Add any subject or study task manually.</p>
+
+    <div class="card brand" style="padding:13px 14px">
+      <div class="row-between">
+        <div>
+          <div class="section-label">📚 Course Library</div>
+          <div class="tiny">Upload material, select a chapter, study, then unlock its quiz.</div>
+        </div>
+        <a class="link-btn secondary small" href="#courses">Open</a>
+      </div>
     </div>
 
-    <div class="goal-card">
-      <div class="row-between"><span class="tiny" style="color:#fff9">TODAY'S GOAL</span><span class="tiny" style="color:#fff9">${doneToday} / ${goalMin} min</span></div>
-      <h3>${pct>=100?'Goal reached 🎉':pct>0?'Keep going!':'Ready to start?'}</h3>
-      <p class="sub">${pct>=100?'Outstanding focus today.':pct>0?`${pct}% of your ${goalMin}-min goal.`:'Every small session adds up.'}</p>
-      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
-    </div>
+    ${selectedTask&&!selectedIsPlanned?`<div class="card sage"><div class="section-label">Selected study material</div><h3>${esc(selectedTask.subject)} · ${esc(selectedTask.topic)}</h3><p class="tiny">This chapter is selected but has not been scheduled yet.</p><a class="link-btn small" href="#recover">Create plan</a></div>`:''}
+
+    ${nextTopic?`
+    <div class="card brand">
+      <span class="section-label">${next.start <= minute ? 'Study session now' : 'Next session today'}</span>
+      <div class="meta">${minToTime(next.start)}–${minToTime(next.end)} · ${esc(nextTopic.subject)} · ${esc(nextTopic.topic)}</div>
+    </div>`:''}
 
     ${nearest?`
     <div class="card" style="border-left:4px solid var(--brand);padding:12px 14px;margin-bottom:12px">
@@ -505,37 +696,75 @@ function renderHome() {
       <div class="meta" style="margin-top:2px">${taskLeft(nearest)} min remaining</div>
     </div>`:''}
 
+    <div class="stats-row">
+      <div class="stat-box"><div class="si">✓</div><strong>${doneTopics}</strong><span>Done</span></div>
+      <div class="stat-box"><div class="si">◷</div><strong>${Math.floor(totalFocus/60)}h ${totalFocus%60}m</strong><span>Focus</span></div>
+      <div class="stat-box"><div class="si">ϟ</div><strong>${openCount}</strong><span>Open</span></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="row-between"><span class="tiny" style="color:var(--on-banner)">TODAY'S PLAN</span><span class="tiny" style="color:var(--on-banner)">${completedTodayCount} of ${todayTaskCount} tasks</span></div>
+      <h3>${todayTaskCount ? `${doneToday} of ${plannedToday} planned min` : 'Nothing scheduled today'}</h3>
+      <p class="sub">${todayQueue.length} active today · ${remaining} min remaining across topics</p>
+      <div class="prog-bg" role="progressbar" aria-label="Daily study goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="prog-fill" style="width:${pct}%"></div></div>
+    </div>
+
     <div class="row-between" style="margin:16px 0 6px">
-      <div class="section-label">Today's Sessions</div>
+      <div class="section-label">Today</div>
       <button class="quiet small" onclick="go('calendar')">Calendar ›</button>
     </div>
-    ${todaySess.length===0?`<div class="card empty-state"><div class="ei">📅</div><h3>No sessions today</h3><p>Add free-time windows in Calendar, then generate a plan.</p><div class="row" style="justify-content:center;gap:8px"><button class="secondary small" onclick="go('calendar')">Set free time</button><button class="small" onclick="go('recover')">Create plan</button></div></div>`:
-      todaySess.map(s=>{
-        const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:TODAY};
+    ${todayQueue.length===0?`<div class="card empty-state"><div class="ei">☑</div><h3>${todayTaskCount?'Today is complete':'Nothing active today'}</h3><p>${todayTaskCount?'Completed tasks are saved in your progress and removed from this list.':remaining?'Create a plan or do an upcoming task now.':'Add a study topic to start planning.'}</p><div class="action-row">${remaining?`<button class="secondary small" onclick="go('calendar')">Add free time</button><button class="small" onclick="go('recover')">Create plan</button>`:`<button class="small" onclick="go('add')">Add topic</button>`}</div></div>`:
+      todayQueue.map(s=>{
+        const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session',priority:2,exam:today()};
         const tr=s.start!=null?`${minToTime(s.start)} – ${minToTime(s.end)}`:`${s.minutes} min`;
+        const status=canRecord(s)?'Ready':'Later today';
+        const dateText='Today';
         return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
           <div class="row-between">
-            <span class="tiny" style="font-weight:700;color:var(--brand)">${esc(t.subject)}</span>
-            <span class="badge ${s.recorded?'g':'a'}">${tr}</span>
+            <span class="tiny" style="font-weight:700;color:var(--brand)">${dateText} · ${esc(t.subject)}</span>
+            <span class="badge a">${status}</span>
           </div>
-          <div class="section-label" style="margin:4px 0 6px">${esc(t.topic)}</div>
+          <div class="section-label" style="margin:4px 0 2px">${esc(t.topic)}</div>
+          <div class="tiny" style="margin-bottom:8px">${tr} · ${s.minutes} min planned</div>
           <div class="row-between">
-            <span class="tiny">${s.recorded?`${s.done} min recorded`:'Pending'}</span>
-            ${s.recorded?`<span class="badge g">✓ Done</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
+            <span class="tiny">${s.minutes} min planned</span>
+            ${canRecord(s)?`<button class="small" onclick="finishSessionNow(${s.id})">✓ Complete</button>`:`<button class="secondary small" onclick="doSessionNow(${s.id})">Do now</button>`}
           </div>
         </div>`;
       }).join('')}
+
+    ${overdueQueue.length?`<div class="row-between" style="margin:18px 0 8px"><div class="section-label">Needs recovery (${overdueQueue.length})</div><button class="quiet small" onclick="go('recover')">Recover ›</button></div>${overdueQueue.map(s=>{const t=S.tasks.find(x=>x.id===s.taskId);return `<div class="card" style="padding:12px 14px"><div class="row-between"><div><b>${esc(t?.topic||'Study session')}</b><div class="tiny">${fmtLong(s.day)} · ${s.minutes} min</div></div><span class="action-row"><button class="secondary small" onclick="skipSession(${s.id})">Skipped</button><button class="small" onclick="doSessionNow(${s.id})">Do now</button></span></div></div>`}).join('')}`:''}
+
+    ${upcomingQueue.length?`<div class="row-between" style="margin:18px 0 8px"><div class="section-label">Upcoming (${upcomingQueue.length})</div><button class="quiet small" onclick="go('calendar')">Calendar ›</button></div>${upcomingQueue.map(s=>{const t=S.tasks.find(x=>x.id===s.taskId);return `<div class="card" style="padding:12px 14px"><div class="row-between"><div><b>${esc(t?.topic||'Study session')}</b><div class="tiny">${fmtLong(s.day)} · ${s.minutes} min</div></div><button class="small" onclick="doSessionNow(${s.id})">✓ Complete now</button></div></div>`}).join('')}`:''}
 
     <div class="row-between" style="margin:18px 0 8px">
       <div class="section-label">All Topics (${S.tasks.length})</div>
       <button class="quiet small" onclick="go('add')">+ Add topic</button>
     </div>
     <input type="search" placeholder="Search topics or subjects…" value="${esc(searchQ)}"
-           oninput="searchQ=this.value;render()"
-           style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid #ddd7f5;font:14px/1 var(--ff);background:rgba(255,255,255,.8);margin-bottom:8px">
-    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">
-      ${filters.map(f=>`<button class="secondary small" style="${subjectF===f||(!subjectF&&f==='All')?'background:var(--brand);color:#fff;border-color:var(--brand)':''}" onclick="subjectF='${f==='All'?'':f}';render()">${esc(f)}</button>`).join('')}
+           aria-label="Search topics or subjects"
+           oninput="searchQ=this.value;refreshHomeTopics()"
+           style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--control-line);font:14px/1 var(--ff);background:var(--field);color:var(--ink);margin-bottom:8px">
+    <div class="filter-strip">
+      ${filters.map(f=>`<button class="secondary small" aria-pressed="${subjectF===(f==='All'?'':f)}" data-filter="${esc(f==='All'?'':f)}" onclick="subjectF=this.dataset.filter;refreshHomeTopics()">${esc(f)}</button>`).join('')}
     </div>
+    <div id="homeTopics">${renderHomeTopics()}</div>
+  </div>`;
+}
+
+/* ── Calendar ── */
+function renderHomeTopics() {
+  const filtered = S.tasks.filter(t => {
+    const qs = searchQ.toLowerCase();
+    const matchQ = !qs || t.topic.toLowerCase().includes(qs) || t.subject.toLowerCase().includes(qs);
+    if (!matchQ) return false;
+    if (subjectF==='In Progress') return taskLeft(t)>0;
+    if (subjectF==='Completed')   return taskLeft(t)<=0;
+    if (subjectF && subjectF!=='All') return t.subject===subjectF;
+    return true;
+  });
+
+  return `
     ${filtered.length===0?`<div class="card"><p class="small" style="text-align:center;color:var(--muted);padding:16px 0">No topics match your filter.</p></div>`:''}
     ${filtered.map(t=>`
     <div class="card" style="padding:12px 14px;margin-bottom:8px">
@@ -554,11 +783,16 @@ function renderHome() {
       </div>
     </div>`).join('')}
 
-    <div class="tiny" style="text-align:center;color:var(--muted);margin-top:20px">ORA RESCUE · BROWSER PREVIEW · DATA STORED LOCALLY</div>
-  </div>`;
+    <div class="tiny" style="text-align:center;color:var(--muted);margin-top:20px">ORA RESCUE · BROWSER PREVIEW · DATA STORED LOCALLY</div>`;
 }
 
-/* ── Calendar ── */
+function refreshHomeTopics() {
+  $('#homeTopics').innerHTML = renderHomeTopics();
+  document.querySelectorAll('[data-filter]').forEach(button => {
+    button.setAttribute('aria-pressed', button.dataset.filter === subjectF);
+  });
+}
+
 function renderCalendar() {
   const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const first = new Date(calYear, calMonth, 1);
@@ -567,18 +801,20 @@ function renderCalendar() {
 
   const wins = winsForDay(calDay);
   const totalMin = dayCapMin(calDay);
-  const sessDay  = S.sessions.filter(s=>s.day===calDay);
+  const sessDay = sessionsForDay(calDay);
+  const done = sessDay.reduce((sum, session) => sum + session.done, 0);
+  const planned = sessDay.filter(session => !session.recorded).reduce((sum, session) => sum + session.minutes, 0);
   const curNow   = nowMin();
 
   let cells = '<span></span>'.repeat(startOffset);
   for (let d=1; d<=days; d++) {
     const ds = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
-    const isSel = ds===calDay, isToday = ds===TODAY;
-    const isPast = ds<TODAY && !isSel;
+    const isSel = ds===calDay, isToday = ds===today();
+    const isPast = ds<today() && !isSel;
     const hw = S.windows.some(w=>w.day===ds);
     const hs = S.sessions.some(s=>s.day===ds);
     const he = S.tasks.some(t=>t.exam===ds);
-    cells += `<button type="button" aria-label="Select ${ds}" aria-pressed="${isSel}" class="cell${isSel?' sel':''}${isToday?' today':''}${isPast?' past':''}" onclick="calDay='${ds}';render()">
+    cells += `<button type="button" aria-label="${fmtLong(ds)}${hw?', free time':''}${hs?', study sessions':''}${he?', exam':''}" aria-pressed="${isSel}" class="cell${isSel?' sel':''}${isToday?' today':''}${isPast?' past':''}" onclick="calDay='${ds}';render()">
       <span>${d}</span>
       <span class="dots" aria-hidden="true">${hw?'<span class="dot g"></span>':''}${hs?'<span class="dot p"></span>':''}${he?'<span class="dot a"></span>':''}</span>
     </button>`;
@@ -586,8 +822,8 @@ function renderCalendar() {
 
   return `<div>
     <div class="row-between" style="margin-bottom:10px">
-      <h2>Calendar</h2>
-      <button class="secondary small" onclick="calDay=TODAY;calYear=new Date().getFullYear();calMonth=new Date().getMonth();render()">Today</button>
+      <div><h2>Calendar</h2><div class="tiny">See assigned tasks by date and manage free time.</div></div>
+      <button class="secondary small" onclick="calDay=today();calYear=new Date().getFullYear();calMonth=new Date().getMonth();render()">Today</button>
     </div>
 
     <div class="row-between" style="margin-bottom:10px">
@@ -612,43 +848,44 @@ function renderCalendar() {
           <div class="eyebrow">Free time</div>
           <div class="section-label">${fmtLong(calDay)}</div>
         </div>
-        <span class="badge ${totalMin>0?'g':''}">${totalMin>0?`${totalMin} min total`:'Day off'}</span>
+        <span class="badge ${totalMin>0?'g':''}">${totalMin>0?`${totalMin} min total`:'No free time'}</span>
       </div>
       <div style="margin:12px 0 8px">
-        ${wins.length===0?`<p class="small" style="color:var(--muted);text-align:center;padding:8px 0">No free-time windows. Rest day.</p>`:''}
+        ${wins.length===0?`<p class="small" style="color:var(--muted);text-align:center;padding:8px 0">No free-time windows on this date.</p>`:''}
         ${wins.map(w=>{
-          const elapsed = calDay===TODAY && w.end<=curNow;
+          const elapsed = calDay===today() && w.end<=curNow;
           return `<div class="win-row">
             <div>
               <div class="win-time">${minToTime(w.start)} – ${minToTime(w.end)}</div>
               <div class="win-dur">${w.end-w.start} min${elapsed?' · <em style="color:var(--muted)">elapsed</em>':''}</div>
             </div>
             <div class="row">
-              <button class="secondary small" onclick="openEditWin(${w.id})" ${calDay<TODAY?'disabled':''}>Edit</button>
-              <button class="danger small" onclick="deleteWin(${w.id})" ${calDay<TODAY?'disabled':''}>✕</button>
+              <button class="secondary small" onclick="openEditWin(${w.id})" ${calDay<today()?'disabled':''}>Edit</button>
+              <button class="danger small" onclick="deleteWin(${w.id})" ${calDay<today()?'disabled':''}>✕</button>
             </div>
           </div>`;
         }).join('')}
       </div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
-        <button class="small" onclick="openAddWin()" ${calDay<TODAY?'disabled':''}>+ Add time</button>
-        <button class="secondary small" onclick="openCopyDlg()" ${calDay<TODAY||wins.length===0?'disabled':''}>Copy to dates</button>
-        <button class="quiet small" onclick="clearDay('${calDay}')" ${calDay<TODAY?'disabled':''}>Day off</button>
+        <button class="small" onclick="openAddWin()" ${calDay<today()?'disabled':''}>Add free time</button>
+        <button class="secondary small" onclick="openCopyDlg()" ${calDay<today()||wins.length===0?'disabled':''}>Copy to dates</button>
+        <button class="quiet small" onclick="clearDay('${calDay}')" ${calDay<today()?'disabled':''}>Day off</button>
       </div>
       <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
         <span class="tiny">Quick presets:</span>
         <div class="presets">
-          <button class="secondary small" onclick="addPreset(960,1080)" ${calDay<TODAY?'disabled':''}>Afternoon 16–18</button>
-          <button class="secondary small" onclick="addPreset(1170,1290)" ${calDay<TODAY?'disabled':''}>Evening 19:30–21:30</button>
-          <button class="secondary small" onclick="addPreset(1260,1380)" ${calDay<TODAY?'disabled':''}>Night 21–23</button>
+          <button class="secondary small" onclick="addPreset(960,1080)" ${calDay<today()?'disabled':''}>Afternoon 16–18</button>
+          <button class="secondary small" onclick="addPreset(1170,1290)" ${calDay<today()?'disabled':''}>Evening 19:30–21:30</button>
+          <button class="secondary small" onclick="addPreset(1260,1380)" ${calDay<today()?'disabled':''}>Night 21–23</button>
         </div>
       </div>
     </div>
 
     <!-- Agenda for selected date -->
-    <div class="section-label" style="margin-bottom:8px">Agenda – ${fmtShort(calDay)}</div>
+    <div class="section-label">Agenda · ${fmtShort(calDay)}</div>
+    <p class="meta" style="margin-bottom:8px">${done} min completed · ${planned} min planned</p>
     ${S.tasks.filter(t=>t.exam===calDay).map(t=>`<div class="card amber" style="padding:10px 14px;margin-bottom:8px">★ Exam – ${esc(t.subject)} · ${esc(t.topic)}</div>`).join('')}
-    ${sessDay.length===0?`<p class="small" style="color:var(--muted)">No study sessions scheduled on this date.</p>`:''}
+    ${sessDay.length===0?`<p class="small" style="color:var(--muted)">No study sessions saved for this date.</p>`:''}
     ${sessDay.map(s=>{
       const t=S.tasks.find(tk=>tk.id===s.taskId)||{subject:'Study',topic:'Session'};
       const tr=s.start!=null?`${minToTime(s.start)}–${minToTime(s.end)}`:`${s.minutes} min`;
@@ -658,12 +895,12 @@ function renderCalendar() {
           <span class="badge ${s.recorded?'g':'a'}">${tr}</span>
         </div>
         <div class="section-label" style="margin:4px 0">${esc(t.topic)}</div>
-        ${s.recorded?`<span class="badge g">${s.done} min completed</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
+        ${s.recorded?`<span class="badge ${s.done?'g':'r'}">${s.done?`${s.done} min completed`:'Missed'}</span>`:`<button class="secondary small" onclick="openProgress(${s.id})" ${canRecord(s)?'':'disabled'}>${canRecord(s)?'Record progress':'Upcoming'}</button>`}
       </div>`;
     }).join('')}
 
     <div style="margin-top:16px">
-      <button class="full" onclick="go('recover')">Build recovery plan →</button>
+      <button class="full" onclick="go('recover')">Create plan</button>
     </div>
   </div>`;
 }
@@ -695,9 +932,10 @@ function deleteWin(id) {
   invalidatePending(); save(); render();
 }
 function clearDay(d) {
-  if (!confirm(`Remove all free-time windows on ${fmtShort(d)}?`)) return;
-  S.windows = S.windows.filter(w=>w.day!==d);
-  invalidatePending(); save(); render(); toast('Day set to rest day');
+  confirmAction('Make this a day off?', `Free time on ${fmtShort(d)} will be cleared. Create a new plan afterwards.`, 'Mark day off', () => {
+    S.windows = S.windows.filter(w=>w.day!==d);
+    invalidatePending(); save(); render(); toast('Day set to rest day');
+  });
 }
 function addPreset(s,e) {
   if (winOverlap(calDay,s,e)) { toast(`Overlaps an existing window – try another slot`); return; }
@@ -727,9 +965,9 @@ function showWdErr(msg) { const el=$('#wdErr'); el.textContent=msg; el.hidden=fa
 function openCopyDlg() {
   const wins = winsForDay(calDay);
   if (!wins.length) { toast('No windows on this date to copy'); return; }
-  const dates = Array.from({length:7},(_,i)=>plusDays(calDay,i+1)).filter(d=>d>=TODAY);
+  const dates = Array.from({length:7},(_,i)=>plusDays(calDay,i+1)).filter(d=>d>=today());
   $('#copyDateList').innerHTML = dates.map(d=>`
-    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.8);border-radius:10px;cursor:pointer">
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--field);color:var(--ink);border-radius:10px;cursor:pointer">
       <input type="checkbox" name="dates" value="${d}"> <span class="small">${fmtLong(d)}</span>
     </label>`).join('');
   $('#copyErr').hidden = true;
@@ -762,11 +1000,11 @@ function renderAdd() {
       <h2>${t?'Edit topic':'New topic'}</h2>
       <button class="quiet small" onclick="go('home')">✕</button>
     </div>
-    <p class="small" style="color:var(--muted);margin-bottom:16px">Estimate honestly. Nearest exam date is scheduled first; priority breaks ties.</p>
+    <p class="small" style="color:var(--muted);margin-bottom:16px">Enter the total time you expect to spend on this topic.</p>
     <form id="addForm">
       <label class="field">Subject<input name="subject" required maxlength="80" value="${esc(t?t.subject:'')}" placeholder="e.g. Operating Systems"></label>
       <label class="field">Topic name<input name="topic" required maxlength="120" value="${esc(t?t.topic:'')}" placeholder="e.g. CPU Scheduling"></label>
-      <label class="field">Exam deadline<input name="exam" type="date" required min="${plusDays(TODAY,1)}" value="${t?t.exam:plusDays(TODAY,10)}"></label>
+      <label class="field">Exam deadline<input name="exam" type="date" required min="${plusDays(today(),1)}" value="${t?t.exam:plusDays(today(),10)}"></label>
       <label class="field">Estimated work (minutes)<input name="minutes" type="number" required min="${minMins}" max="100000" step="1" value="${t?t.minutes:120}"></label>
       <div class="presets">
         <button type="button" class="secondary small" onclick="const x=document.querySelector('[name=minutes]');x.value=+x.value+30">+30 min</button>
@@ -779,6 +1017,7 @@ function renderAdd() {
           <option value="1"${t&&t.priority===1?' selected':''}>Low</option>
         </select>
       </label>
+      <p id="topicError" class="error-msg" role="alert" hidden></p>
       <div style="margin-top:20px">
         <button type="submit" class="full">${t?'Save changes':'Create topic'}</button>
         <button type="button" class="quiet full" style="margin-top:8px" onclick="go('home')">Cancel</button>
@@ -792,26 +1031,36 @@ function bindAddForm() {
     const f = new FormData(e.target);
     const subject = f.get('subject').trim();
     const topic   = f.get('topic').trim();
-    if (!subject||!topic) { toast('Enter a subject and topic name'); return; }
+    if (!subject || !topic) {
+      const missing = !subject ? 'subject' : 'topic';
+      const error = $('#topicError');
+      error.textContent = missing === 'subject' ? 'Enter a subject.' : 'Enter a topic name.';
+      error.hidden = false;
+      e.target.elements[missing].focus();
+      return;
+    }
     const task = {id:editId||Date.now(),subject,topic,minutes:+f.get('minutes'),exam:f.get('exam'),priority:+f.get('priority')};
-    if (editId) S.tasks = S.tasks.map(t=>t.id===editId?task:t);
+    const isEdit = editId != null;
+    if (isEdit) S.tasks = S.tasks.map(t=>t.id===editId?task:t);
     else S.tasks.push(task);
-    invalidatePending(); save(); go('home'); toast(editId?'Topic updated':'Topic added');
+    invalidatePending(); save(); go('home'); toast(isEdit?'Topic updated':'Topic added');
   };
 }
 function deleteTopic(id) {
-  if (!confirm('Delete this topic and its pending sessions?')) return;
-  S.tasks    = S.tasks.filter(t=>t.id!==id);
-  S.sessions = S.sessions.filter(s=>s.taskId!==id);
-  save(); render(); toast('Topic deleted');
+  confirmAction('Delete this topic?', 'Its scheduled sessions and recorded progress will be permanently removed.', 'Delete topic', () => {
+    S.tasks = S.tasks.filter(t=>t.id!==id);
+    S.sessions = S.sessions.filter(s=>s.taskId!==id);
+    save(); render(); toast('Topic deleted');
+  });
 }
 
 /* ── Recovery Planner ── */
 function generatePlan() {
+  const startDay = today();
   const curNow = nowMin();
   // Reserve completed work at its actual clock position, then exclude elapsed time.
   const slots = [];
-  const days = [...new Set(S.windows.map(w=>w.day))].filter(d=>d>=TODAY).sort();
+  const days = [...new Set(S.windows.map(w=>w.day))].filter(d=>d>=startDay).sort();
   for (const d of days) {
     let ranges = winsForDay(d).map(w=>[w.start,w.end]);
     const done = S.sessions.filter(x=>x.day===d && x.recorded && x.done>0);
@@ -822,13 +1071,13 @@ function generatePlan() {
     }
     let reserve=done.filter(x=>x.start==null).reduce((n,x)=>n+x.done,0);
     for (let [start,end] of ranges) {
-      if(d===TODAY)start=Math.max(start,curNow);
+      if(d===startDay)start=Math.max(start,curNow);
       const take=Math.min(Math.max(0,end-start),reserve);start+=take;reserve-=take;
       if(end>start)slots.push({day:d,start,end,avail:end-start});
     }
   }
   // Sort tasks: nearest exam, highest priority, stable id
-  const tasks = [...S.tasks].filter(t=>taskLeft(t)>0)
+  const tasks = [...S.tasks].filter(t=>taskLeft(t)>0 && (!t.chapterId || t.selected !== false))
     .sort((a,b)=>a.exam.localeCompare(b.exam)||b.priority-a.priority||a.id-b.id);
 
   const proposed=[], unplaced=[];
@@ -842,35 +1091,40 @@ function generatePlan() {
         slot.start+=take; slot.avail-=take; rem-=take;
       }
     } else {
-      let placed=false;
-      for (const slot of slots) {
-        if (slot.day>=task.exam) continue;
-        if (slot.avail>=rem) {
-          proposed.push({id:Date.now()+Math.random(),taskId:task.id,day:slot.day,start:slot.start,end:slot.start+rem,minutes:rem,done:0,recorded:false});
-          slot.start+=rem; slot.avail-=rem; placed=true; rem=0; break;
-        }
+      const slot = slots.find(slot => slot.day < task.exam && slot.avail >= rem);
+      if (slot) {
+        proposed.push({id:Date.now()+Math.random(),taskId:task.id,day:slot.day,start:slot.start,end:slot.start+rem,minutes:rem,done:0,recorded:false});
+        slot.start += rem;
+        slot.avail -= rem;
+        rem = 0;
       }
-      if (!placed) rem>0 && (void 0);
     }
-    if (rem>0) unplaced.push({task,minutes:rem,reason:splitMode?'Exceeds free capacity before exam':'Needs one continuous window (or enable splitting)'});
+    if (rem > 0) {
+      const reason = task.exam <= startDay ? 'Exam is today or earlier. Check the exam date.'
+        : splitMode ? 'Exceeds free time before the exam.'
+        : 'Needs one continuous window before the exam.';
+      unplaced.push({task, minutes:rem, reason});
+    }
   }
   proposed.sort((a,b)=>a.day.localeCompare(b.day)||a.start-b.start);
-  preview = {sessions:proposed, unplaced, createdAt:Date.now(), day:localDay(new Date()), revision:JSON.stringify(S)};
+  preview = {sessions:proposed, unplaced, createdAt:Date.now(), day:startDay, revision:JSON.stringify(S)};
   render();
 }
 
 function acceptPlan() {
   if (!preview) return;
+  const startDay = today();
   const curNow = nowMin();
-  if (preview.day!==localDay(new Date())||preview.revision!==JSON.stringify(S)||preview.sessions.some(s=>s.day===TODAY&&s.start!=null&&s.start<curNow)) {
+  if (preview.day!==startDay||preview.revision!==JSON.stringify(S)||preview.sessions.some(s=>s.day===startDay&&s.start!=null&&s.start<curNow)) {
     preview=null; render(); toast('Plan is stale or a start time passed — recalculate'); return;
   }
-  S.sessions = [...S.sessions.filter(s=>s.recorded||s.day<TODAY), ...preview.sessions];
+  S.sessions = [...S.sessions.filter(s=>s.recorded||s.day<startDay), ...preview.sessions];
   save(); preview=null; go('home'); toast('Recovery plan saved!');
 }
 
 function renderRecover() {
   const outstanding = S.tasks.filter(t=>taskLeft(t)>0).reduce((a,t)=>a+taskLeft(t),0);
+  const hasSavedPlan = S.sessions.some(s=>!s.recorded&&s.day>=today());
   return `<div>
     <div class="row-between" style="margin-bottom:8px">
       <h2>Recovery Plan</h2>
@@ -878,24 +1132,25 @@ function renderRecover() {
     </div>
     <p class="small" style="color:var(--muted);margin-bottom:14px">Schedules unfinished work into your exact free-time windows: nearest exam first, then priority.</p>
 
-    <div class="card row-between" style="padding:12px 14px;margin-bottom:12px">
-      <div>
-        <div class="section-label">Split topics across days</div>
-        <div class="tiny">Allow one topic to span multiple windows</div>
-      </div>
+    <label class="card row-between" style="padding:12px 14px;margin-bottom:12px">
+      <span>
+        <span class="section-label">Split longer topics</span>
+        <span class="tiny" style="display:block">Allow one topic to span multiple windows</span>
+      </span>
       <input type="checkbox" ${splitMode?'checked':''} style="width:20px;height:20px;accent-color:var(--brand)"
              onchange="splitMode=this.checked;preview=null;render()">
-    </div>
+    </label>
 
     <div class="row" style="gap:8px;margin-bottom:14px">
       <button class="secondary small full" onclick="go('calendar')">Edit free time</button>
-      <button class="small full" onclick="generatePlan()">${preview?'Recalculate':'Create plan'}</button>
+      <button class="small full" onclick="generatePlan()" ${outstanding?'':'disabled'}>${preview?'Recalculate':hasSavedPlan?'Update plan':'Create plan'}</button>
     </div>
 
     ${!preview?`<div class="card empty-state">
       <div class="ei">♧</div>
-      <h3>Preview your plan first</h3>
-      <p>Tap "Create plan" to simulate placement. Your saved sessions stay untouched until you accept.</p>
+      <h3>${outstanding?(hasSavedPlan?'Your plan is saved':'Preview your plan'):'No work to schedule'}</h3>
+      <p>${outstanding?(hasSavedPlan?'Your sessions remain available in My Study Plan. Update only when your availability or priorities change.':'Review the proposed sessions and any shortfall before saving.'):'Add a study topic with time remaining.'}</p>
+      ${hasSavedPlan?`<a class="link-btn secondary small" href="#home">Open My Study Plan</a>`:''}
     </div>`:`
     <div class="card ${preview.unplaced.length?'amber':'sage'}" style="margin-bottom:10px">
       <div class="row-between">
@@ -903,8 +1158,9 @@ function renderRecover() {
         <span class="badge ${preview.unplaced.length?'a':'g'}">${preview.unplaced.length?`${preview.unplaced.reduce((a,u)=>a+u.minutes,0)}m shortfall`:'All placed ✓'}</span>
       </div>
       <p class="small" style="margin-top:6px;color:${preview.unplaced.length?'var(--amber)':'var(--sage)'}">
-        ${preview.unplaced.length?'Some work cannot fit — add more free time or enable splitting.':'All pending study fits in your free windows before each exam.'}
+        ${preview.unplaced.length?(splitMode?'Add free time before the affected exams, or check the dates and estimates.':'Add a longer window before the exam, or enable splitting and recalculate.'):'All pending study fits in your free windows before each exam.'}
       </p>
+      ${preview.unplaced.length?`<button class="secondary small" style="margin-top:8px" onclick="go('calendar')">Edit free time</button>`:''}
     </div>
 
     ${preview.unplaced.map(u=>`<div class="card amber" style="padding:10px 14px;margin-bottom:8px">
@@ -939,12 +1195,185 @@ function renderRecover() {
       </div>`;
     }).join('')}
 
-    <div style="margin-top:16px">
-      <button class="full" onclick="acceptPlan()">✓ Accept & save plan</button>
-      <button class="quiet full" style="margin-top:6px" onclick="preview=null;render()">Discard preview</button>
+    <p class="tiny" style="margin:12px 0">Saving replaces upcoming pending sessions. Completed study stays in your history.</p>
+    <div class="plan-actions">
+      <button class="secondary" onclick="preview=null;render()">Discard preview</button>
+      <button onclick="acceptPlan()">Save plan</button>
     </div>
-    <p class="tiny" style="color:var(--muted);text-align:center;margin-top:8px">Applies to this browser preview only.</p>
     `}
+  </div>`;
+}
+
+/* ── Course library and mastery quiz ── */
+const ML_CHAPTERS = [
+  'Machine Learning Foundations','Types of Machine Learning','Python for Machine Learning','ML Pipeline',
+  'Data Preprocessing','Feature Engineering','Linear Regression','Classification','Evaluation Metrics','Artificial Neural Networks'
+];
+
+function chapterSeeds(title) {
+  const bank = {
+    'Machine Learning Foundations': [
+      ['What best describes machine learning?',['Typing rules for every case','Learning patterns from data','Only storing data','Drawing charts'],1,'Machine learning uses data to learn patterns that support predictions or decisions.'],
+      ['Why evaluate a model on unseen data?',['To increase file size','To test generalisation','To remove every feature','To avoid training'],1,'Unseen data shows whether the model generalises beyond its training examples.']
+    ],
+    'Types of Machine Learning': [
+      ['Predicting churn from labelled examples is…',['Supervised classification','Unsupervised clustering','Reinforcement learning','Data cleaning'],0,'The outcome is labelled and the prediction is a category.'],
+      ['Grouping customers without labels is…',['Regression','Clustering','Classification','Backpropagation'],1,'Clustering discovers groups without known labels.']
+    ],
+    'Python for Machine Learning': [
+      ['Which Python structure stores an ordered, changeable collection?',['List','Float','Boolean','Comment'],0,'A Python list stores ordered values and can be changed.'],
+      ['Which loop visits each item in a list?',['for','switch','until','select'],0,'A for loop iterates through items in a sequence.']
+    ],
+    'ML Pipeline': [
+      ['What should happen before model evaluation?',['Train the model','Publish the answer','Delete the target','Rename the laptop'],0,'A model is trained before its performance is evaluated.'],
+      ['Why separate training and test data?',['Prevent misleading evaluation','Make the file colourful','Create duplicate targets','Remove all features'],0,'Testing on separate data gives a fairer estimate of generalisation.']
+    ],
+    'Data Preprocessing': [
+      ['One-hot encoding is mainly used for…',['Categorical variables','Deleting duplicates','Video compression','Splitting dates'],0,'One-hot encoding represents categories with indicator columns.'],
+      ['Why fit a scaler only on training data?',['Prevent data leakage','Create more labels','Remove the target','Reduce brightness'],0,'Using test information during preprocessing leaks knowledge into training.']
+    ],
+    'Feature Engineering': [
+      ['Feature engineering means…',['Creating useful model inputs','Deleting every column','Choosing a font','Only collecting labels'],0,'Feature engineering transforms raw information into useful predictors.'],
+      ['A useful engineered feature should be…',['Relevant to the prediction','A secret password','Always text','Copied from the target'],0,'Features should provide relevant information without leaking the answer.']
+    ],
+    'Linear Regression': [
+      ['In advertising spend → sales, the dependent variable is…',['Advertising spend','Sales','Row number','Company name'],1,'Sales is the outcome being predicted.'],
+      ['Which target suits regression?',['Loan default yes/no','Monthly sales amount','Spam/not spam','Disease class'],1,'Monthly sales is a continuous numeric outcome.']
+    ],
+    'Classification': [
+      ['Which problem is classification?',['Predicting temperature','Predicting spam or not spam','Estimating price','Forecasting revenue'],1,'Classification predicts a discrete class.'],
+      ['A false positive means…',['Predicted positive, actually negative','Predicted negative, actually positive','Correct positive','Correct negative'],0,'A false positive is a positive prediction for a negative case.']
+    ],
+    'Evaluation Metrics': [
+      ['When missing a disease case is costly, prioritise…',['Recall','File size','Precision only','Training rows'],0,'Recall measures how many actual positives were found.'],
+      ['The F1-score balances…',['Precision and recall','Rows and columns','Training and storage','Bias and filename'],0,'F1 is the harmonic mean of precision and recall.']
+    ],
+    'Artificial Neural Networks': [
+      ['What does an artificial neuron calculate first?',['A weighted sum plus bias','A confusion matrix','A file path','A database migration'],0,'A neuron combines inputs with weights and bias before activation.'],
+      ['Which is an activation function?',['ReLU','CSV','SQL','Room'],0,'ReLU is a commonly used nonlinear activation function.']
+    ]
+  };
+  return (bank[title]||[]).map(([prompt,options,answer,explanation])=>({prompt,options,answer,explanation,source:'Course material'}));
+}
+
+function fallbackChapterSeeds(courseName, chapterTitle) {
+  const subject=chapterTitle||courseName||'this material';
+  return [
+    {prompt:`What is the best first step when studying ${subject}?`,options:['Identify the main ideas','Ignore the headings','Memorise without reading','Skip directly to the exam'],answer:0,explanation:'Identifying the main ideas gives the chapter a structure before detailed revision.',source:courseName},
+    {prompt:`Which technique best checks your understanding of ${subject}?`,options:['Active recall','Only rereading','Changing the font','Closing the material immediately'],answer:0,explanation:'Active recall requires you to retrieve the idea instead of only recognising it.',source:courseName},
+    {prompt:`After finishing ${subject}, what should you do next?`,options:['Review mistakes and weak points','Delete every note','Avoid testing yourself','Start an unrelated chapter'],answer:0,explanation:'Reviewing mistakes turns the session into a useful next-step plan.',source:courseName}
+  ];
+}
+
+function nextId(list) { return Math.max(0,...list.map(x=>Number(x.id)||0))+1; }
+
+function importCourseName(fileName) {
+  const clean = String(fileName||'').trim();
+  if (!clean) { toast('Choose a course file first.'); return; }
+  const isML = /machine|learning|prg4206/i.test(clean);
+  if (S.courses.some(c=>c.name.toLowerCase()===clean.toLowerCase())) { toast('This course is already in your library.'); return; }
+  const courseId=nextId(S.courses), courseName=clean.replace(/\.[^.]+$/,'')||'Imported course';
+  const titles=isML?ML_CHAPTERS:[courseName];
+  S.courses.push({id:courseId,name:courseName,fileName:clean,importedAt:Date.now(),template:isML?'Machine Learning':'Manual'});
+  titles.forEach((title,order)=>{
+    const chapterId=nextId(S.chapters);
+    S.chapters.push({id:chapterId,courseId,title,order});
+    S.tasks.push({id:nextId(S.tasks),subject:courseName,topic:title,minutes:60,exam:plusDays(today(),30),priority:2,chapterId,selected:false});
+    const seeds=chapterSeeds(title);
+    (seeds.length?seeds:fallbackChapterSeeds(courseName,title)).forEach(seed=>S.questions.push({id:nextId(S.questions),chapterId,...seed}));
+  });
+  const firstChapter=S.chapters.find(ch=>ch.courseId===courseId);
+  const firstTask=firstChapter&&S.tasks.find(t=>t.chapterId===firstChapter.id);
+  if(firstTask){S.tasks.filter(t=>t.chapterId).forEach(t=>t.selected=t.id===firstTask.id);S.selectedChapterId=firstChapter.id}
+  save();
+  if(firstTask){go('recover');toast('Material selected. Create and save its study plan.');}
+  else {render();toast('Course imported.');}
+}
+
+function selectChapterForStudy(chapterId) {
+  const chapter=S.chapters.find(ch=>ch.id===Number(chapterId));
+  const task=chapter&&S.tasks.find(t=>t.chapterId===chapter.id);
+  if(!task)return;
+  S.tasks.filter(t=>t.chapterId).forEach(t=>t.selected=t.id===task.id);
+  S.selectedChapterId=chapter.id;
+  save();go('home');toast(`${chapter.title} selected. Add free time, then create your plan.`);
+}
+
+function importCourseFile(input) {
+  const file=input.files&&input.files[0];
+  if (file) importCourseName(file.name);
+  input.value='';
+}
+
+function deleteCourse(id) {
+  const chapters=S.chapters.filter(c=>c.courseId===id), chapterIds=new Set(chapters.map(c=>c.id));
+  const taskIds=new Set(S.tasks.filter(t=>chapterIds.has(t.chapterId)).map(t=>t.id));
+  if (S.sessions.some(s=>taskIds.has(s.taskId)&&s.recorded)) { toast('Completed study history protects this course from deletion.'); return; }
+  confirmAction('Delete this course?','Chapter topics, pending sessions and quiz attempts will be removed.','Delete',()=>{
+    S.sessions=S.sessions.filter(s=>!taskIds.has(s.taskId)); S.tasks=S.tasks.filter(t=>!taskIds.has(t.id));
+    S.questions=S.questions.filter(q=>!chapterIds.has(q.chapterId)); S.attempts=S.attempts.filter(a=>!chapterIds.has(a.chapterId));
+    S.chapters=S.chapters.filter(c=>c.courseId!==id); S.courses=S.courses.filter(c=>c.id!==id); save();render();toast('Course deleted.');
+  });
+}
+
+function bestAttempt(chapterId) {
+  return S.attempts.filter(a=>a.chapterId===chapterId).sort((a,b)=>(b.score/b.total)-(a.score/a.total)||b.at-a.at)[0];
+}
+function quizStars(score,total) { const r=total?score/total:0; return r>=.9?3:r>=.7?2:r>=.5?1:0; }
+function masteryLabel(score,total) { return ['Review this chapter','Keep practising','Strong','Mastered'][quizStars(score,total)]; }
+
+function renderCourses() {
+  return `<div>
+    <div class="row-between"><div><div class="eyebrow">Course library</div><h2>Material → mastery</h2></div><a class="link-btn secondary small" href="#home">Home</a></div>
+    <p class="small" style="margin-bottom:14px">Upload material, then select the exact chapter you want to study. The quiz appears only after that chapter's session is finished.</p>
+    <label class="link-btn full" style="cursor:pointer;margin-bottom:8px">Upload course material<input type="file" accept=".zip,.pdf,.docx,.pptx,.txt" hidden onchange="importCourseFile(this)"></label>
+    <button class="secondary full" onclick="importCourseName('MACHINE-LEARNING.zip')">Load Machine Learning demo course</button>
+    <div class="card brand" style="margin-top:12px"><div class="section-label">Gemini-assisted flow</div><p class="small">The Android app sends the selected PDF or text material to Gemini only after a session is finished, then caches the validated questions in Room. This browser demo uses reviewed sample questions and never exposes an API key.</p></div>
+    ${S.courses.length?'':`<div class="card empty-state"><div class="ei">📚</div><h3>No course material yet</h3><p>Choose a file or load the demonstration course.</p></div>`}
+    ${S.courses.map(course=>{
+      const chapters=S.chapters.filter(c=>c.courseId===course.id).sort((a,b)=>a.order-b.order);
+      return `<div class="card"><div class="row-between"><div><h3>${esc(course.name)}</h3><div class="tiny">${chapters.length} chapters · ${esc(course.template)}</div></div><button class="danger small" onclick="deleteCourse(${course.id})">Delete</button></div>
+        <div style="margin-top:10px">${chapters.map(ch=>{const qs=S.questions.filter(q=>q.chapterId===ch.id),a=bestAttempt(ch.id),selected=S.selectedChapterId===ch.id;return `<div class="win-row"><div style="min-width:0"><div class="section-label">${esc(ch.title)}</div><div class="tiny">${qs.length?`${qs.length} quiz questions ready`:'Quiz generated after finishing'}${a?` · ${masteryLabel(a.score,a.total)} ${'★'.repeat(quizStars(a.score,a.total))}`:''}</div></div><button class="${selected?'':'secondary'} small" onclick="selectChapterForStudy(${ch.id})">${selected?'Selected':'Study'}</button></div>`}).join('')}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function startQuiz(chapterId, navigate=true) {
+  const questions=S.questions.filter(q=>q.chapterId===Number(chapterId)).sort(()=>Math.random()-.5).slice(0,5);
+  quizState={chapterId:Number(chapterId),questions,index:0,score:0,combo:0,hearts:3,selected:-1,checked:false,finished:false};
+  if (navigate) go('quiz',chapterId);
+}
+function selectQuizAnswer(i){if(!quizState?.checked){quizState.selected=i;render()}}
+function quizTone(ok){if(S.profile.quizMuted)return;try{const C=window.AudioContext||window.webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();o.frequency.value=ok?660:180;g.gain.setValueAtTime(.06,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.16);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.17)}catch{}}
+function checkQuiz(){
+  if(!quizState||quizState.selected<0)return;
+  const q=quizState.questions[quizState.index],ok=quizState.selected===q.answer;quizState.checked=true;
+  if(ok){quizState.score++;quizState.combo++;}else{quizState.combo=0;quizState.hearts=Math.max(0,quizState.hearts-1)}
+  quizTone(ok);render();
+}
+function nextQuiz(){
+  if(quizState.index>=quizState.questions.length-1){quizState.finished=true;render();return}
+  quizState.index++;quizState.selected=-1;quizState.checked=false;render();
+}
+function saveQuizResult(){
+  S.attempts.push({id:nextId(S.attempts),chapterId:quizState.chapterId,score:quizState.score,total:quizState.questions.length,at:Date.now()});save();go('courses');toast('Quiz result saved.');
+}
+
+function renderQuiz(){
+  const ch=S.chapters.find(c=>c.id===quizState?.chapterId);
+  if(!ch||!quizState||!quizState.questions.length)return `<div class="card empty-state"><div class="ei">🎯</div><h3>Quiz not ready</h3><p>Add a Machine Learning course to load reviewed questions.</p><a class="link-btn" href="#courses">Open Course Library</a></div>`;
+  if(quizState.finished){const stars=quizStars(quizState.score,quizState.questions.length);return `<div style="text-align:center;padding:34px 4px"><div style="font-size:68px">🏆</div><div class="eyebrow">${esc(ch.title)}</div><h2>${masteryLabel(quizState.score,quizState.questions.length)}</h2><div class="quiz-stars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div><p class="body" style="margin:10px 0 22px">${quizState.score} of ${quizState.questions.length} correct</p><button class="full" onclick="saveQuizResult()">Save result</button><button class="quiet full" style="margin-top:8px" onclick="startQuiz(${ch.id})">Play again</button></div>`}
+  const q=quizState.questions[quizState.index],ok=quizState.selected===q.answer,pct=Math.round((quizState.index+(quizState.checked?1:0))/quizState.questions.length*100);
+  return `<div>
+    <div class="row-between"><a class="link-btn secondary small" href="#courses">‹ Courses</a><button class="quiet small" onclick="S.profile.quizMuted=!S.profile.quizMuted;save();render()">${S.profile.quizMuted?'🔇 Muted':'🔊 Sound'}</button></div>
+    <div class="prog-bg" style="background:var(--brand-light);margin:14px 0"><div class="prog-fill" style="background:var(--brand);width:${pct}%"></div></div>
+    <div class="row-between"><span class="badge r">${'♥'.repeat(quizState.hearts)}${'♡'.repeat(3-quizState.hearts)}</span>${quizState.combo>=2?`<span class="badge a">🔥 ${quizState.combo} combo</span>`:''}<span class="tiny">${quizState.index+1}/${quizState.questions.length}</span></div>
+    <div class="eyebrow" style="margin-top:18px">${esc(ch.title)}</div><h2>${esc(q.prompt)}</h2><p class="small" style="margin-bottom:14px">Choose the best answer.</p>
+    <div style="display:grid;gap:9px">${q.options.map((option,i)=>{let cls=quizState.selected===i?' selected':'';if(quizState.checked&&i===q.answer)cls=' correct';else if(quizState.checked&&quizState.selected===i)cls=' wrong';return `<button class="quiz-option${cls}" onclick="selectQuizAnswer(${i})" ${quizState.checked?'disabled':''}><span class="quiz-letter">${String.fromCharCode(65+i)}</span><span>${esc(option)}</span></button>`}).join('')}</div>
+    ${quizState.checked?`<div class="card ${ok?'sage':'amber'}" style="margin-top:14px"><h3>${ok?'Correct!':'Good try — learn from this one'}</h3><p class="small">${esc(q.explanation)}</p></div>`:''}
+    <button class="full" style="margin-top:14px" onclick="${quizState.checked?'nextQuiz()':'checkQuiz()'}" ${quizState.selected<0?'disabled':''}>${quizState.checked?(quizState.index===quizState.questions.length-1?'See results':'Next challenge'):'Check answer'}</button>
+    <div class="tiny" style="text-align:center;margin-top:10px">Question source · ${esc(q.source)}</div>
   </div>`;
 }
 
@@ -977,6 +1406,16 @@ function renderProfile() {
       <div class="stat-box"><div class="si">ϟ</div><strong>${openCount}</strong><span>Open</span></div>
     </div>
 
+    <fieldset class="appearance">
+      <legend class="section-label">Appearance</legend>
+      <div class="row" style="flex-wrap:wrap">
+        ${appearances.map(mode=>`<label>
+          <input type="radio" name="appearance" value="${mode}" ${appearance===mode?'checked':''}
+            onchange="setAppearance(this.value)"> ${mode[0].toUpperCase()+mode.slice(1)}
+        </label>`).join('')}
+      </div>
+    </fieldset>
+
     <form id="profileForm">
       <label class="field" style="margin-top:4px">Display name
         <input name="name" required maxlength="40" value="${esc(p.name)}" placeholder="Your name">
@@ -998,14 +1437,13 @@ function renderProfile() {
     </form>
 
     <div class="card" style="margin-top:14px;padding:0">
-      <div class="row-between" style="padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--line)" onclick="go('calendar')">
-        <div class="row"><span style="font-size:16px">📅</span><span class="section-label">Manage free-time windows</span></div>
-        <span style="color:var(--muted)">›</span>
-      </div>
-      <div class="row-between" style="padding:12px 14px;cursor:pointer" onclick="$('#aboutDlg').showModal()">
-        <div class="row"><span style="font-size:16px">ℹ️</span><span class="section-label">About Ora Rescue</span></div>
-        <span style="color:var(--muted)">›</span>
-      </div>
+      <button class="secondary full" onclick="go('calendar')">Manage free time</button>
+    </div>
+    <div class="card" style="margin-top:10px;padding:0">
+      <a class="link-btn secondary full" href="#courses">Open Course Library & quizzes</a>
+    </div>
+    <div class="card" style="margin-top:10px;padding:0">
+      <button class="secondary full" onclick="signOutDemo()">Sign out</button>
     </div>
 
     <p class="tiny" style="color:var(--muted);text-align:center;margin-top:14px">Data stored locally in this browser. Separate from the Android app.</p>
@@ -1013,6 +1451,20 @@ function renderProfile() {
 }
 
 function setAvatar(av) { S.profile.avatar=av; save(); render(); toast('Avatar updated'); }
+
+const DEMO_LOGIN_ID='demo@orarescue.app', DEMO_LOGIN_PASSWORD='OraDemo2026', DEMO_SESSION_KEY='ora-demo-signed-in-v2';
+function showSignedInState(){
+  const signedIn=sessionStorage.getItem(DEMO_SESSION_KEY)==='true';
+  $('#loginGate').hidden=signedIn;$('#appPhone').hidden=!signedIn;
+  if(signedIn)render();
+}
+function signOutDemo(){sessionStorage.removeItem(DEMO_SESSION_KEY);showSignedInState();}
+$('#loginForm').onsubmit=e=>{
+  e.preventDefault();const data=new FormData(e.target);
+  const ok=String(data.get('loginId')).trim().toLowerCase()===DEMO_LOGIN_ID&&data.get('password')===DEMO_LOGIN_PASSWORD;
+  $('#loginError').hidden=ok;
+  if(ok){sessionStorage.setItem(DEMO_SESSION_KEY,'true');showSignedInState();}
+};
 
 // Profile form binding (called after render)
 document.addEventListener('submit', e => {
@@ -1046,16 +1498,58 @@ $('#progressForm').onsubmit=e=>{
   if(!task || !canRecord(session)){toast('This session changed or has not started yet.');$('#progressDlg').close();return}
   const val=Number(new FormData(e.target).get('done')),max=Math.min(session.minutes,taskLeft(task));
   if(!Number.isInteger(val)||val<0||val>max){toast(`Enter 0 to ${max} whole minutes.`);return}
-  session.done=val;session.recorded=true;
-  S.sessions=S.sessions.filter(x=>x.id===session.id||x.recorded||x.taskId!==task.id||x.day<TODAY);
-  save();$('#progressDlg').close();render();
-  toast(val?`${val} min recorded — well done!`:'Missed session recorded. Create a new recovery plan.');
+  recordSession(session,val);
 };
+
+function finishSessionNow(id){
+  const session=S.sessions.find(x=>x.id===Number(id)),task=S.tasks.find(t=>t.id===session?.taskId);
+  if(!task||!canRecord(session)){toast('This task becomes available when its session starts.');return}
+  recordSession(session,Math.min(session.minutes,taskLeft(task)));
+}
+
+function doSessionNow(id){
+  const session=S.sessions.find(x=>x.id===Number(id)),task=S.tasks.find(t=>t.id===session?.taskId);
+  if(!session||session.recorded||!task){toast('This task is no longer available.');return}
+  // Moving a future task to an unslotted session now keeps the no-early-progress rule honest.
+  session.day=today();session.start=null;session.end=null;
+  recordSession(session,Math.min(session.minutes,taskLeft(task)));
+}
+
+function skipSession(id){
+  const session=S.sessions.find(x=>x.id===Number(id));
+  if(!session||!canRecord(session)){toast('This session is not ready yet.');return}
+  recordSession(session,0,true);
+}
+
+function recordSession(session,val,recoverAfter=false){
+  const task=S.tasks.find(t=>t.id===session?.taskId);
+  if(!task)return;
+  session.done=val;session.recorded=true;
+  S.sessions=S.sessions.filter(x=>x.id===session.id||x.recorded||x.taskId!==task.id||x.day<today());
+  save();if($('#progressDlg').open)$('#progressDlg').close();
+  const hasQuiz=val>0&&task.chapterId&&S.questions.some(q=>q.chapterId===task.chapterId);
+  if(hasQuiz){startQuiz(task.chapterId);toast(`Session finished — chapter challenge unlocked!`)}
+  else if(val>0&&task.chapterId){render();toast('Session finished. The Android app now asks Gemini to create this material quiz.')}
+  else if(recoverAfter||val===0){go('recover');toast('Skipped session saved. Create an updated recovery plan.')}
+  else{render();toast(`${val} min completed — well done!`)}
+}
 
 /* ── Utilities ── */
 function invalidatePending() {
   // Clear unrecorded future sessions when availability changes
-  S.sessions=S.sessions.filter(s=>s.recorded||s.day<TODAY);
+  S.sessions=S.sessions.filter(s=>s.recorded||s.day<today());
+}
+
+function confirmAction(title, detail, actionLabel, action) {
+  const dialog = $('#confirmDlg');
+  $('#confirmTitle').textContent = title;
+  $('#confirmDetail').textContent = detail;
+  $('#confirmButton').textContent = actionLabel;
+  dialog.returnValue = 'cancel';
+  dialog.addEventListener('close', () => {
+    if (dialog.returnValue === 'confirm') action();
+  }, {once:true});
+  dialog.showModal();
 }
 
 function toast(msg) {
@@ -1066,7 +1560,9 @@ function toast(msg) {
 // Clock
 (function tick() { const d=new Date(); $('#clock').textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}`; setTimeout(tick,1000); })();
 
-render();
+window.addEventListener('hashchange',routeFromHash);
+if(!location.hash) location.hash='home'; else routeFromHash();
+showSignedInState();
 </script>
 </body>
 </html>

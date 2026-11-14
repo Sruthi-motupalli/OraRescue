@@ -4,25 +4,25 @@ package com.ora.rescue
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -33,21 +33,41 @@ import androidx.navigation.navArgument
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             val vm: StudyViewModel = viewModel()
+            val prefs = (application as OraApplication).prefs
+            var signedIn by remember { mutableStateOf(prefs.getBoolean("demo_signed_in", false)) }
             val themePreference by vm.themePreference.collectAsStateWithLifecycle()
             OraRescueTheme(themePreference = themePreference) {
-                OraApp(vm)
+                val dark = LocalOraAccents.current.dark
+                SideEffect {
+                    WindowCompat.getInsetsController(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = !dark
+                        isAppearanceLightNavigationBars = !dark
+                    }
+                }
+                if (signedIn) {
+                    OraApp(vm, onSignOut = {
+                        prefs.edit().putBoolean("demo_signed_in", false).apply()
+                        signedIn = false
+                    })
+                } else {
+                    LoginScreen(onLogin = {
+                        prefs.edit().putBoolean("demo_signed_in", true).apply()
+                        signedIn = true
+                    })
+                }
             }
         }
     }
 }
-
 @Composable
-private fun OraApp(vm: StudyViewModel = viewModel()) {
+private fun OraApp(vm: StudyViewModel = viewModel(), onSignOut: () -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     val preview by vm.preview.collectAsStateWithLifecycle()
+    val selectedChapterId by vm.selectedChapterId.collectAsStateWithLifecycle()
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route ?: "home"
@@ -65,14 +85,23 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
 
     LaunchedEffect(vm) {
         vm.events.collect { event ->
-            if (event.destination == "home") {
-                navigateTab("home")
+            event.destination?.let { destination ->
+                if (destination in setOf("home", "calendar", "recover", "profile")) {
+                    navigateTab(destination)
+                } else {
+                    nav.navigate(destination) { launchSingleTop = true }
+                }
             }
             snackbars.showSnackbar(event.message)
         }
     }
 
-    val isTopLevelDestination = route in listOf("home", "calendar", "recover", "profile")
+    val isTopicDetail = route == "topic/{id}"
+    val isTopicForm = route == "task/{id}"
+    val isCourses = route == "courses"
+    val isQuiz = route.startsWith("quiz/")
+    val isAuxiliary = isTopicForm || isTopicDetail || isQuiz
+    val isAddingTopic = isTopicForm && backStack?.arguments?.getLong("id") == 0L
     val cs = MaterialTheme.colorScheme
 
     Scaffold(
@@ -80,27 +109,21 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "ora rescue",
-                            fontFamily = OraFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            color = cs.primary
-                        )
-                        Text(
-                            text = when (route) {
-                                "calendar" -> "Your study schedule"
-                                "recover"  -> "A fresh start"
-                                "profile"  -> "Your personal space"
-                                else       -> "Make today productive"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = cs.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = when {
+                            isAddingTopic -> "Add topic"
+                            isTopicForm -> "Edit topic"
+                            isTopicDetail -> "Topic details"
+                            isCourses -> "Course library"
+                            isQuiz -> "Chapter challenge"
+                            else -> "ora rescue"
+                        },
+                        fontWeight = FontWeight.Bold,
+                        color = cs.primary
+                    )
                 },
                 navigationIcon = {
-                    if (!isTopLevelDestination) {
+                    if (isAuxiliary) {
                         IconButton(
                             onClick = { nav.popBackStack() },
                             enabled = !busy,
@@ -118,6 +141,19 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                             color = cs.primary
                         )
                     }
+                    if (route == "home") {
+                        IconButton(onClick = { nav.navigate("task/0") { launchSingleTop = true } }, enabled = !busy) {
+                            Icon(Icons.Rounded.AddTask, contentDescription = "Add task without course material")
+                        }
+                        IconButton(onClick = { nav.navigate("courses") { launchSingleTop = true } }) {
+                            Icon(Icons.Rounded.LibraryBooks, contentDescription = "Open course library")
+                        }
+                    }
+                    if (route == "profile") {
+                        IconButton(onClick = onSignOut) {
+                            Icon(Icons.Rounded.Logout, contentDescription = "Sign out")
+                        }
+                    }
                     Spacer(Modifier.width(16.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = cs.background)
@@ -125,87 +161,76 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
         },
         snackbarHost = { SnackbarHost(snackbars) },
         bottomBar = {
-            if (isTopLevelDestination) {
-                NavigationBar(
-                    containerColor = cs.surface.copy(alpha = 0.97f),
-                    tonalElevation = 6.dp
-                ) {
-                    NavigationBarItem(
-                        selected = route == "home",
-                        onClick = { navigateTab("home") },
-                        icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                        label = { Text("Home", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+            if (!isQuiz) NavigationBar(
+                containerColor = cs.surface.copy(alpha = 0.97f),
+                tonalElevation = 6.dp
+            ) {
+                NavigationBarItem(
+                    selected = route == "home",
+                    onClick = { navigateTab("home") },
+                    icon = { Icon(Icons.Rounded.Home, contentDescription = null) },
+                    label = { Text("Home", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
+                )
 
-                    NavigationBarItem(
-                        selected = route == "calendar",
-                        onClick = { navigateTab("calendar") },
-                        icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = "Calendar") },
-                        label = { Text("Calendar", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+                NavigationBarItem(
+                    selected = route == "calendar",
+                    onClick = { navigateTab("calendar") },
+                    icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = null) },
+                    label = { Text("Calendar", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
+                )
 
-                    // Prominent Center Add Topic Action
-                    IconButton(
-                        onClick = {
-                            if (!busy) nav.navigate("task/0") { launchSingleTop = true }
-                        },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(Color(0xFF9879FF), Color(0xFF7365FF))
-                                )
-                            )
-                    ) {
-                        Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = "Add study topic",
-                            tint = Color.White,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-
-                    NavigationBarItem(
-                        selected = route == "recover",
-                        onClick = { navigateTab("recover") },
-                        icon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = "Recovery") },
-                        label = { Text("Recovery", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+                NavigationBarItem(
+                    selected = route == "courses",
+                    onClick = { nav.navigate("courses") { launchSingleTop = true } },
+                    icon = { Icon(Icons.Rounded.LibraryBooks, contentDescription = null) },
+                    label = { Text("Material", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
+                )
 
-                    NavigationBarItem(
-                        selected = route == "profile",
-                        onClick = { navigateTab("profile") },
-                        icon = { Icon(Icons.Rounded.Person, contentDescription = "Profile") },
-                        label = { Text("Profile", style = MaterialTheme.typography.labelSmall) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = cs.primary,
-                            selectedTextColor = cs.primary,
-                            indicatorColor = cs.primaryContainer
-                        )
+                NavigationBarItem(
+                    selected = route == "recover",
+                    onClick = { navigateTab("recover") },
+                    icon = { Icon(Icons.Rounded.Schedule, contentDescription = null) },
+                    label = { Text("Plan", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
                     )
-                }
+                )
+
+                NavigationBarItem(
+                    selected = route == "profile",
+                    onClick = { navigateTab("profile") },
+                    icon = { Icon(Icons.Rounded.Person, contentDescription = null) },
+                    label = { Text("Profile", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = cs.primary,
+                        selectedTextColor = cs.primary,
+                        indicatorColor = cs.primaryContainer
+                    )
+                )
             }
         }
     ) { padding ->
         Box(
             modifier = Modifier
                 .padding(padding)
+                .consumeWindowInsets(padding)
                 .fillMaxSize()
         ) {
             when {
@@ -239,11 +264,16 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                             HomeScreen(
                                 snapshot = state.snapshot,
                                 busy = busy,
-                                onAdd = { nav.navigate("task/0") },
-                                onEdit = { nav.navigate("task/$it") },
+                                onAdd = { nav.navigate("task/0") { launchSingleTop = true } },
+                                onOpenTopic = { nav.navigate("topic/$it") { launchSingleTop = true } },
                                 onRecover = { navigateTab("recover") },
                                 onCalendar = { navigateTab("calendar") },
-                                onProgress = vm::progress
+                                onProgress = vm::progress,
+                                onCompleteNow = vm::completeNow,
+                                onSkip = { id ->
+                                    vm.progress(id, 0)
+                                    navigateTab("recover")
+                                }
                             )
                         }
                         composable("calendar") {
@@ -256,8 +286,21 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 onClearDayWindows = vm::clearTimeWindows,
                                 onCopyWindows = vm::copyTimeWindows,
                                 onProgress = vm::progress,
-                                onEditTopic = { nav.navigate("task/$it") },
+                                onOpenTopic = { nav.navigate("topic/$it") { launchSingleTop = true } },
                                 onNavigateToRecovery = { navigateTab("recover") }
+                            )
+                        }
+                        composable(
+                            route = "topic/{id}",
+                            arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        ) { entry ->
+                            val id = entry.arguments?.getLong("id") ?: 0L
+                            TopicDetailScreen(
+                                id = id,
+                                snapshot = state.snapshot,
+                                onEdit = { nav.navigate("task/$id") { launchSingleTop = true } },
+                                onPractice = { nav.navigate("quiz/chapter/$it") },
+                                onBack = { nav.popBackStack() }
                             )
                         }
                         composable(
@@ -283,6 +326,50 @@ private fun OraApp(vm: StudyViewModel = viewModel()) {
                                 onCancel = vm::cancelPreview,
                                 onAccept = vm::accept,
                                 onAvailability = { navigateTab("calendar") }
+                            )
+                        }
+                        composable("courses") {
+                            CourseScreen(
+                                snapshot = state.snapshot,
+                                busy = busy,
+                                selectedChapterId = selectedChapterId,
+                                onImport = vm::importCourse,
+                                onAddQuestion = vm::addStudentQuestion,
+                                onDeleteCourse = vm::deleteCourse,
+                                onStudy = { taskId ->
+                                    vm.selectStudyChapter(taskId)
+                                    nav.navigate("topic/$taskId")
+                                }
+                            )
+                        }
+                        composable(
+                            route = "quiz/session/{id}",
+                            arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        ) { entry ->
+                            val sessionId = entry.arguments?.getLong("id") ?: 0L
+                            val chapterId = state.snapshot.sessions.firstOrNull { it.id == sessionId }
+                                ?.let { state.snapshot.chapterForTask(it.taskId)?.id } ?: 0L
+                            QuizScreen(
+                                chapterId = chapterId,
+                                sessionId = sessionId,
+                                snapshot = state.snapshot,
+                                busy = busy,
+                                onSave = vm::saveQuizAttempt,
+                                onDone = { nav.popBackStack() }
+                            )
+                        }
+                        composable(
+                            route = "quiz/chapter/{id}",
+                            arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        ) { entry ->
+                            val chapterId = entry.arguments?.getLong("id") ?: 0L
+                            QuizScreen(
+                                chapterId = chapterId,
+                                sessionId = null,
+                                snapshot = state.snapshot,
+                                busy = busy,
+                                onSave = vm::saveQuizAttempt,
+                                onDone = { nav.popBackStack() }
                             )
                         }
                         composable("profile") {
