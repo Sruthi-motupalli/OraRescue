@@ -24,6 +24,11 @@ const context = {
     setItem(key, value) { storage.set(key, String(value)); },
     clear() { storage.clear(); }
   },
+  sessionStorage: {
+    getItem(key) { return storage.has(`session:${key}`) ? storage.get(`session:${key}`) : null; },
+    setItem(key, value) { storage.set(`session:${key}`, String(value)); },
+    removeItem(key) { storage.delete(`session:${key}`); }
+  },
   location: { hash: '#home' },
   document: {
     documentElement: { dataset: {} },
@@ -54,7 +59,7 @@ vm.runInContext(scripts + `
   const plannedHome = renderHome();
   assert.ok(plannedHome.includes('Today'));
   assert.ok(plannedHome.includes('Upcoming'));
-  assert.ok(plannedHome.includes('Do now'));
+  assert.ok(plannedHome.includes('Complete now'));
   assert.ok(plannedHome.includes('Add task'));
   assert.ok(plannedHome.includes('Course upload is optional'));
   assert.ok(renderCalendar().includes('Agenda'));
@@ -73,5 +78,9 @@ vm.runInContext(scripts + `
   assert.ok(renderQuiz().includes('Save result'));
   saveQuizResult();
   assert.equal(S.attempts.length, 1);
+  importCourseName('Database Systems.pdf');
+  const genericChapter = S.chapters.find(ch => S.courses.find(c => c.id === ch.courseId)?.name === 'Database Systems');
+  assert.ok(genericChapter);
+  assert.equal(S.questions.filter(q => q.chapterId === genericChapter.id).length, 3);
 `, context);
 console.log('Browser course import, chapter quiz, feedback and saved mastery checks passed.');
